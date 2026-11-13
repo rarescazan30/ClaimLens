@@ -1,0 +1,197 @@
+"""Photo forensics: are the photos authentic, recent, from the address, and do they show the declared damage?
+
+Quick checks (every round, local or one vision call): EXIF date and GPS, the same image in another claim
+(perceptual hash), a vision model's read of each photo.
+On the Judge's request: web-wide copy search (Google Cloud Vision, Web Detection) with first-published dates.
+A copy published before the event produces the finding `exact_copy_before_event`, which the score treats as a gate.
+"""
+from __future__ import annotations
+
+import base64
+import io
+import os
+from datetime import date, datetime
+from pathlib import Path
+
+import imagehash
+from PIL import ExifTags, Image
+
+from agents.common import conclude, event_day, haversine_m, main_hypothesis
+from engine.context import AgentContext, BudgetExceeded
+from engine.graph import AgentTask
+from engine.http import SourceError
+from engine.models import Evidence, Finding
+
+VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
+ROLE = "autenticitatea fotografiilor: metadate, copii în alte dosare sau pe web, ce arată imaginile."
+MAX_VISION_PHOTOS = 4
+HASH_DISTANCE = 6
+GUIDANCE = ("Lipsa metadatelor EXIF este frecventă (aplicații de mesagerie le șterg): singură este 'inconclusive'. "
+            "O dată EXIF cu multe zile înaintea evenimentului, o copie în alt dosar sau o copie pe web publicată "
+            "înainte de eveniment contrazic puternic (strength ≥ 0.8). O copie pe web fără dată nu e concludentă.")
+
+VISION_SYSTEM = """Analizezi fotografii dintr-un dosar de daună la o locuință. Pentru fiecare fotografie, în ordinea primită:
+- shows_declared_damage: true/false/null – arată dauna descrisă de client?
+- looks_generated: true/false – are semne clare de imagine generată sau editată artificial?
+- description: o propoziție, în română, despre ce se vede.
+Fii prudent: fără semne clare, looks_generated este false.
+JSON: {"photos": [{"index": 0, "shows_declared_damage": true, "looks_generated": false, "description": "..."}]}"""
+
+DATES_SYSTEM = """Primești pagini web pe care apare o fotografie. Pentru fiecare, determină data de prima publicare
+DOAR dacă reiese clar din URL sau din titlu (de exemplu /2024/03/18/ în adresă). Dacă nu reiese, first_seen este null.
+Nu ghici. JSON: {"pages": [{"url": "...", "first_seen": "YYYY-MM-DD" sau null}]}"""
+
+
+def _dms(value) -> float:
+    d, m, s = (float(x) for x in value)
+    return d + m / 60 + s / 3600
+
+
+def read_exif(img: Image.Image) -> tuple[date | None, tuple[float, float] | None]:
+    exif = img.getexif()
+    raw = exif.get_ifd(ExifTags.IFD.Exif).get(0x9003) or exif.get(0x0132)
+    taken = None
+    if raw:
+        try:
+            taken = datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S").date()
+        except ValueError:
+            pass
+    gps = exif.get_ifd(ExifTags.IFD.GPSInfo)
+    where = None
+    try:
+        if gps.get(2) and gps.get(4):
+            lat, lon = _dms(gps[2]), _dms(gps[4])
+            where = (-lat if gps.get(1) == "S" else lat, -lon if gps.get(3) == "W" else lon)
+    except (TypeError, ValueError, ZeroDivisionError):
+        pass
+    return taken, where
+
+
+def small_jpeg(img: Image.Image, side: int = 1024) -> bytes:
+    img = img.convert("RGB")
+    img.thumbnail((side, side))
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85)
+    return buf.getvalue()
+
+
+def _hash(path: str):
+    try:
+        with Image.open(path) as im:
+            return imagehash.phash(im)
+    except Exception:
+        return None
+
+
+async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
+    c = task.claim
+    paths = [p for p in c.get("photo_paths") or [] if Path(p).is_file()]
+    if not paths:
+        return ctx.inconclusive(main_hypothesis(task), "Nu există fotografii în dosar")
+
+    event = event_day(task)
+    findings: list[Finding] = []
+    gaps: list[str] = []
+    readable: list[tuple[str, str, bytes]] = []          # (name, path, small jpeg)
+    other_hashes = [h for h in map(_hash, c.get("other_photo_paths") or []) if h is not None]
+
+    def f(name, check, value, source, unit=None, url=None):
+        findings.append(Finding(metric=f"{name}:{check}", value=value, unit=unit, source=source, url=url))
+
+    # 1. local checks: EXIF and copies in other claims
+    for path in paths:
+        name = Path(path).name
+        try:
+            with Image.open(path) as img:
+                img.load()
+                taken, where = read_exif(img)
+                jpeg = small_jpeg(img)
+                digest = imagehash.phash(img)
+        except Exception:
+            f(name, "unreadable", True, "Fișier")
+            gaps.append(f"{name} nu a putut fi citită ca imagine")
+            continue
+        readable.append((name, path, jpeg))
+        if taken is None and where is None:
+            f(name, "exif_missing", True, "EXIF")
+        if taken is not None:
+            f(name, "exif_date", taken.isoformat(), "EXIF")
+            days = (event - taken).days
+            f(name, "exif_days_before_event" if days >= 0 else "exif_days_after_event", abs(days), "EXIF", "zile")
+        if where is not None:
+            f(name, "exif_distance_to_address_km", round(haversine_m(c["lat"], c["lon"], *where) / 1000, 2), "EXIF", "km")
+        f(name, "copy_in_other_claim", any(digest - h <= HASH_DISTANCE for h in other_hashes),
+          "Comparare cu fotografiile din alte dosare")
+    ctx.note("observation", f"Metadate citite pentru {len(readable)} din {len(paths)} fotografii; "
+                            f"comparate cu {len(other_hashes)} fotografii din alte dosare",
+             {"photos": [n for n, _, _ in readable]}, ["EXIF"])
+    if not readable:
+        return Evidence(agent=ctx.agent, round=ctx.round, hypothesis=main_hypothesis(task), verdict="inconclusive",
+                        strength=0, data_quality=0, findings=findings, gaps=gaps)
+
+    # 2. what the photos show (one vision call)
+    shown = readable[:MAX_VISION_PHOTOS]
+    try:
+        out = await ctx.llm(VISION_SYSTEM, f"Dauna declarată: {c.get('description')} (tip: {c.get('damage_type')}). "
+                                           f"Fotografii, în ordine: {[n for n, _, _ in shown]}",
+                            images=[j for _, _, j in shown])
+        for i, item in enumerate(out.get("photos") or []):
+            idx = item.get("index", i)
+            if isinstance(idx, int) and 0 <= idx < len(shown):
+                name = shown[idx][0]
+                f(name, "shows_declared_damage", item.get("shows_declared_damage"), "Model de viziune")
+                f(name, "looks_generated", bool(item.get("looks_generated")), "Model de viziune")
+                if item.get("description"):
+                    f(name, "description", str(item["description"])[:200], "Model de viziune")
+        ctx.note("observation", f"Analiză vizuală pentru {len(shown)} fotografii", sources=["Model de viziune"])
+    except SourceError:
+        gaps.append("Analiza vizuală a fotografiilor nu a fost disponibilă")
+    if len(readable) > MAX_VISION_PHOTOS:
+        gaps.append(f"Doar primele {MAX_VISION_PHOTOS} fotografii au fost analizate vizual")
+
+    # 3. web-wide copy search, only when the Judge asks
+    if task.question:
+        key = os.environ.get("GOOGLE_API_KEY", "")
+        searched = 0
+        for name, _, jpeg in readable:
+            body = {"requests": [{"image": {"content": base64.b64encode(jpeg).decode()},
+                                  "features": [{"type": "WEB_DETECTION", "maxResults": 10}]}]}
+            try:
+                data = await ctx.fetch("Google Vision – căutare copii pe web", VISION_URL, method="POST",
+                                       params={"key": key}, json_body=body, timeout=30)
+            except BudgetExceeded:
+                break
+            except SourceError:
+                gaps.append("Google Vision nu a răspuns: căutarea de copii pe web lipsește")
+                break
+            searched += 1
+            web = ((data.get("responses") or [{}])[0] or {}).get("webDetection") or {}
+            pages = [p for p in web.get("pagesWithMatchingImages") or [] if p.get("fullMatchingImages")]
+            f(name, "web_matches", len(pages), "Google Vision Web Detection")
+            if not pages:
+                continue
+            try:
+                dated = await ctx.llm(DATES_SYSTEM, str([{"url": p.get("url"), "title": p.get("pageTitle")} for p in pages[:8]]))
+            except SourceError:
+                gaps.append(f"{name}: copii găsite pe web, dar data publicării nu a putut fi stabilită")
+                continue
+            firsts = []
+            for p in dated.get("pages") or []:
+                try:
+                    firsts.append((date.fromisoformat(str(p.get("first_seen"))[:10]), p.get("url")))
+                except (TypeError, ValueError):
+                    pass
+            if firsts:
+                first, url = min(firsts)
+                f(name, "first_seen", first.isoformat(), "Google Vision Web Detection", url=url)
+                if first < event:
+                    findings.append(Finding(metric="exact_copy_before_event", value=True,
+                                            source="Google Vision Web Detection", url=url))
+                    ctx.note("observation", f"{name}: copie exactă publicată pe {first.isoformat()}, înainte de eveniment",
+                             {"url": url}, ["Google Vision Web Detection"])
+            else:
+                gaps.append(f"{name}: copii găsite pe web, fără dată de publicare clară")
+        if searched < len(readable) and not any("Google Vision nu a răspuns" in g for g in gaps):
+            gaps.append(f"{len(readable) - searched} fotografii nu au fost căutate pe web (buget de apeluri)")
+
+    return await conclude(ctx, task, ROLE, findings, GUIDANCE, gaps)

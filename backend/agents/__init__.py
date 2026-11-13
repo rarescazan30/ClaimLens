@@ -10,6 +10,9 @@ from agents.satellite.agent import run as _satellite  # noqa: E402
 
 from agents.risk_zones.agent import run as _risk  # noqa: E402
 
+from agents.photo_forensics.agent import run as _photo  # noqa: E402
+
 AGENTS["meteo"] = _meteo
+AGENTS["photo_forensics"] = _photo
 AGENTS["risk_zones"] = _risk
 AGENTS["satellite"] = _satellite
