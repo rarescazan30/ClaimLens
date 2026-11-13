@@ -1,0 +1,1 @@
+{"url": "https://graph.mapillary.com/images", "params": {"fields": "id,captured_at,thumb_1024_url,geometry", "bbox": "27.782520,45.605361,27.784060,45.606439", "limit": 50}, "body": {"data": []}}

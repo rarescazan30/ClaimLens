@@ -1,0 +1,1 @@
+{"url": "https://api.open-meteo.com/v1/elevation", "params": {"latitude": "45.6059,45.604918", "longitude": "27.78329,27.784603"}, "body": {"elevation": [46.0, 33.0]}}
