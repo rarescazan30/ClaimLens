@@ -115,3 +115,10 @@ async def test_llm_provider_error_is_retried_once(monkeypatch):
     monkeypatch.setattr(llm, "_complete", flaky)
     assert await llm.llm_json("s", "u2") == {"verdict": "supports"}
     assert len(n) == 2
+
+
+async def test_llm_answer_with_two_objects_or_trailing_text_uses_the_first_object(monkeypatch):
+    async def two(payload):
+        return '{"verdict": "supports", "note": "a } brace"}\n\n{"verdict": "inconclusive"}\nExplicație suplimentară.'
+    monkeypatch.setattr(llm, "_complete", two)
+    assert await llm.llm_json("s", "u3") == {"verdict": "supports", "note": "a } brace"}

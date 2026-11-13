@@ -43,11 +43,11 @@ def _parse(text: str) -> dict:
     m = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if m:
         text = m.group(1)
-    else:
-        start, end = text.find("{"), text.rfind("}")
-        if start != -1 and end > start:
-            text = text[start:end + 1]
-    out = json.loads(text)
+    start = text.find("{")
+    if start == -1:
+        raise ValueError("no JSON object in the answer")
+    # first complete object only: models sometimes add a second object or a closing remark
+    out, _ = json.JSONDecoder().raw_decode(text[start:])
     if not isinstance(out, dict):
         raise ValueError("not a JSON object")
     return out

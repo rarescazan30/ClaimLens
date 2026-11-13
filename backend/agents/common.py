@@ -12,7 +12,7 @@ from engine.models import Evidence, Finding
 
 SYSTEM = """Ești un agent specialist într-o investigație de daune la asigurări de locuințe. Ai o singură competență: {role}
 Primești ipotezele de verificat și constatările obținute din surse reale. Evaluezi DOAR pe baza constatărilor.
-Răspunzi în română, cu un obiect JSON:
+Răspunzi în română, cu UN SINGUR obiect JSON (un singur verdict de ansamblu, chiar dacă sunt mai multe ipoteze):
 {{"verdict": "supports" | "contradicts" | "inconclusive",
   "strength": 0..1  (cât de mult mută dovada verdictul asupra ipotezei),
   "data_quality": 0..1  (cât ne putem baza pe sursă: rezoluție, distanță în timp, oficială sau nu),
