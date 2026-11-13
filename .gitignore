@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+
+# Secrets / local config
+.env
+*.local.json
+
+# Run outputs (trace JSONL per case) — demo/cache/ IS committed on purpose (offline demo)
+runs/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+node_modules/
