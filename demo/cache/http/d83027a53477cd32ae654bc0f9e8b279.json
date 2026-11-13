@@ -1,0 +1,1 @@
+{"url": "https://maps.googleapis.com/maps/api/streetview/metadata", "params": {"location": "45.4353,28.008", "radius": 150}, "body": {"copyright": "© 2026 Google", "date": "2012-07", "location": {"lat": 45.43537194029737, "lng": 28.00717793164328}, "pano_id": "r2yhyqMMkQk6eVqDjP6S1A", "status": "OK"}}

@@ -83,3 +83,10 @@ async def test_findings_say_when_the_maximum_fell_and_what_the_event_day_had(sin
     assert m["precipitation_event_day"].value == 45.7
     assert m["precipitation_24h_max_date"].value == "2024-09-14"
     assert "reanaliză" in seen[0][1] and "supports" in seen[0][1]
+
+
+async def test_gust_findings_carry_the_event_day_value_and_the_date_of_the_maximum(sink, route, fake_llm):
+    route({"archive-api.open-meteo.com": reply})
+    fake_llm()
+    m = by_metric(await run(make_task(damage_type="storm"), AgentContext("C-1", "meteo", 1, sink)))
+    assert m["wind_gusts_event_day"].value == 45.0 and m["wind_gusts_10m_max_date"].value == "2024-09-14"

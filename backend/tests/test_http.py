@@ -102,3 +102,16 @@ async def test_error_messages_never_contain_secret_params(monkeypatch):
         await http.fetch("https://maps.test/meta", params={"key": "AIzaSECRET", "access_token": "MLYSECRET", "q": "x"})
     assert "AIzaSECRET" not in str(err.value) and "MLYSECRET" not in str(err.value)
     assert "403" in str(err.value) and "maps.test/meta" in str(err.value)
+
+
+async def test_llm_provider_error_is_retried_once(monkeypatch):
+    n = []
+
+    async def flaky(payload):
+        n.append(1)
+        if len(n) == 1:
+            raise llm.LLMError("OpenRouter failed: ReadTimeout")
+        return '{"verdict": "supports"}'
+    monkeypatch.setattr(llm, "_complete", flaky)
+    assert await llm.llm_json("s", "u2") == {"verdict": "supports"}
+    assert len(n) == 2

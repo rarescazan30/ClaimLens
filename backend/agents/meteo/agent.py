@@ -54,7 +54,10 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
                 f("precipitation_24h_max", peak, "mm"),
                 f("precipitation_24h_max_date", peak_day, None),
                 f("precipitation_72h_max", round(max(rain3), 1) if rain3 else None, "mm"),
-                f("wind_gusts_10m_max", _max(gust[near]), "km/h")]
+                f("wind_gusts_event_day", gust[i], "km/h"),
+                f("wind_gusts_10m_max", _max(gust[near]), "km/h"),
+                f("wind_gusts_10m_max_date",
+                  days[near][gust[near].index(_max(gust[near]))] if _max(gust[near]) is not None else None, None)]
     if _max(snow[near]):
         findings.append(f("snowfall_24h_max", _max(snow[near]), "cm"))
 

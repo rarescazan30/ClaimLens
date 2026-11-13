@@ -21,11 +21,11 @@ from engine.models import Evidence, Finding
 MAPILLARY = "https://graph.mapillary.com/images"
 G_META = "https://maps.googleapis.com/maps/api/streetview/metadata"
 G_IMAGE = "https://maps.googleapis.com/maps/api/streetview"
-BOX_M = 60
+BOX_M = 150         # street imagery is sparse in villages; the distance is reported so it can be weighed
 ROLE = "starea locuinței înainte de eveniment, din imagini stradale: dauna era preexistentă?"
 GUIDANCE = ("Doar existența unei imagini mai vechi, fără comparație, este 'inconclusive'. Dacă imaginea veche arată "
             "deja dauna declarată, verdictul este 'contradicts'. Dacă arată clădirea întreagă, 'supports' (strength moderat). "
-            "Imaginile mai vechi de 3 ani au data_quality scăzut.")
+            "Imaginile mai vechi de 3 ani sau făcute la peste 50 m de adresă au data_quality scăzut.")
 COMPARE_SYSTEM = """Prima imagine este o fotografie stradală a unei locuințe, făcută ÎNAINTE de evenimentul declarat.
 Celelalte sunt fotografiile clientului, făcute după. Compară starea acoperișului și a fațadei.
 JSON: {"prior_condition": "o propoziție în română despre starea clădirii în imaginea veche",
@@ -65,14 +65,14 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
             key = os.environ.get("GOOGLE_API_KEY", "")
             # a refused key or exhausted quota comes back as HTTP 200 with another status: that is a failed
             # source (and must not be cached), not the same as 'no imagery here'
-            meta = await ctx.fetch("Google Street View", G_META, params={"location": f"{lat},{lon}", "key": key},
+            meta = await ctx.fetch("Google Street View", G_META, params={"location": f"{lat},{lon}", "radius": BOX_M, "key": key},
                                    validate=lambda m: m.get("status") in ("OK", "ZERO_RESULTS", "NOT_FOUND"))
             if meta.get("status") == "OK" and str(meta.get("date") or "9999") < event.isoformat()[:7]:
                 loc = meta.get("location") or {}
                 chosen = {"date": meta["date"], "source": "Google Street View", "image_url": G_IMAGE,
                           "url": f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={loc.get('lat', lat)},{loc.get('lng', lon)}",
                           "distance_m": round(haversine_m(lat, lon, loc.get("lat", lat), loc.get("lng", lon)), 1),
-                          "image_kw": {"params": {"size": "640x640", "location": f"{lat},{lon}", "key": key}}}
+                          "image_kw": {"params": {"size": "640x640", "location": f"{lat},{lon}", "radius": BOX_M, "key": key}}}
         except SourceError:
             failed.append("Google Street View")
 

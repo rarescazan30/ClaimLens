@@ -76,6 +76,6 @@ async def llm_json(system: str, user: str, *, model: str = "fast", images: list[
             out = _parse(await _complete(payload))
             cache_put("llm", key, out)
             return out
-        except ValueError as e:  # includes JSONDecodeError
+        except (ValueError, LLMError) as e:  # invalid JSON, or a provider hiccup (timeout, 429, 5xx)
             last = e
-    raise LLMError(f"model {mid} returned invalid JSON twice: {last}")
+    raise LLMError(f"model {mid} failed twice: {type(last).__name__}: {last}")

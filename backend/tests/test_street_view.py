@@ -92,3 +92,12 @@ async def test_google_refusing_the_key_is_a_failed_source_not_missing_imagery(si
     assert "Nicio imagine" not in e.gaps[0]
     # a refusal must never be saved, or it would be replayed forever once a valid key is added
     assert not [p for p in (tmp_path / "cache").rglob("*.json") if "REQUEST_DENIED" in p.read_text()]
+
+
+async def test_google_is_asked_within_150_m_and_the_distance_is_reported(sink, route, fake_llm):
+    calls = route({"graph.mapillary.com": {"data": []},
+                   "streetview/metadata": {**GOOGLE_OK, "location": {"lat": 45.6311, "lng": 27.8001}}})
+    fake_llm()
+    m = by_metric(await run(make_task(), ctx(sink)))
+    assert "radius=150" in str(calls[-1].url)
+    assert 100 < m["distance_m"].value < 150
