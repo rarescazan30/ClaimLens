@@ -190,3 +190,52 @@ def test_unknown_claim_and_unknown_policy(client):
     assert client.get("/claims/nope").status_code == 404
     r = client.post("/claims", data={"data": json.dumps({"claim": {**CLAIM, "policy_id": "P-404"}})})
     assert r.status_code == 422
+
+
+# ---- event footprint (knowledge base per event) and the map layer -------------------------------
+SQUARE = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {},
+          "geometry": {"type": "Polygon", "coordinates": [[[27.79, 45.59], [27.81, 45.59], [27.81, 45.61], [27.79, 45.61], [27.79, 45.59]]]}}]}
+LAYER = "https://s3.test/EMSR758/extent.json"
+
+
+def flood_engine(seen_footprints):
+    from engine.models import Finding
+    kw = engine()
+
+    async def satellite(task, ctx):
+        seen_footprints.append(task.claim.get("footprints"))
+        fs = [Finding(metric="activation", value="EMSR758", source="Copernicus CEMS"),
+              Finding(metric="mapped_area", value="Pechea", source="Copernicus CEMS"),
+              Finding(metric="map_date", value="2024-09-17T16:13:00", source="Copernicus CEMS"),
+              Finding(metric="flood_extent_geojson_url", value=LAYER, source="Copernicus CEMS")]
+        return Evidence(agent="satellite", round=task.round, hypothesis="h", verdict="supports", strength=0.5,
+                        data_quality=0.5, findings=fs)
+    kw["agents"]["satellite"] = satellite
+    return kw
+
+
+def test_flood_extent_is_served_for_the_map(client, route):
+    route({"s3.test": SQUARE})
+    client.app.state.engine_kwargs = flood_engine([])
+    cid = create(client)
+    wait(client, cid)
+    assert client.get(f"/claims/{cid}/flood-extent").json() == SQUARE
+    client.app.state.engine_kwargs = engine()
+    other = create(client)
+    wait(client, other)
+    assert client.get(f"/claims/{other}/flood-extent").status_code == 404
+
+
+def test_deciding_a_flood_claim_saves_the_event_footprint_for_the_next_claim(client, route):
+    route({"s3.test": SQUARE})
+    seen = []
+    client.app.state.engine_kwargs = flood_engine(seen)
+    first = create(client)
+    wait(client, first)
+    assert seen == [[]]
+    client.post(f"/claims/{first}/decision", json={"decision": "approve"})
+    fp = client.get("/footprints/EMSR758-Pechea").json()
+    assert fp["polygon"]["features"] and fp["date_from"] <= "2024-09-14" <= fp["date_to"]
+    second = create(client, lat=45.601, lon=27.801)
+    wait(client, second)
+    assert [f["id"] for f in seen[1]] == ["EMSR758-Pechea"]

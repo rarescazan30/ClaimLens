@@ -1,0 +1,14 @@
+{
+  "_note": "DRAFT. Synthetic person. Coordinates are a real spot 150 m outside the EMSR758 maximum flood extent and about 13 m above its edge (Copernicus DEM). Check on a satellite map that a house stands there, or move the point with backend/scripts/check_site.py. Add photos under demo/cases/photos/C-1042/ and list them in claim.photos.",
+  "policy": {
+    "id": "P-7731", "holder_name": "Persoană Sintetică Unu", "address": "Str. Exemplu 12, Pechea, jud. Galați",
+    "lat": 45.6059, "lon": 27.78329, "valid_from": "2024-02-01", "valid_to": "2025-01-31", "waiting_days": 0,
+    "covered_risks": ["flood", "earthquake", "landslide"], "sum_insured": 100000, "product": "PAD"
+  },
+  "claim": {
+    "id": "C-1042", "policy_id": "P-7731", "damage_type": "flood", "event_date": "2024-09-14",
+    "notified_at": "2024-09-19", "address": "Str. Exemplu 12, Pechea, jud. Galați", "lat": 45.6059, "lon": 27.78329,
+    "description": "Apă în casă, aproximativ 60 cm, pardoseală și mobilier distruse.", "amount_claimed": 48000,
+    "photos": []
+  }
+}

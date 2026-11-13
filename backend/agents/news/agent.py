@@ -22,8 +22,8 @@ GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
 PAUSE_S = 5          # GDELT asks for at most one request every 5 seconds
 MAX_REPORTS = 5
 ROLE = "confirmări independente din presă ale evenimentului, în localitatea și la data declarate."
-WORDS = {"flood": ("(inundatii OR inundatie OR viitura OR inundate)", "flood"),
-         "storm": ("(furtuna OR vijelie OR acoperisuri OR rafale)", "storm")}
+WORDS = {"flood": ("(inundatii OR inundații OR viitura OR inundate)", "flood"),
+         "storm": ("(furtuna OR furtună OR vijelie OR rafale)", "storm")}
 FILTER_SYSTEM = """Selectezi relatări de presă relevante pentru o daună la o locuință.
 O relatare e relevantă DOAR dacă titlul se referă la fenomenul declarat (inundație, furtună) în localitatea sau județul indicat.
 JSON: {"relevant": [indicii relatărilor relevante]}"""

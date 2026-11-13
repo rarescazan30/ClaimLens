@@ -249,7 +249,7 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
         return {"id": claim_id, "status": "investigating"}
 
     @app.post("/claims/{claim_id}/decision")
-    def decide(claim_id: str, body: DecisionIn):
+    async def decide(claim_id: str, body: DecisionIn):
         c = claim_or_404(claim_id)
         refuse_if_running(c)
         if c["recommendation"] is None:
@@ -263,6 +263,7 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                 raise HTTPException(422, "Modificarea recomandării cere un motiv")
             outcome, reason = body.outcome, body.reason.strip()
         store().save_decision(claim_id, body.decision, outcome, reason)
+        await save_footprint(c)
         return {"id": claim_id, "status": "decided", "outcome": outcome}
 
     @app.post("/claims/{claim_id}/evidence/{evidence_id}/reject")
@@ -280,6 +281,52 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                                context_term(c, s.get_policy(c["policy_id"]) or {}))
         s.for_claim(claim_id).score(result, max((r["round"] for r in rows), default=1))
         return result.model_dump()
+
+    def satellite_findings(claim_id: str) -> dict:
+        for e in reversed(store().evidence_for(claim_id, include_rejected=True)):
+            if e.agent == "satellite":
+                return {f.metric: f.value for f in e.findings}
+        return {}
+
+    @app.get("/claims/{claim_id}/flood-extent")
+    async def flood_extent(claim_id: str):
+        """GeoJSON of the mapped flood for this claim, for the map. Served from the saved Copernicus response."""
+        claim_or_404(claim_id)
+        url = satellite_findings(claim_id).get("flood_extent_geojson_url")
+        if not url:
+            raise HTTPException(404, "Nu există o hartă a zonei inundate pentru acest dosar")
+        try:
+            return await http.fetch(url, timeout=60)
+        except http.SourceError:
+            raise HTTPException(502, "Harta zonei inundate nu a putut fi încărcată")
+
+    async def save_footprint(claim: dict) -> None:
+        """Learning step: keep the event's flood area, weather maxima and news for the next claims nearby."""
+        found = satellite_findings(claim["id"])
+        url, code = found.get("flood_extent_geojson_url"), found.get("activation")
+        if not (url and code):
+            return
+        try:
+            polygon = await http.fetch(url, timeout=60)
+        except http.SourceError:
+            return
+        from datetime import date, timedelta
+        from shapely.geometry import shape
+        from shapely.ops import unary_union
+        bounds = unary_union([shape(f["geometry"]).buffer(0) for f in polygon["features"]]).bounds
+        day = date.fromisoformat(claim["event_date"][:10])
+        ev = store().evidence_for(claim["id"])
+        meteo = {f.metric: f.value for e in ev if e.agent == "meteo" for f in e.findings}
+        news = [{"title": f.value, "outlet": f.source, "url": f.url}
+                for e in ev if e.agent == "news" for f in e.findings if f.metric == "news_report"]
+        store().save_footprint({
+            "id": f"{code}-{found.get('mapped_area') or 'zona'}", "name": f"{code} – {found.get('mapped_area') or ''}".strip(" –"),
+            "damage_type": claim["damage_type"], "date_from": (day - timedelta(days=3)).isoformat(),
+            "date_to": (day + timedelta(days=10)).isoformat(),
+            "center_lat": (bounds[1] + bounds[3]) / 2, "center_lon": (bounds[0] + bounds[2]) / 2,
+            "radius_km": max(bounds[3] - bounds[1], bounds[2] - bounds[0]) * 111 / 2 + 2,
+            "polygon": polygon, "meteo_maxima": {**meteo, "map_date": found.get("map_date"), "geojson_url": url},
+            "news": news, "sources": [f"Copernicus CEMS Rapid Mapping {code}"], "version": 1})
 
     @app.get("/footprints/{footprint_id}")
     def footprint(footprint_id: str):
