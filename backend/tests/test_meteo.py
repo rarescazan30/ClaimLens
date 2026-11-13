@@ -74,3 +74,12 @@ async def test_out_of_range_llm_numbers_are_clamped(sink, route, fake_llm):
     fake_llm({"verdict": "maybe", "strength": 7, "data_quality": -1})
     e = await run(make_task(), AgentContext("C-1", "meteo", 1, sink))
     assert (e.verdict, e.strength, e.data_quality) == ("inconclusive", 1, 0)
+
+
+async def test_findings_say_when_the_maximum_fell_and_what_the_event_day_had(sink, route, fake_llm):
+    route({"archive-api.open-meteo.com": reply})
+    seen = fake_llm()
+    m = by_metric(await run(make_task(), AgentContext("C-1", "meteo", 1, sink)))
+    assert m["precipitation_event_day"].value == 45.7
+    assert m["precipitation_24h_max_date"].value == "2024-09-14"
+    assert "reanaliză" in seen[0][1] and "supports" in seen[0][1]

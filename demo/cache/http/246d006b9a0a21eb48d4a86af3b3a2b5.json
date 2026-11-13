@@ -1,0 +1,1 @@
+{"url": "https://api.gdeltproject.org/api/v2/doc/doc", "params": {"query": "Pechea (inundatii OR inundații OR viitura OR inundate)", "mode": "artlist", "format": "json", "maxrecords": 25, "sort": "datedesc", "startdatetime": "20240913000000", "enddatetime": "20240921235959"}, "body": "{}"}

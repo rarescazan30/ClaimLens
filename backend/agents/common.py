@@ -20,7 +20,9 @@ Răspunzi în română, cu un obiect JSON:
   "gaps": ["ce a lipsit sau ce limitează concluzia"],
   "suggested_followup": "o verificare suplimentară utilă, sau null"}}
 Reguli: "supports" = constatările susțin că dauna declarată e plauzibilă; "contradicts" = o contrazic.
-Date lipsă sau insuficiente înseamnă "inconclusive", niciodată "contradicts". Nu acuzi pe nimeni de fraudă."""
+Date lipsă sau insuficiente înseamnă "inconclusive", niciodată "contradicts". Nu acuzi pe nimeni de fraudă.
+Dacă cifrele răspund clar la ipoteză, dă verdictul: limitările generale ale sursei scad data_quality, nu schimbă verdictul.
+Fii scurt: cel mult 3 pași de raționament și cel mult 2 goluri, fiecare sub 25 de cuvinte, doar goluri care contează."""
 
 
 def main_hypothesis(task: AgentTask) -> str:

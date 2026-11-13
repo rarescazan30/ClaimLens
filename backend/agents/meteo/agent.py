@@ -48,7 +48,11 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
     def f(metric, value, unit):
         return Finding(metric=metric, value=value, unit=unit, source=source, url=SITE, spatial_res_km=res)
 
-    findings = [f("precipitation_24h_max", _max(rain[near]), "mm"),
+    peak = _max(rain[near])
+    peak_day = days[near][rain[near].index(peak)] if peak is not None else None
+    findings = [f("precipitation_event_day", rain[i], "mm"),
+                f("precipitation_24h_max", peak, "mm"),
+                f("precipitation_24h_max_date", peak_day, None),
                 f("precipitation_72h_max", round(max(rain3), 1) if rain3 else None, "mm"),
                 f("wind_gusts_10m_max", _max(gust[near]), "km/h")]
     if _max(snow[near]):
@@ -68,5 +72,9 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
 
     guidance = (f"Prag pentru inundație: precipitații ≥ {RAIN_24H_MM} mm în 24 h. " if c["damage_type"] == "flood"
                 else f"Prag pentru furtună: rafale ≥ {GUST_KMH} km/h. ")
-    guidance += "Datele sunt din reanaliză pe grilă, deci data_quality rareori peste 0.7."
+    guidance += ("Maximele sunt calculate pe ziua evenimentului ± 1 zi; data maximului este în constatări. "
+                 "Dacă valoarea din ziua evenimentului sau maximul din zilele vecine atinge pragul, verdictul este "
+                 "'supports' cu strength 0.6–0.8. Dacă este clar sub prag, 'contradicts'. Sursa este o reanaliză "
+                 "pe grilă, nu o stație meteo: asta limitează data_quality (0.5–0.7), dar nu este un motiv "
+                 "pentru 'inconclusive'.")
     return await conclude(ctx, task, ROLE, findings, guidance, gaps)

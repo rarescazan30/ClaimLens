@@ -75,7 +75,6 @@ async def investigate(sink, tmp_path):
 async def test_fraud_story_live_then_offline(sink, tmp_path, monkeypatch):
     from agents.news import agent as news
     from tests.conftest import FakeSink
-    monkeypatch.setattr(news, "PAUSE_S", 0)
     monkeypatch.setattr(http, "TRANSPORT", httpx.MockTransport(network))
     monkeypatch.setattr(llm, "_complete", model)
 

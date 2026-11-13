@@ -1,7 +1,7 @@
 """News: is there independent local confirmation of the event?
 
-Source: GDELT DOC API (worldwide news index, no key, one request every 5 seconds).
-Backup: a web-search model through OpenRouter. A fast model keeps only reports that name the place and the event.
+Sources, queried side by side: GDELT DOC API (worldwide news index, no key, often rate-limited) and a
+web-search model through OpenRouter. GDELT's reports are preferred when it has any. A fast model keeps only reports that name the place and the event.
 No reports found is 'inconclusive': small local events often go unreported.
 """
 from __future__ import annotations
@@ -19,7 +19,6 @@ from engine.http import SourceError
 from engine.models import Evidence, Finding
 
 GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
-PAUSE_S = 5          # GDELT asks for at most one request every 5 seconds
 MAX_REPORTS = 5
 ROLE = "confirmări independente din presă ale evenimentului, în localitatea și la data declarate."
 WORDS = {"flood": ("(inundatii OR inundații OR viitura OR inundate)", "flood"),
@@ -46,55 +45,56 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
     gaps: list[str] = []
     findings: list[Finding] = []
 
-    # 1. GDELT, two queries
-    articles: dict[str, dict] = {}
-    gdelt_ok = False
-    for i, query in enumerate([f"{locality} {ro}", f"{county} {en}"]):
-        if i:
-            await asyncio.sleep(PAUSE_S)
-        try:
-            text = await ctx.fetch("GDELT", GDELT, as_text=True, validate=_valid_gdelt, params={
-                "query": query, "mode": "artlist", "format": "json", "maxrecords": 25, "sort": "datedesc", **window})
-            gdelt_ok = True
-            for a in (json.loads(text) if text.strip() else {}).get("articles") or []:
-                if a.get("url") and a.get("title"):
-                    articles.setdefault(a["url"], a)
-        except (SourceError, ValueError):
-            pass
-    if not gdelt_ok:
-        gaps.append("GDELT nu a răspuns (limită de cereri sau serviciu indisponibil)")
+    place = locality if locality == county else f"({locality} OR {county})"
 
-    # 2. keep only reports about this event in this place
-    items = list(articles.values())[:25]
-    if items:
+    async def from_gdelt() -> tuple[bool, list[Finding]]:
+        """One query for village and county. Returns (GDELT answered, confirmed reports)."""
+        try:
+            text = await ctx.fetch("GDELT", GDELT, as_text=True, validate=_valid_gdelt, timeout=8, params={
+                "query": f"{place} {ro}", "mode": "artlist", "format": "json", "maxrecords": 25,
+                "sort": "datedesc", **window})
+            items = [a for a in (json.loads(text) if text.strip() else {}).get("articles") or []
+                     if a.get("url") and a.get("title")][:25]
+        except (SourceError, ValueError):
+            return False, []
+        if not items:
+            return True, []
         try:
             out = await ctx.llm(FILTER_SYSTEM, f"Fenomen: {c['damage_type']}, localitate: {locality}, județ: {county}, "
                                                f"data: {event.isoformat()}.\nRelatări:\n"
                                 + "\n".join(f"{i}. {a['title']} ({a.get('domain')})" for i, a in enumerate(items)))
-            for i in out.get("relevant") or []:
-                if isinstance(i, int) and 0 <= i < len(items) and len(findings) < MAX_REPORTS:
-                    a = items[i]
-                    findings.append(Finding(metric="news_report", value=a["title"], source=a.get("domain") or "presă",
-                                            url=a["url"]))
         except SourceError:
             gaps.append("Filtrarea relatărilor GDELT nu a fost disponibilă")
+            return True, []
+        picked = [items[i] for i in out.get("relevant") or [] if isinstance(i, int) and 0 <= i < len(items)]
+        return True, [Finding(metric="news_report", value=a["title"], source=a.get("domain") or "presă", url=a["url"])
+                      for a in picked[:MAX_REPORTS]]
 
-    # 3. backup: web search, when GDELT gave nothing usable
-    used_backup = False
-    if not findings:
+    async def from_web_search() -> tuple[bool, list[Finding]]:
         try:
             out = await ctx.llm(SEARCH_SYSTEM, f"Fenomen: {c['damage_type']}. Localitate: {locality}, județul {county}, România. "
                                                f"Perioada: {event.isoformat()} ± câteva zile.",
                                 model=os.environ.get("MODEL_SEARCH") or "perplexity/sonar")
-            for r in out.get("reports") or []:
-                if isinstance(r, dict) and str(r.get("url") or "").startswith("http") and len(findings) < MAX_REPORTS:
-                    findings.append(Finding(metric="news_report", value=str(r.get("title") or r["url"]),
-                                            source=str(r.get("outlet") or "presă"), url=r["url"]))
-            used_backup = True
-            gaps.append("Relatările provin din căutare web de rezervă, nu din indexul GDELT")
         except SourceError:
-            if not gdelt_ok:
-                return ctx.inconclusive(main_hypothesis(task), "GDELT și căutarea web de rezervă nu au răspuns")
+            return False, []
+        return True, [Finding(metric="news_report", value=str(r.get("title") or r["url"]),
+                              source=str(r.get("outlet") or "presă"), url=r["url"])
+                      for r in out.get("reports") or []
+                      if isinstance(r, dict) and str(r.get("url") or "").startswith("http")][:MAX_REPORTS]
+
+    # GDELT is slow and rate-limited, so the web search runs at the same time instead of waiting for it to fail.
+    (gdelt_ok, gdelt_reports), (search_ok, search_reports) = await asyncio.gather(from_gdelt(), from_web_search())
+    if not gdelt_ok:
+        gaps.append("GDELT nu a răspuns (limită de cereri sau serviciu indisponibil)")
+    used_backup = not gdelt_reports
+    if gdelt_reports:
+        findings = gdelt_reports
+    elif search_ok:
+        findings = search_reports
+        if findings:
+            gaps.append("Relatările provin din căutare web de rezervă, nu din indexul GDELT")
+    elif not gdelt_ok:
+        return ctx.inconclusive(main_hypothesis(task), "GDELT și căutarea web de rezervă nu au răspuns")
 
     count = len(findings)
     findings.append(Finding(metric="reports_confirmed", value=count,

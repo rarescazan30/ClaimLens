@@ -61,6 +61,8 @@ async def plan_hypotheses(claim: dict, policy: dict, flags: list[RuleFlag]) -> l
             f"Pragul pentru acest tip de daună: {THRESHOLD_TEXT.get(kind, 'nedefinit')}. Scrie pragul în ipoteza meteo.\n"
             f"Reguli de poliță eșuate: {[f.reason for f in flags if not f.passed] or 'niciuna'}\n\n"
             f"Agenți disponibili (folosește doar aceste nume):\n{_skills(allowed)}\n\n"
+            "Formulează ipotezele în termenii datelor pe care agenții chiar le au (reanaliză meteo pe grilă, nu stații "
+            "meteo; harta Copernicus; OpenStreetMap; altitudine). Fiecare ipoteză: o singură propoziție, sub 30 de cuvinte. "
             "Fiecare agent disponibil trebuie să apară la cel puțin o ipoteză. Include o ipoteză despre "
             "autenticitatea fotografiilor și una despre consistența dintre ce declară clientul și expunerea reală.")
     out = await llm_json(PLAN_SYSTEM, user, model="strong")
