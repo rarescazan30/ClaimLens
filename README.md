@@ -20,69 +20,68 @@ Agentic assistant for home-insurance claim adjusters (natural disasters), built 
 5. The **adjuster sees every reasoning step**, can correct it, and makes the decision.
    **The AI never rejects a claim on its own.**
 
-## Workflow
+## How it is built
 
-| # | Stage | How | UiPath |
-| --- | --- | --- | --- |
-| 1 | Intake | Claim, policy, address, event date, photos → case ID | Apps / email → Maestro Case |
-| 2 | Parsing & validation | Extract fields, ask the client for missing data | IXP |
-| 3 | Policy cross-check | Deterministic rules (active, covered, address, deadline) — a failed rule flags, never rejects | API workflow + rules |
-| 4 | Photo forensics | EXIF vs date/address, recycled or generated images | Agent |
-| 5 | Orchestrator plan | Hypotheses + agent selection, shown in the UI | Coded agent |
-| 6 | Investigation loop | Agents in parallel, Judge re-dispatches | Agents + coded agent |
-| 7 | Build the case | Score, 5 factors, evidence with sources, recommendation | Data Fabric |
-| 8 | Human decision | Approve / modify / investigate more; overrides logged with reason | Action Center |
-| 9 | Learning | Event footprint saved and reused for the next claims in the area | Data Fabric + Context Grounding |
+```
+ React app ── HTTP + live stream ──► FastAPI backend ──► SQLite
+                                        │
+                                  Engine (LangGraph)
+                    rules → plan → 6 agents in parallel → score → judge ─┐
+                                        ▲                                │ one narrow question
+                                        └──────── re-dispatch ◄──────────┘   (max 3 rounds)
 
-Stages 1–3 are fixed; 4–6 adapt to what was found. Rule of thumb: **what rules can verify is
-deterministic; what needs judgement and search is agentic.**
+   meteo        satellite         risk zones            photo forensics        street view            news
+   Open-Meteo   Copernicus CEMS   OpenStreetMap + DEM   EXIF + Google Vision   Mapillary + Google     GDELT
+```
+
+| # | Stage | How |
+| --- | --- | --- |
+| 1 | Intake | Claim, policy, address, event date, photos → case ID |
+| 2 | Policy cross-check | Five deterministic rules. A failed rule flags the case, never rejects it |
+| 3 | Orchestrator plan | 3–5 testable hypotheses, agents assigned, shown in the UI |
+| 4 | Investigation loop | Agents in parallel; quick checks first, deeper checks only when the Judge asks |
+| 5 | Score | Log-odds formula computed by code, not by a model; gates for coverage and clear fakes |
+| 6 | Human decision | Approve / modify (reason required) / investigate more, in the same app |
+| 7 | Learning | The event's flood area, weather maxima and news are saved and reused for the next claim nearby |
+
+Rule of thumb: **what rules can verify is deterministic; what needs judgement and search is agentic.**
+Every step is recorded as a trace event, streamed live to the UI and replayable.
+
+The engine is a self-contained LangGraph program with no web-server code, so it can also be published as a
+UiPath coded agent. Details: [`docs/backend-design.md`](docs/backend-design.md), plan:
+[`docs/backend-plan.md`](docs/backend-plan.md), running it: [`backend/README.md`](backend/README.md).
 
 ## Demo
 
-Anchored on the real **Galați flood, 14.09.2024** (CEMS EMSR758). Claims and people are synthetic.
+Anchored on real events. Claims and people are synthetic. Details and measured numbers: [`demo/README.md`](demo/README.md).
 
-- **Honest case** — roof torn off in a real storm → fast-track.
-- **"Smart fraud"** — house 150 m from the flood polygon but 6 m higher, photos with EXIF from March →
-  Judge re-dispatches in round 2 → antifraud referral.
+- **"Smart fraud"** — Galați flood of 14.09.2024 (Copernicus CEMS EMSR758). The house is 150 m outside the mapped
+  flood but well above its edge, and the photos were published before the event → the Judge re-dispatches in
+  round 2 → antifraud referral.
+- **Honest case** — roof damaged in the windstorm of 26.11.2023 in Galați (gusts of 90 km/h) → fast-track.
 
 ## Repository layout
 
 ```
-docs/          proposal, shared contracts (evidence, trace, score)
-maestro/       case lifecycle (Maestro Case / BPMN), IXP, F1 rules
-agents/        specialist agents, one folder each
-orchestrator/  Orchestrator + Judge loop
-data-fabric/   entity definitions
+docs/          proposal, shared contracts, backend design and plan
+backend/       API (app/), investigation engine (engine/), six agents (agents/), tests
 ui/            adjuster app
-demo/          demo cases, cached API responses, backup video
+demo/          demo cases, saved API responses (offline replay), mock data for the UI
+maestro/, data-fabric/   placeholders from the first proposal (not used)
 ```
 
-## Team & timeline
+## Team
 
-| When (Fri → Sat) | Deliverable | Who |
-| --- | --- | --- |
-| 22:00–23:00 | Scope frozen, Data Fabric entities, 2 demo cases, roles | All |
-| 23:00–03:00 | IXP + F1 rules; Meteo, Satellite and Risk zones agents end-to-end; trace events | A: Maestro + IXP · B: agents |
-| 03:00–08:00 | Photo forensics, Street view and News agents; Orchestrator/Judge loop with all 6 agents | B: agents · C: UI |
-| 08:00–11:00 | UI (timeline, trace, map); Action Center approval; 10-case eval set | C: UI · A: integration |
-| 11:00–12:30 | 3 clean end-to-end runs; backup video; README + architecture | All |
-| 12:30–14:00 | Pitch rehearsed 3×, Q&A prep, buffer | D: pitch |
+One backend developer, one frontend developer, the rest on demo cases and pitch.
+**Deliverables by Sat 14 Nov 2026, 14:00:** code on GitHub, working prototype, 5-min pitch, demo ≤ 5 min.
 
-**Deliverables by Sat 14:00:** code on GitHub, working prototype, 5-min pitch, demo ≤ 5 min.
-
-Priority: one end-to-end run that really works beats many agents — *Working result* (30) and *User value* (25)
-are 55 of 100 points.
-
-**Goal: all 6 specialist agents implemented for real** (meteo, satellite, risk zones, photo forensics,
-street view, news) and wired into the Orchestrator/Judge loop. Pre-captured data is only a fallback for an
-agent that is not ready by 11:00, and we say so in the pitch.
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how we work tonight.
+All six specialist agents are implemented against their real sources. An agent that fails on demo day runs
+from its saved responses, and the pitch says which.
 
 ## Data sources & licences
 
-Open-Meteo (free for non-commercial use only), Copernicus GFM / CEMS / DEM / EGMS (free, attribution required),
-Google Street View (check Maps Platform terms), OpenStreetMap (ODbL), GDELT.
+Open-Meteo (free for non-commercial use only), Copernicus CEMS Rapid Mapping and Copernicus DEM (free, attribution
+required), OpenStreetMap (ODbL), Mapillary (CC BY-SA), Google Street View and Cloud Vision (Google terms), GDELT.
 
 ## License
 
