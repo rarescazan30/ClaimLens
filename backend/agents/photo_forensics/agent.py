@@ -2,7 +2,7 @@
 
 Quick checks (every round, local or one vision call): EXIF date and GPS, the same image in another claim
 (perceptual hash), a vision model's read of each photo.
-On the Judge's request: web-wide copy search (Google Cloud Vision, Web Detection) with first-published dates.
+On the Judge's request: web-wide copy search (Google Cloud Vision, Web Detection) with first-published dates read from the page address.
 A copy published before the event produces the finding `exact_copy_before_event`, which the score treats as a gate.
 """
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import io
 import os
+import re
 from datetime import date, datetime
 from pathlib import Path
 
@@ -37,9 +38,13 @@ VISION_SYSTEM = """Analizezi fotografii dintr-un dosar de daună la o locuință
 Fii prudent: fără semne clare, looks_generated este false.
 JSON: {"photos": [{"index": 0, "shows_declared_damage": true, "looks_generated": false, "description": "..."}]}"""
 
-DATES_SYSTEM = """Primești pagini web pe care apare o fotografie. Pentru fiecare, determină data de prima publicare
-DOAR dacă reiese clar din URL sau din titlu (de exemplu /2024/03/18/ în adresă). Dacă nu reiese, first_seen este null.
-Nu ghici. JSON: {"pages": [{"url": "...", "first_seen": "YYYY-MM-DD" sau null}]}"""
+DATE_IN_URL = re.compile(r"(20\d\d)[/-](\d{1,2})[/-](\d{1,2})")
+
+
+def _vision_ok(data) -> bool:
+    """Vision reports a bad key or a bad image inside an HTTP 200 answer; that is a failed source."""
+    responses = data.get("responses") if isinstance(data, dict) else None
+    return bool(responses) and not any("error" in (r or {}) for r in responses)
 
 
 def _dms(value) -> float:
@@ -158,7 +163,7 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
                                   "features": [{"type": "WEB_DETECTION", "maxResults": 10}]}]}
             try:
                 data = await ctx.fetch("Google Vision – căutare copii pe web", VISION_URL, method="POST",
-                                       params={"key": key}, json_body=body, timeout=30)
+                                       params={"key": key}, json_body=body, timeout=30, validate=_vision_ok)
             except BudgetExceeded:
                 break
             except SourceError:
@@ -170,17 +175,16 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
             f(name, "web_matches", len(pages), "Google Vision Web Detection")
             if not pages:
                 continue
-            try:
-                dated = await ctx.llm(DATES_SYSTEM, str([{"url": p.get("url"), "title": p.get("pageTitle")} for p in pages[:8]]))
-            except SourceError:
-                gaps.append(f"{name}: copii găsite pe web, dar data publicării nu a putut fi stabilită")
-                continue
+            # First-published date: only what is literally written in the page address (…/2024/03/18/…).
+            # No model is asked, because this date can force an antifraud referral.
             firsts = []
-            for p in dated.get("pages") or []:
-                try:
-                    firsts.append((date.fromisoformat(str(p.get("first_seen"))[:10]), p.get("url")))
-                except (TypeError, ValueError):
-                    pass
+            for p in pages:
+                m = DATE_IN_URL.search(str(p.get("url") or ""))
+                if m:
+                    try:
+                        firsts.append((date(int(m[1]), int(m[2]), int(m[3])), p["url"]))
+                    except ValueError:
+                        pass
             if firsts:
                 first, url = min(firsts)
                 f(name, "first_seen", first.isoformat(), "Google Vision Web Detection", url=url)
@@ -190,7 +194,7 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
                     ctx.note("observation", f"{name}: copie exactă publicată pe {first.isoformat()}, înainte de eveniment",
                              {"url": url}, ["Google Vision Web Detection"])
             else:
-                gaps.append(f"{name}: copii găsite pe web, fără dată de publicare clară")
+                gaps.append(f"{name}: copii găsite pe web, fără dată de publicare în adresa paginii")
         if searched < len(readable) and not any("Google Vision nu a răspuns" in g for g in gaps):
             gaps.append(f"{len(readable) - searched} fotografii nu au fost căutate pe web (buget de apeluri)")
 

@@ -34,6 +34,11 @@ def _query(lat: float, lon: float) -> str:
             f"way{a}[natural=water];);out tags geom;")
 
 
+def _answered(data) -> bool:
+    """A busy Overpass server answers HTTP 200 with no elements and a 'remark' saying the query timed out."""
+    return isinstance(data, dict) and "elements" in data and "error" not in str(data.get("remark", "")).lower()
+
+
 def nearest_water(elements: list[dict], lat: float, lon: float) -> dict | None:
     zone = int((lon + 180) // 6) + 1
     fwd = Transformer.from_crs(4326, 32600 + zone, always_xy=True).transform
@@ -74,7 +79,8 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
     water = None
     try:
         source, data = await ctx.fetch_first([
-            (name, url, {"method": "POST", "data": {"data": _query(lat, lon)}, "timeout": 40}) for name, url in OVERPASS])
+            (name, url, {"method": "POST", "data": {"data": _query(lat, lon)}, "timeout": 40, "validate": _answered})
+            for name, url in OVERPASS])
         water = nearest_water(data.get("elements") or [], lat, lon)
         osm = "https://www.openstreetmap.org/copyright"
         findings.append(Finding(metric="distance_to_water_m", value=water["distance_m"] if water else None, unit="m",

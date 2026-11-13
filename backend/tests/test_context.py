@@ -60,3 +60,11 @@ async def test_replay_agents_forces_cache_for_that_agent(sink, ok, monkeypatch):
     with pytest.raises(http.CacheMiss):
         await AgentContext("C-1", "news", 1, sink).fetch("GDELT", "https://x.test/n")
     await AgentContext("C-1", "meteo", 1, sink).fetch("Open-Meteo", "https://x.test/m")
+
+
+async def test_failed_keyed_call_does_not_put_the_key_in_the_trace(sink, monkeypatch):
+    monkeypatch.setattr(http, "TRANSPORT", httpx.MockTransport(lambda r: httpx.Response(403)))
+    ctx = AgentContext("C-1", "street_view", 1, sink)
+    with pytest.raises(http.SourceError):
+        await ctx.fetch("Google Street View", "https://maps.test/meta", params={"key": "AIzaSECRET"})
+    assert "AIzaSECRET" not in "".join(s.model_dump_json() for s in sink.steps)

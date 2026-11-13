@@ -81,4 +81,6 @@ async def fetch(url: str, *, params: dict | None = None, method: str = "GET", js
                 return body
             except (httpx.HTTPError, ValueError) as e:
                 last = e
-    raise SourceError(f"{method} {url} failed: {type(last).__name__}: {last}")
+    # The message ends up in trace steps shown to users, so it never includes the query string (keys live there).
+    detail = f"HTTP {last.response.status_code}" if isinstance(last, httpx.HTTPStatusError) else type(last).__name__
+    raise SourceError(f"{method} {url} failed: {detail}")

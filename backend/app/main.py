@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -31,6 +32,8 @@ from engine.thresholds import AGENTS_FOR, ALL_AGENTS
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 OUTCOMES = ("fast_track", "standard_review", "antifraud_referral")
+CLAIM_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+PHOTO_TYPES = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
 RUN_KEYS = ("rule_flags", "hypotheses", "score_detail", "score", "band", "recommendation")
 
 
@@ -96,9 +99,9 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
             cfg = s.weight_config(claim["damage_type"]) or s.weight_config("flood")
             engine_claim = {k: v for k, v in claim.items() if k not in RUN_KEYS}
             engine_claim["photo_paths"] = [str(p) for p in map(photo_file, claim.get("photos") or []) if p]
+            # only claims filed before this one: the earlier claimant is never penalised for a later copy
             engine_claim["other_photo_paths"] = [
-                str(p) for c in s.list_claims() if c["id"] != claim_id
-                for p in map(photo_file, c.get("photos") or []) if p]
+                str(p) for c in s.claims_before(claim_id) for p in map(photo_file, c.get("photos") or []) if p]
             if claim.get("lat") is not None:
                 engine_claim["footprints"] = s.footprints_near(claim["lat"], claim["lon"], claim["event_date"])
             kwargs = dict(app.state.engine_kwargs)
@@ -165,11 +168,16 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
             except (http.SourceError, IndexError, KeyError, ValueError):
                 raise HTTPException(422, "Adresa nu a putut fi localizată. Trimiteți lat/lon.")
         claim["id"] = claim.get("id") or f"C-{uuid.uuid4().hex[:6].upper()}"
+        if not isinstance(claim["id"], str) or not CLAIM_ID.match(claim["id"]):   # the id becomes a folder name
+            raise HTTPException(422, "ID de dosar invalid: doar litere, cifre, '-' și '_' (maximum 40)")
+        for up in photos:
+            if Path(up.filename or "").suffix.lower() not in PHOTO_TYPES:
+                raise HTTPException(422, f"Tip de fișier neacceptat. Acceptate: {', '.join(sorted(PHOTO_TYPES))}")
         if s.get_claim(claim["id"]) is not None:
             raise HTTPException(409, "Există deja un dosar cu acest ID")
         names = []
         for i, up in enumerate(photos):
-            ext = Path(up.filename or "").suffix.lower() or ".jpg"
+            ext = Path(up.filename or "").suffix.lower()
             target = data_dir / "photos" / claim["id"] / f"foto{i + 1}{ext}"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(await up.read())
@@ -218,6 +226,10 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                     yield {"event": "trace", "data": t.model_dump_json()}
                 status = store().get_claim(claim_id)["status"]
                 if status != "investigating":
+                    for t in store().trace_for(claim_id):   # steps written while history was being sent
+                        if t.step_id not in seen:
+                            seen.add(t.step_id)
+                            yield {"event": "trace", "data": t.model_dump_json()}
                     yield {"event": "status", "data": json.dumps({"status": status})}
                     return
                 while True:
@@ -263,7 +275,10 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                 raise HTTPException(422, "Modificarea recomandării cere un motiv")
             outcome, reason = body.outcome, body.reason.strip()
         store().save_decision(claim_id, body.decision, outcome, reason)
-        await save_footprint(c)
+        try:
+            await save_footprint(c)
+        except Exception:   # learning is best-effort; the adjuster's decision is already saved
+            pass
         return {"id": claim_id, "status": "decided", "outcome": outcome}
 
     @app.post("/claims/{claim_id}/evidence/{evidence_id}/reject")

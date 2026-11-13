@@ -226,7 +226,8 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
     async def finish_node(state: State) -> State:
         s = state["score"]
         gates = " ".join(f"[{g.reason}]" for g in s.gates)
-        trace("final", f"r{state['round']}.judge", "engine", "escalation",
+        step_id = f"r{state['round']}.final" if extra_question else "final"   # ids stay unique across runs
+        trace(step_id, f"r{state['round']}.judge", "engine", "escalation",
               f"Scor de plauzibilitate {s.score} ({BAND_LABEL[s.band]}). Recomandare: {OUTCOME_LABEL[s.recommendation]}. "
               f"{gates} Decizia aparține evaluatorului.".replace("  ", " "),
               s.model_dump())

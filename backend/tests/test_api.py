@@ -239,3 +239,74 @@ def test_deciding_a_flood_claim_saves_the_event_footprint_for_the_next_claim(cli
     second = create(client, lat=45.601, lon=27.801)
     wait(client, second)
     assert [f["id"] for f in seen[1]] == ["EMSR758-Pechea"]
+
+
+# ---- findings from the whole-branch review ------------------------------------------------------
+@pytest.mark.parametrize("bad_id", ["../../../../tmp/x", "/srv/app", "a/b", "x" * 60, ""])
+def test_claim_id_that_could_escape_the_photo_folder_is_refused(client, bad_id, tmp_path):
+    r = client.post("/claims", data={"data": json.dumps({"claim": {**CLAIM, "id": bad_id}})},
+                    files=[("photos", ("a.jpg", b"x", "image/jpeg"))])
+    assert r.status_code in (200, 422)
+    if r.status_code == 200:                      # empty id → the server generated a safe one
+        assert bad_id == "" and r.json()["id"].startswith("C-")
+
+
+def test_upload_that_is_not_an_image_type_is_refused(client):
+    r = client.post("/claims", data={"data": json.dumps({"claim": CLAIM})},
+                    files=[("photos", ("page.html", b"<script>", "text/html"))])
+    assert r.status_code == 422
+
+
+def test_after_a_question_step_ids_stay_unique_and_the_stream_shows_the_new_closing_step(client):
+    cid = create(client)
+    wait(client, cid)
+    client.post(f"/claims/{cid}/question", json={"question": "A plouat și pe 15?"})
+    time.sleep(0.05)
+    wait(client, cid)
+    ids = [t["step_id"] for t in client.get(f"/claims/{cid}/trace").json()]
+    assert len(ids) == len(set(ids)) and ids[-1] == "r2.final" and "final" in ids
+    assert [d["step_id"] for n, d in events(client, cid) if n == "trace"] == ids
+
+
+def test_stream_delivers_steps_written_while_it_was_replaying_history(client):
+    cid = create(client)
+    wait(client, cid)
+    store = client.app.state.store
+    real, n = store.trace_for, []
+
+    def stale_first(claim_id):                     # first read misses the last step, as if it landed mid-replay
+        n.append(1)
+        full = real(claim_id)
+        return full[:-1] if len(n) == 1 else full
+    store.trace_for = stale_first
+    ids = [d["step_id"] for name, d in events(client, cid) if name == "trace"]
+    store.trace_for = real
+    assert ids == [t.step_id for t in real(cid)]
+
+
+def test_photo_copy_check_only_looks_at_earlier_claims(client):
+    seen = {}
+    kw = engine()
+
+    async def photo_agent(task, ctx):
+        seen[task.claim["id"]] = [p.split("/photos/")[1] for p in task.claim["other_photo_paths"]]
+        return Evidence(agent="photo_forensics", round=task.round, hypothesis="h", verdict="supports", strength=0.5, data_quality=0.5)
+    kw["agents"]["photo_forensics"] = photo_agent
+    client.app.state.engine_kwargs = kw
+    for cid in ("A-1", "B-2"):
+        client.post("/claims", data={"data": json.dumps({"claim": {**CLAIM, "id": cid}})},
+                    files=[("photos", ("a.jpg", b"\xff\xd8x", "image/jpeg"))])
+        wait(client, cid)
+    client.post("/claims/A-1/rerun")
+    time.sleep(0.05)
+    wait(client, "A-1")
+    assert seen == {"A-1": [], "B-2": ["A-1/foto1.jpg"]}
+
+
+def test_decision_is_saved_even_when_the_footprint_cannot_be_built(client, route):
+    route({"s3.test": {"not": "geojson"}})
+    client.app.state.engine_kwargs = flood_engine([])
+    cid = create(client)
+    wait(client, cid)
+    assert client.post(f"/claims/{cid}/decision", json={"decision": "approve"}).status_code == 200
+    assert client.get(f"/claims/{cid}").json()["claim"]["status"] == "decided"

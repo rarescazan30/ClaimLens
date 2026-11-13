@@ -143,4 +143,4 @@ async def test_extra_question_runs_one_round_on_the_agent_the_judge_picks(sink):
     await run_investigation(claim(), POLICY, CFG, sink, agents=recording_agents(calls), planner=planner,
                             judge=judge_script(pick, STOP), extra_question="Q?", prior=prior, hypotheses=HYP)
     assert calls == [(2, "news", "Q?")]
-    assert "final" == sink.steps[-1].step_id
+    assert "r2.final" == sink.steps[-1].step_id   # a question run gets its own closing step id

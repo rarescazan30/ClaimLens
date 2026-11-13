@@ -93,3 +93,12 @@ async def test_response_failing_validation_is_an_error_and_is_not_cached(monkeyp
     with pytest.raises(http.SourceError):
         await http.fetch("https://x.test/limited", as_text=True, validate=lambda body: body.startswith("{"))
     assert len(calls) == 2 and not list((tmp_path / "cache").rglob("*.json"))
+
+
+async def test_error_messages_never_contain_secret_params(monkeypatch):
+    t, calls = transport(lambda r: httpx.Response(403))
+    monkeypatch.setattr(http, "TRANSPORT", t)
+    with pytest.raises(http.SourceError) as err:
+        await http.fetch("https://maps.test/meta", params={"key": "AIzaSECRET", "access_token": "MLYSECRET", "q": "x"})
+    assert "AIzaSECRET" not in str(err.value) and "MLYSECRET" not in str(err.value)
+    assert "403" in str(err.value) and "maps.test/meta" in str(err.value)

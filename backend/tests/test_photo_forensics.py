@@ -109,9 +109,15 @@ async def test_web_copy_published_before_the_event_is_a_clear_fake(sink, route, 
     assert len(calls) == 1 and b"WEB_DETECTION" in calls[0].content
 
 
-async def test_web_copy_after_the_event_or_undated_is_not_a_clear_fake(sink, route, fake_llm, tmp_path):
-    route({"vision.googleapis.com": WEB})
-    fake_llm(llm_router(dates={"pages": [{"url": "https://stiri.test/2024/03/18/inundatii-vrancea", "first_seen": None}]}))
+UNDATED = {"responses": [{"webDetection": {"pagesWithMatchingImages": [
+    {"url": "https://stiri.test/articol/inundatii-vrancea", "pageTitle": "Inundații în Vrancea",
+     "fullMatchingImages": [{"url": "https://stiri.test/img/inundatie.jpg"}]}]}}]}
+
+
+async def test_web_copy_without_a_date_in_its_address_is_not_a_clear_fake_whatever_a_model_says(sink, route, fake_llm, tmp_path):
+    route({"vision.googleapis.com": UNDATED})
+    fake_llm(llm_router(dates={"pages": [{"url": "https://stiri.test/articol/inundatii-vrancea", "first_seen": "2019-05-01"},
+                                         {"url": "https://invented.test/2019/05/01/x", "first_seen": "2019-05-01"}]}))
     m = by_metric(await run(make_task(photo_paths=[photo(tmp_path / "foto1.jpg")], question="?", round=2), ctx(sink, 2)))
     assert "exact_copy_before_event" not in m and m["foto1.jpg:web_matches"].value == 1
 
@@ -139,3 +145,21 @@ async def test_unreadable_file_does_not_break_the_agent(sink, route, fake_llm, t
     e = await run(make_task(photo_paths=[str(bad), photo(tmp_path / "foto1.jpg")]), ctx(sink))
     m = by_metric(e)
     assert m["stricat.jpg:unreadable"].value is True and "foto1.jpg:exif_missing" in m
+
+
+async def test_web_copy_dated_after_the_event_is_not_a_clear_fake(sink, route, fake_llm, tmp_path):
+    later = {"responses": [{"webDetection": {"pagesWithMatchingImages": [
+        {"url": "https://stiri.test/2024/09/20/dupa-inundatii", "pageTitle": "După inundații",
+         "fullMatchingImages": [{"url": "https://stiri.test/img/x.jpg"}]}]}}]}
+    route({"vision.googleapis.com": later})
+    fake_llm(llm_router())
+    m = by_metric(await run(make_task(photo_paths=[photo(tmp_path / "foto1.jpg")], question="?", round=2), ctx(sink, 2)))
+    assert "exact_copy_before_event" not in m and m["foto1.jpg:first_seen"].value == "2024-09-20"
+
+
+async def test_vision_per_image_error_is_a_gap_not_zero_matches(sink, route, fake_llm, tmp_path):
+    route({"vision.googleapis.com": {"responses": [{"error": {"code": 7, "message": "API key not valid"}}]}})
+    fake_llm(llm_router())
+    e = await run(make_task(photo_paths=[photo(tmp_path / "foto1.jpg")], question="?", round=2), ctx(sink, 2))
+    assert "foto1.jpg:web_matches" not in by_metric(e) and any("Google Vision" in g for g in e.gaps)
+    assert not [p for p in (tmp_path / "cache").rglob("*.json") if "API key not valid" in p.read_text()]

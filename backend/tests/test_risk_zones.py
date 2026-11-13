@@ -81,3 +81,13 @@ async def test_everything_down_is_inconclusive(sink, route, fake_llm):
     fake_llm()
     e = await run(make_task(lat=LAT, lon=LON), ctx(sink))
     assert e.verdict == "inconclusive" and "OpenStreetMap" in e.gaps[0]
+
+
+async def test_overpass_timeout_answer_is_a_failed_source_not_no_water(sink, route, fake_llm, tmp_path):
+    busy = {"elements": [], "remark": "runtime error: Query timed out in \"query\" at line 1 after 26 seconds."}
+    route({"overpass": busy})
+    fake_llm()
+    e = await run(make_task(lat=LAT, lon=LON), ctx(sink))
+    assert e.verdict == "inconclusive" and "OpenStreetMap" in e.gaps[0]
+    assert "distance_to_water_m" not in by_metric(e)
+    assert not [p for p in (tmp_path / "cache").rglob("*.json") if "runtime error" in p.read_text()]

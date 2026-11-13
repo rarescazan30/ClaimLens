@@ -131,6 +131,11 @@ class Store:
     def list_claims(self) -> list[dict]:
         return [_load(r, CLAIM_JSON) for r in self._all("SELECT * FROM claim ORDER BY created_at DESC")]
 
+    def claims_before(self, claim_id: str) -> list[dict]:
+        """Claims filed earlier than this one (by insertion order)."""
+        return [_load(r, CLAIM_JSON) for r in self._all(
+            "SELECT * FROM claim WHERE rowid < (SELECT rowid FROM claim WHERE id=?) ORDER BY rowid", (claim_id,))]
+
     def set_status(self, claim_id: str, status: str) -> None:
         self._exec("UPDATE claim SET status=? WHERE id=?", (status, claim_id))
         self._notify(claim_id, "status", {"status": status})
