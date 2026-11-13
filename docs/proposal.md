@@ -109,7 +109,7 @@ Benzi: foarte probabil (≥ 85), probabil (65–85), incert (35–65), improbabi
 | UI evaluator | UiPath Apps sau front-end propriu peste Data Fabric | Coadă, ecranul cazului, trace vizual |
 | Observabilitate | Agent traces + Evaluations | 10 dosare sintetice, trajectory + faithfulness |
 
-**Pragmatic pentru noaptea asta:** un agent complet (meteo) + unul pentru satelit sau zone de risc. Restul cu date pre-capturate, menționat explicit în pitch. Mai bine 2 agenți reali și o buclă reală decât 6 falși.
+**Decizia echipei (actualizare):** vrem toți cei 6 agenți implementați real și legați în buclă. Ordinea: meteo, satelit, zone de risc (nucleul demo-ului cu inundația), apoi foto-forensic, street view, știri. Un agent care nu e gata până sâmbătă la 11:00 rulează cu date pre-capturate, menționat explicit în pitch.
 
 ## Reasoning trace vizual și controlul evaluatorului
 
@@ -160,8 +160,8 @@ Ancorăm demo-ul pe inundația din Galați din 14.09.2024 (CEMS EMSR758, GFM, ER
 | Interval | Livrabil | Rol |
 | --- | --- | --- |
 | Vin 22:00–23:00 | Scope înghețat, entitățile Data Fabric, cele 2 dosare de demo, rolurile | Toți |
-| Vin 23:00 – Sâm 03:00 | IXP pe cerere și poliță, reguli F1; agentul Meteo cap-coadă; evenimente de trace | A: Maestro + IXP, B: agenți |
-| Sâm 03:00–08:00 | Satelit / Zone de risc; Foto-forensic minimal (EXIF); bucla Orchestrator/Judge | B: agenți, C: UI |
+| Vin 23:00 – Sâm 03:00 | IXP pe cerere și poliță, reguli F1; agenții Meteo, Satelit și Zone de risc cap-coadă; evenimente de trace | A: Maestro + IXP, B: agenți |
+| Sâm 03:00–08:00 | Agenții Foto-forensic, Street view și Știri; bucla Orchestrator/Judge cu toți cei 6 agenți | B: agenți, C: UI |
 | Sâm 08:00–11:00 | UI cu timeline, trace, hartă; aprobare în Action Center; set de evaluare cu 10 dosare | C: UI, A: integrare |
 | Sâm 11:00–12:30 | 3 rulări cap-coadă fără erori; video de rezervă; README și arhitectura pe GitHub | Toți |
 | Sâm 12:30–14:00 | Pitch repetat de 3 ori, Q&A, buffer | D: pitch |

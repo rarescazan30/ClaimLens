@@ -62,8 +62,8 @@ demo/          demo cases, cached API responses, backup video
 | When (Fri → Sat) | Deliverable | Who |
 | --- | --- | --- |
 | 22:00–23:00 | Scope frozen, Data Fabric entities, 2 demo cases, roles | All |
-| 23:00–03:00 | IXP + F1 rules; Meteo agent end-to-end; trace events | A: Maestro + IXP · B: agents |
-| 03:00–08:00 | Satellite / Risk zones; minimal Photo forensics; Orchestrator/Judge loop | B: agents · C: UI |
+| 23:00–03:00 | IXP + F1 rules; Meteo, Satellite and Risk zones agents end-to-end; trace events | A: Maestro + IXP · B: agents |
+| 03:00–08:00 | Photo forensics, Street view and News agents; Orchestrator/Judge loop with all 6 agents | B: agents · C: UI |
 | 08:00–11:00 | UI (timeline, trace, map); Action Center approval; 10-case eval set | C: UI · A: integration |
 | 11:00–12:30 | 3 clean end-to-end runs; backup video; README + architecture | All |
 | 12:30–14:00 | Pitch rehearsed 3×, Q&A prep, buffer | D: pitch |
@@ -71,7 +71,11 @@ demo/          demo cases, cached API responses, backup video
 **Deliverables by Sat 14:00:** code on GitHub, working prototype, 5-min pitch, demo ≤ 5 min.
 
 Priority: one end-to-end run that really works beats many agents — *Working result* (30) and *User value* (25)
-are 55 of 100 points. Two real agents and a real loop beat six fake ones.
+are 55 of 100 points.
+
+**Goal: all 6 specialist agents implemented for real** (meteo, satellite, risk zones, photo forensics,
+street view, news) and wired into the Orchestrator/Judge loop. Pre-captured data is only a fallback for an
+agent that is not ready by 11:00, and we say so in the pitch.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how we work tonight.
 

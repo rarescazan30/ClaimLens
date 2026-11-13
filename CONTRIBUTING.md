@@ -22,5 +22,5 @@ Deadline: **Saturday 14 November 2026, 14:00**. Keep `main` demo-ready at all ti
 - Each agent works in isolation before it is wired into the loop.
 - Cache every API response the demo uses, so it does not depend on Wi-Fi.
 - Formats in [`docs/contracts.md`](docs/contracts.md) are shared — announce changes before making them.
-- Be honest in the pitch about which agents are live and which use pre-captured data.
+- Target: all 6 agents real. If one isn't ready by 11:00, it falls back to pre-captured data and the pitch says so.
 - Sleep in shifts.
