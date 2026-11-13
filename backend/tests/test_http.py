@@ -85,3 +85,11 @@ async def test_llm_parses_fenced_json_and_caches(monkeypatch):
     assert await llm.llm_json("s", "u") == {"verdict": "supports"}
     assert await llm.llm_json("s", "u") == {"verdict": "supports"}
     assert len(n) == 1
+
+
+async def test_response_failing_validation_is_an_error_and_is_not_cached(monkeypatch, tmp_path):
+    t, calls = transport(lambda r: httpx.Response(200, text="Please limit requests"))
+    monkeypatch.setattr(http, "TRANSPORT", t)
+    with pytest.raises(http.SourceError):
+        await http.fetch("https://x.test/limited", as_text=True, validate=lambda body: body.startswith("{"))
+    assert len(calls) == 2 and not list((tmp_path / "cache").rglob("*.json"))

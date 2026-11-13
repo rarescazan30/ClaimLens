@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 
@@ -53,7 +53,8 @@ def cache_put(bucket: str, key: str, value: Any) -> None:
 
 async def fetch(url: str, *, params: dict | None = None, method: str = "GET", json_body: Any = None,
                 data: dict | None = None, headers: dict | None = None, timeout: float = 20,
-                as_bytes: bool = False, as_text: bool = False, replay: bool | None = None) -> Any:
+                as_bytes: bool = False, as_text: bool = False, replay: bool | None = None,
+                validate: Callable[[Any], bool] | None = None) -> Any:
     public_params = {k: v for k, v in (params or {}).items() if k.lower() not in SECRET_PARAMS}
     key = make_key(method, url, public_params, json_body, data)
     saved = cache_get("http", key)
@@ -70,11 +71,12 @@ async def fetch(url: str, *, params: dict | None = None, method: str = "GET", js
                 r = await client.request(method, url, params=params, json=json_body, data=data,
                                          headers={"User-Agent": UA, **(headers or {})})
                 r.raise_for_status()
+                body: Any = r.content if as_bytes else (r.text if as_text else r.json())
+                if validate is not None and not validate(body):
+                    raise ValueError("response did not look like the expected data")
                 if as_bytes:
-                    body: Any = r.content
                     cache_put("http", key, {"url": url, "bytes": True, "body": base64.b64encode(body).decode()})
                 else:
-                    body = r.text if as_text else r.json()
                     cache_put("http", key, {"url": url, "params": public_params, "body": body})
                 return body
             except (httpx.HTTPError, ValueError) as e:
