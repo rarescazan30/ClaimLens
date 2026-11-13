@@ -1,0 +1,12 @@
+[
+ {
+  "id": "C-1042",
+  "address": "Str. Exemplu 12, Pechea, jud. Galați",
+  "damage_type": "flood",
+  "event_date": "2024-09-14",
+  "status": "awaiting_decision",
+  "score": 12.4,
+  "band": "unlikely",
+  "recommendation": "antifraud_referral"
+ }
+]

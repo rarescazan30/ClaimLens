@@ -1,0 +1,487 @@
+[
+ {
+  "case_id": "C-1042",
+  "step_id": "rules",
+  "parent": null,
+  "actor": "rules",
+  "type": "decision",
+  "summary": "Verificare poliță: 5 din 5 reguli trecute",
+  "inputs": {},
+  "outputs": {
+   "flags": [
+    {
+     "rule": "policy_active",
+     "passed": true,
+     "reason": "Poliță activă la data evenimentului"
+    },
+    {
+     "rule": "waiting_period",
+     "passed": true,
+     "reason": "Perioada de așteptare a trecut"
+    },
+    {
+     "rule": "risk_covered",
+     "passed": true,
+     "reason": "Inundația este risc acoperit"
+    },
+    {
+     "rule": "address_match",
+     "passed": true,
+     "reason": "Adresa coincide cu polița"
+    },
+    {
+     "rule": "notified_in_time",
+     "passed": true,
+     "reason": "Notificat la 5 zile de la eveniment"
+    }
+   ]
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:03Z",
+  "ended_at": "2026-11-14T03:00:05Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "plan",
+  "parent": null,
+  "actor": "orchestrator",
+  "type": "decision",
+  "summary": "Plan: 4 ipoteze, 6 agenți",
+  "inputs": {},
+  "outputs": {
+   "hypotheses": [
+    {
+     "id": "H1",
+     "text": "Precipitații ≥ 30 mm în 24 h la adresă, pe 14.09.2024",
+     "critical": true,
+     "agents": [
+      "meteo",
+      "news"
+     ]
+    },
+    {
+     "id": "H2",
+     "text": "Adresa a fost în zona inundată cartografiată de Copernicus",
+     "critical": true,
+     "agents": [
+      "satellite",
+      "risk_zones"
+     ]
+    },
+    {
+     "id": "H3",
+     "text": "Fotografiile sunt autentice și arată dauna declarată (apă 60 cm în casă)",
+     "critical": true,
+     "agents": [
+      "photo_forensics"
+     ]
+    },
+    {
+     "id": "H4",
+     "text": "Dauna nu era preexistentă",
+     "critical": false,
+     "agents": [
+      "street_view"
+     ]
+    }
+   ]
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:06Z",
+  "ended_at": "2026-11-14T03:00:08Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.dispatch",
+  "parent": "plan",
+  "actor": "orchestrator",
+  "type": "decision",
+  "summary": "Runda 1: 6 agenți în paralel",
+  "inputs": {},
+  "outputs": {},
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:09Z",
+  "ended_at": "2026-11-14T03:00:11Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.meteo.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:meteo",
+  "type": "tool_call",
+  "summary": "Interogare Open-Meteo ERA5-Land",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Open-Meteo ERA5-Land"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:12Z",
+  "ended_at": "2026-11-14T03:00:14Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.meteo.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:meteo",
+  "type": "observation",
+  "summary": "45.7 mm în 24 h depășește pragul de 30 mm.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "supports"
+  },
+  "sources": [
+   "Open-Meteo ERA5-Land"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:15Z",
+  "ended_at": "2026-11-14T03:00:17Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.satellite.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:satellite",
+  "type": "tool_call",
+  "summary": "Interogare Copernicus CEMS EMSR758",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Copernicus CEMS EMSR758"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:18Z",
+  "ended_at": "2026-11-14T03:00:20Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.satellite.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:satellite",
+  "type": "observation",
+  "summary": "Casa e în afara poligonului, la 150 m de margine.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "inconclusive"
+  },
+  "sources": [
+   "Copernicus CEMS EMSR758"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:21Z",
+  "ended_at": "2026-11-14T03:00:23Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.risk_zones.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:risk_zones",
+  "type": "tool_call",
+  "summary": "Interogare OpenStreetMap",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "OpenStreetMap"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:24Z",
+  "ended_at": "2026-11-14T03:00:26Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.risk_zones.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:risk_zones",
+  "type": "observation",
+  "summary": "Curs de apă la 310 m.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "supports"
+  },
+  "sources": [
+   "OpenStreetMap"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:27Z",
+  "ended_at": "2026-11-14T03:00:29Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.photo_forensics.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:photo_forensics",
+  "type": "tool_call",
+  "summary": "Interogare EXIF",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "EXIF"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:30Z",
+  "ended_at": "2026-11-14T03:00:32Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.photo_forensics.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:photo_forensics",
+  "type": "observation",
+  "summary": "Fără metadate; imaginile arată apă în interior.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "inconclusive"
+  },
+  "sources": [
+   "EXIF"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:33Z",
+  "ended_at": "2026-11-14T03:00:35Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.street_view.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:street_view",
+  "type": "tool_call",
+  "summary": "Interogare Mapillary",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Mapillary"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:36Z",
+  "ended_at": "2026-11-14T03:00:38Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.street_view.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:street_view",
+  "type": "observation",
+  "summary": "Imagine din iunie 2023, fără daune vizibile.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "inconclusive"
+  },
+  "sources": [
+   "Mapillary"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:39Z",
+  "ended_at": "2026-11-14T03:00:41Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.news.1",
+  "parent": "r1.dispatch",
+  "actor": "agent:news",
+  "type": "tool_call",
+  "summary": "Interogare Digi24",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Digi24"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:42Z",
+  "ended_at": "2026-11-14T03:00:44Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.news.2",
+  "parent": "r1.dispatch",
+  "actor": "agent:news",
+  "type": "observation",
+  "summary": "3 relatări independente confirmă inundația în localitate.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "supports"
+  },
+  "sources": [
+   "Digi24"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:45Z",
+  "ended_at": "2026-11-14T03:00:47Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.score",
+  "parent": "r1.dispatch",
+  "actor": "score",
+  "type": "observation",
+  "summary": "Scor după runda 1: 74.1 (probabil)",
+  "inputs": {},
+  "outputs": {
+   "score": 74.1,
+   "band": "likely"
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:48Z",
+  "ended_at": "2026-11-14T03:00:50Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r1.judge",
+  "parent": "r1.dispatch",
+  "actor": "judge",
+  "type": "decision",
+  "summary": "Tensiune: casa e în afara zonei inundate, dar dosarul declară 60 cm de apă în casă. Pozele nu au metadate. Retrimit 2 agenți.",
+  "inputs": {},
+  "outputs": {
+   "action": "redispatch",
+   "redispatch": [
+    {
+     "agent": "risk_zones",
+     "question": "Care e diferența de nivel dintre casă și marginea zonei inundate?"
+    },
+    {
+     "agent": "photo_forensics",
+     "question": "Au mai fost publicate aceste poze înainte de 14.09.2024?"
+    }
+   ]
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:51Z",
+  "ended_at": "2026-11-14T03:00:53Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.dispatch",
+  "parent": "r1.judge",
+  "actor": "orchestrator",
+  "type": "decision",
+  "summary": "Runda 2: zone de risc, foto-forensic",
+  "inputs": {},
+  "outputs": {},
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:54Z",
+  "ended_at": "2026-11-14T03:00:56Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.risk_zones.1",
+  "parent": "r2.dispatch",
+  "actor": "agent:risk_zones",
+  "type": "tool_call",
+  "summary": "Interogare Copernicus DEM (Open-Meteo)",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Copernicus DEM (Open-Meteo)"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:00:57Z",
+  "ended_at": "2026-11-14T03:00:59Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.risk_zones.2",
+  "parent": "r2.dispatch",
+  "actor": "agent:risk_zones",
+  "type": "observation",
+  "summary": "Casa e cu 6 m deasupra marginii apei; 60 cm de apă în casă nu sunt plauzibili.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "contradicts"
+  },
+  "sources": [
+   "Copernicus DEM (Open-Meteo)"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:00Z",
+  "ended_at": "2026-11-14T03:01:02Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.photo_forensics.1",
+  "parent": "r2.dispatch",
+  "actor": "agent:photo_forensics",
+  "type": "tool_call",
+  "summary": "Interogare Google Vision Web Detection",
+  "inputs": {},
+  "outputs": {},
+  "sources": [
+   "Google Vision Web Detection"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:03Z",
+  "ended_at": "2026-11-14T03:01:05Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.photo_forensics.2",
+  "parent": "r2.dispatch",
+  "actor": "agent:photo_forensics",
+  "type": "observation",
+  "summary": "foto2.jpg apare într-un articol publicat în martie 2024, înainte de eveniment.",
+  "inputs": {},
+  "outputs": {
+   "verdict": "contradicts"
+  },
+  "sources": [
+   "Google Vision Web Detection"
+  ],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:06Z",
+  "ended_at": "2026-11-14T03:01:08Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.score",
+  "parent": "r2.dispatch",
+  "actor": "score",
+  "type": "observation",
+  "summary": "Scor după runda 2: 12.4 (improbabil)",
+  "inputs": {},
+  "outputs": {
+   "score": 12.4,
+   "band": "unlikely"
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:09Z",
+  "ended_at": "2026-11-14T03:01:11Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "r2.judge",
+  "parent": "r2.dispatch",
+  "actor": "judge",
+  "type": "decision",
+  "summary": "Toate ipotezele critice au verdict. Opresc investigația.",
+  "inputs": {},
+  "outputs": {
+   "action": "stop"
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:12Z",
+  "ended_at": "2026-11-14T03:01:14Z"
+ },
+ {
+  "case_id": "C-1042",
+  "step_id": "final",
+  "parent": "r2.judge",
+  "actor": "engine",
+  "type": "escalation",
+  "summary": "Recomandare: trimitere la antifraudă. Decizia aparține evaluatorului.",
+  "inputs": {},
+  "outputs": {
+   "recommendation": "antifraud_referral"
+  },
+  "sources": [],
+  "status": "done",
+  "started_at": "2026-11-14T03:01:15Z",
+  "ended_at": "2026-11-14T03:01:17Z"
+ }
+]
