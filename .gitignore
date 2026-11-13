@@ -24,3 +24,6 @@ node_modules/
 
 # Plan execution scratch
 .superpowers/
+
+# Local database and uploaded photos
+backend/data/
