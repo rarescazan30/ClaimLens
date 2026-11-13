@@ -63,7 +63,10 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
     if chosen is None:
         try:
             key = os.environ.get("GOOGLE_API_KEY", "")
-            meta = await ctx.fetch("Google Street View", G_META, params={"location": f"{lat},{lon}", "key": key})
+            # a refused key or exhausted quota comes back as HTTP 200 with another status: that is a failed
+            # source (and must not be cached), not the same as 'no imagery here'
+            meta = await ctx.fetch("Google Street View", G_META, params={"location": f"{lat},{lon}", "key": key},
+                                   validate=lambda m: m.get("status") in ("OK", "ZERO_RESULTS", "NOT_FOUND"))
             if meta.get("status") == "OK" and str(meta.get("date") or "9999") < event.isoformat()[:7]:
                 loc = meta.get("location") or {}
                 chosen = {"date": meta["date"], "source": "Google Street View", "image_url": G_IMAGE,

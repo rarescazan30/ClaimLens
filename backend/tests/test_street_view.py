@@ -82,3 +82,13 @@ async def test_judge_question_compares_the_old_image_with_the_client_photos(sink
     m = by_metric(e)
     assert m["preexisting_damage"].value is False and "acoperiș întreg" in m["prior_condition"].value
     assert e.verdict == "supports"
+
+
+async def test_google_refusing_the_key_is_a_failed_source_not_missing_imagery(sink, route, fake_llm, tmp_path):
+    route({"graph.mapillary.com": 500, "streetview/metadata": {"status": "REQUEST_DENIED", "error_message": "no key"}})
+    fake_llm()
+    e = await run(make_task(), ctx(sink))
+    assert e.verdict == "inconclusive" and "nu au răspuns" in e.gaps[0]
+    assert "Nicio imagine" not in e.gaps[0]
+    # a refusal must never be saved, or it would be replayed forever once a valid key is added
+    assert not [p for p in (tmp_path / "cache").rglob("*.json") if "REQUEST_DENIED" in p.read_text()]
