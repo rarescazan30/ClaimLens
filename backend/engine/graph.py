@@ -113,8 +113,10 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
         from agents import AGENTS as agents  # noqa: N811
     if planner is None or judge is None:
         from engine import prompts
+        from functools import partial
         planner = planner or prompts.plan_hypotheses
-        judge = judge or prompts.judge_round
+        declared = f"{claim.get('description') or ''} (sumă cerută: {claim.get('amount_claimed')})"
+        judge = judge or partial(prompts.judge_round, claim_summary=declared)
 
     case_id = claim["id"]
     allowed = [a for a in AGENTS_FOR.get(claim.get("damage_type"), ALL_AGENTS) if a in agents]
