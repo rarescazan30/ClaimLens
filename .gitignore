@@ -21,3 +21,6 @@ runs/
 .idea/
 .vscode/
 node_modules/
+
+# Plan execution scratch
+.superpowers/
