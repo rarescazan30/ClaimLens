@@ -74,12 +74,20 @@ paused ── POST /claims/{id}/continue ──► continue → plan → agents 
 
 | Route | Detail |
 | --- | --- |
-| `POST /claims` | multipart: `data` (JSON `{"claim": {...}, "policy"?: {...}}`) and `photos`. Same JSON as before; the claim may also carry the policyholder's `holder_name`, `cnp`, `phone`, `email`, `iban` (written into the claim form only). The backend writes `claim_form.pdf` and `policy.pdf` and investigates from them. `lat`/`lon` in the JSON are not used: the address read from the PDF is located during the run (a failed lookup is a flag, not an error). Returns `{"id"}`. |
+| `POST /claims` | multipart: `data` (JSON `{"claim": {...}, "policy"?: {...}}`) and `photos`. Same JSON as before; the claim may also carry the policyholder's `holder_name`, `cnp`, `telefon` (alias `phone`), `email`, `iban` (written into the claim form), and `policy` may carry `cnp` (stored, written into the policy PDF). Policy keys that are not policy columns are ignored. The backend writes `claim_form.pdf` and `policy.pdf` and investigates from them. `lat`/`lon` in the JSON are not used: the address read from the PDF is located during the run (a failed lookup is a flag, not an error). Returns `{"id"}`. |
 | `POST /claims/{id}/continue` | only when `paused` (else 409): starts again at the plan, reusing the checks already done; the failed rule stays a flag, keeps forcing standard review and reaches the Judge. Returns `{"id", "status": "investigating"}`. |
 | `POST /claims/{id}/decision` | also when `paused`, only with `{"decision": "modify", "outcome", "reason"}`. `approve` while paused → 409 `Nu există încă o recomandare`. |
 | `POST /claims/{id}/question` | 409 while `paused` (continue or decide first). On a claim read from documents, the question run keeps the stored rule flags and early flags. |
 | `POST /claims/{id}/rerun` | also on a paused claim: reads the PDFs again from the start. |
 | `GET /documents/{claim_id}/{name}` | `name` is `claim_form.pdf` or `policy.pdf`: the original PDF (`application/pdf`), for an "Open PDF" link. 404 for any other name, a claim without documents, or a path outside the documents folders. |
+
+**Client data and flags.** Client data comes from the documents, as on a paper form: whatever the caller leaves
+out is missing from the PDF and is flagged, and each client/document flag lowers the score by one `client` line.
+To file a claim with no such flags, send: on the claim `cnp` (valid), `telefon` (Romanian format), plus everything
+already required (`policy_id`, `damage_type`, `event_date`, `notified_at`, `address`, `description`,
+`amount_claimed`); `email` and `iban` are optional but flagged when malformed; on the policy `cnp` (same as the
+claim's), `holder_name`, `address`, `valid_from`, `valid_to`, `waiting_days`, `covered_risks`, `sum_insured`,
+`product`. The address must be found by the map lookup at house or street level.
 
 ### `GET /claims/{id}`: new keys
 

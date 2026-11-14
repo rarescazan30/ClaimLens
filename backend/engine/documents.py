@@ -264,8 +264,9 @@ def _amount_text(x) -> str:
 def from_claim(claim: dict, policy: dict) -> tuple[dict[str, str], dict[str, str]]:
     """The reverse of to_claim: form fields for the two PDFs, from the API's claim and policy dicts.
 
-    The claim may also carry the policyholder's data, which has no column of its own: holder_name, cnp, phone,
-    email, iban. Values the dicts do not have stay empty (the documents check flags them).
+    The claim may also carry the policyholder's data, which has no column of its own: holder_name, cnp, telefon
+    (or phone), email, iban; the policy may carry cnp. Values the dicts do not have stay empty (the documents and
+    client checks flag them, as they would on a paper form).
     """
     damage = {v: k for k, v in _DAMAGE.items()}
     risks = {v: k for k, v in _RISKS.items()}
@@ -287,7 +288,7 @@ def from_claim(claim: dict, policy: dict) -> tuple[dict[str, str], dict[str, str
         "numar_polita": text(claim.get("policy_id") or policy.get("id")),
         "nume_asigurat": text(claim.get("holder_name") or policy.get("holder_name")),
         "cnp": text(claim.get("cnp")),
-        "telefon": text(claim.get("phone")),
+        "telefon": text(claim.get("telefon") or claim.get("phone")),
         "email": text(claim.get("email")),
         "iban": text(claim.get("iban")),
         "adresa_daunei": text(claim.get("address")),

@@ -12,7 +12,7 @@ from engine.models import Evidence, Hypothesis, RuleFlag, ScoreResult, StepResul
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS policy (
   id TEXT PRIMARY KEY, holder_name TEXT, address TEXT, lat REAL, lon REAL, valid_from TEXT, valid_to TEXT,
-  waiting_days INTEGER, covered_risks TEXT, sum_insured REAL, product TEXT);
+  waiting_days INTEGER, covered_risks TEXT, sum_insured REAL, product TEXT, cnp TEXT);
 CREATE TABLE IF NOT EXISTS claim (
   id TEXT PRIMARY KEY, policy_id TEXT, damage_type TEXT, event_date TEXT, notified_at TEXT, address TEXT,
   lat REAL, lon REAL, description TEXT, amount_claimed REAL, photos TEXT, status TEXT, rule_flags TEXT,
@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS weight_config (
 
 CLAIM_JSON = ("photos", "rule_flags", "hypotheses", "score_detail", "documents", "checks", "early_flags")
 NEW_CLAIM_COLUMNS = {"documents": "TEXT", "checks": "TEXT", "early_flags": "TEXT", "run_mode": "TEXT"}
+NEW_POLICY_COLUMNS = {"cnp": "TEXT"}
 READ_FIELDS = ("address", "lat", "lon", "event_date", "notified_at", "damage_type", "description",
                "amount_claimed", "policy_id")
 POLICY_JSON = ("covered_risks",)
@@ -131,20 +132,26 @@ class Store:
         self.migrate()
 
     def migrate(self) -> None:
-        """Add claim columns that older databases lack."""
+        """Add claim and policy columns that older databases lack."""
         with self.lock:
-            have = {r["name"] for r in self.db.execute("PRAGMA table_info(claim)")}
-            for col, typ in NEW_CLAIM_COLUMNS.items():
-                if col not in have:
-                    self.db.execute(f"ALTER TABLE claim ADD COLUMN {col} {typ}")
+            for table, new in (("claim", NEW_CLAIM_COLUMNS), ("policy", NEW_POLICY_COLUMNS)):
+                have = {r["name"] for r in self.db.execute(f"PRAGMA table_info({table})")}
+                for col, typ in new.items():
+                    if col not in have:
+                        self.db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
             self.db.commit()
+
+    def _columns(self, table: str) -> set[str]:
+        return {r["name"] for r in self._all(f"PRAGMA table_info({table})")}
 
     def for_claim(self, claim_id: str) -> ClaimSink:
         return ClaimSink(self, claim_id)
 
     # -- policies and claims
     def upsert_policy(self, p: dict) -> None:
-        self._upsert("policy", p, POLICY_JSON)
+        """Keys that are not policy columns are ignored (a caller's extra field never breaks the insert)."""
+        cols = self._columns("policy")
+        self._upsert("policy", {k: v for k, v in p.items() if k in cols}, POLICY_JSON)
 
     def get_policy(self, policy_id: str) -> dict | None:
         rows = self._all("SELECT * FROM policy WHERE id=?", (policy_id,))

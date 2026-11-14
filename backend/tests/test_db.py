@@ -129,3 +129,21 @@ def test_rerun_clears_checks(store):
     store.reset_claim("C-1")
     c = store.get_claim("C-1")
     assert c["checks"] is None and c["early_flags"] is None and c["run_mode"] is None
+
+
+def test_policy_keeps_a_cnp_and_ignores_unknown_keys(store):
+    store.upsert_policy({"id": "P-2", "holder_name": "Ana", "cnp": "1800101123456", "colour": "blue"})
+    p = store.get_policy("P-2")
+    assert p["cnp"] == "1800101123456" and "colour" not in p
+
+
+def test_old_policy_table_gets_the_cnp_column(tmp_path):
+    db = tmp_path / "old.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE policy (id TEXT PRIMARY KEY, holder_name TEXT)")
+    con.execute("INSERT INTO policy VALUES ('P-1', 'Ion')")
+    con.commit()
+    con.close()
+    s = Store(db)
+    s.create_schema()
+    assert s.get_policy("P-1")["cnp"] is None

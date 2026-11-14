@@ -486,3 +486,19 @@ def test_rejecting_evidence_keeps_the_client_lines_of_a_documents_claim(client):
     new = client.post(f"/claims/{cid}/evidence/{eid}/reject").json()
     client_lines = [c for c in before["score"]["contributions"] if c["agent"] == "client"]
     assert client_lines and [c for c in new["contributions"] if c["agent"] == "client"] == client_lines
+
+
+def test_claim_with_full_client_data_gets_no_flags_and_no_client_lines(client):
+    policy = {**POLICY, "id": "P-FULL", "cnp": "1800101123450", "unknown_key": "ignored"}
+    claim = {**CLAIM, "policy_id": "P-FULL", "cnp": "1800101123450", "telefon": "0722123456",
+             "email": "ana@example.ro", "iban": "RO49AAAA1B31007593840000"}
+    r = client.post("/claims", data={"data": json.dumps({"claim": claim, "policy": policy})})
+    assert r.status_code == 200, r.text
+    cid = r.json()["id"]
+    wait(client, cid)
+    body = client.get(f"/claims/{cid}").json()
+    assert body["flags"] == []
+    assert body["documents"]["policy"]["cnp"] == "1800101123450"
+    assert body["documents"]["claim_form"]["telefon"] == "0722123456"
+    assert [c for c in body["score"]["contributions"] if c["agent"] == "client"] == []
+    assert body["policy"]["cnp"] == "1800101123450" and "unknown_key" not in body["policy"]
