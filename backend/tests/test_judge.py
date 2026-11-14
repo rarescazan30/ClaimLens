@@ -9,7 +9,7 @@ HYP = [Hypothesis(id="H1", text="ploaie", critical=True, agents=["meteo"])]
 SCORE = ScoreResult(score=60, band="uncertain", recommendation="standard_review")
 EV = [Evidence(agent="meteo", round=1, hypothesis="ploaie", verdict="supports", strength=0.5, data_quality=0.5)]
 CLAIM = {"id": "C-1", "damage_type": "flood", "event_date": "2024-09-14", "notified_at": "2024-09-16",
-         "address": "A 1", "description": "apa in casa", "amount_claimed": 1, "photos": []}
+         "address": "A 1", "lat": 45.6, "lon": 27.8, "description": "apa in casa", "amount_claimed": 1, "photos": []}
 POLICY = {"address": "A 1", "valid_from": "2024-01-01", "valid_to": "2024-12-31", "covered_risks": ["flood"],
           "sum_insured": 10}
 

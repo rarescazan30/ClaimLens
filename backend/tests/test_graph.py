@@ -192,3 +192,156 @@ def test_should_stop_counts_rounds_from_first_round():
                         redispatch=[{"agent": "news", "question": "q"}])
     assert should_stop(4, None, 60, conflict, HYP, 10, first_round=4) == (False, "")
     assert should_stop(6, 40, 60, conflict, HYP, 10, first_round=4)[0]
+
+
+# ---- intake: five steps, the pause, resuming ---------------------------------------------------
+from engine.documents import write_document  # noqa: E402
+from engine.models import Flag, RuleFlag  # noqa: E402
+
+DOC_CLAIM = {
+    "numar_dosar": "C-1042", "numar_polita": "P-7731", "nume_asigurat": "Persoană Sintetică Unu",
+    "cnp": "1800101123456", "telefon": "+40 700 000 000", "email": "nume@example.ro",
+    "iban": "RO49AAAA1B31007593840000", "adresa_daunei": "Str. Exemplu 12, Pechea, jud. Galați",
+    "tip_dauna": "inundație", "data_evenimentului": "2024-09-14", "data_notificarii": "2024-09-19",
+    "descriere": "Apa a intrat în casă", "suma_solicitata": "48000", "numar_fotografii": "0",
+}
+DOC_POLICY = {
+    "numar_polita": "P-7731", "produs": "PAD", "nume_asigurat": "Persoană Sintetică Unu",
+    "cnp": "1800101123456", "adresa_asigurata": "Str. Exemplu 12, Pechea, jud. Galați",
+    "valabila_de_la": "2024-02-01", "valabila_pana_la": "2025-01-31", "zile_asteptare": "0",
+    "riscuri_acoperite": "inundație, cutremur, alunecare de teren", "suma_asigurata": "100000",
+}
+HOUSE = {"nominatim": [{"lat": "45.6", "lon": "27.7", "addresstype": "house"}]}
+
+
+def _docs(tmp_path, claim_over=None, policy_over=None):
+    write_document({**DOC_CLAIM, **(claim_over or {})}, "claim_form", tmp_path / "c.pdf")
+    write_document({**DOC_POLICY, **(policy_over or {})}, "policy", tmp_path / "p.pdf")
+    return {"claim_form": tmp_path / "c.pdf", "policy": tmp_path / "p.pdf"}
+
+
+@pytest.fixture
+def docs_ok(tmp_path, route):
+    route(HOUSE)
+    return _docs(tmp_path)
+
+
+@pytest.fixture
+def docs_expired(tmp_path, route):
+    route(HOUSE)
+    return _docs(tmp_path, policy_over={"valabila_pana_la": "2024-06-30"})
+
+
+@pytest.fixture
+def docs_no_date(tmp_path, route):
+    route(HOUSE)
+    return _docs(tmp_path, claim_over={"data_evenimentului": ""})
+
+
+class Recorder:
+    """A planner and a Judge that remember the early flags they were given."""
+
+    def __init__(self, *judge_outs):
+        self.plan_flags, self.judge_flags, self.outs, self.tasks = [], [], list(judge_outs), []
+
+    async def planner(self, claim, policy, flags, early_flags=None):
+        self.plan_flags.append(early_flags)
+        return HYP
+
+    async def judge(self, hypotheses, evidence, score, round, question=None, early_flags=None):
+        self.judge_flags.append(early_flags)
+        return self.outs.pop(0) if self.outs else STOP
+
+    def agents(self, calls):
+        base = recording_agents(calls)
+
+        def wrap(name):
+            async def run(task, ctx):
+                self.tasks.append((name, task))
+                return await base[name](task, ctx)
+            return run
+        return {a: wrap(a) for a in ALL_AGENTS}
+
+
+async def test_all_rules_pass_runs_through_to_the_verdict(sink, docs_ok):
+    rec, calls = Recorder(), []
+    out = await run_investigation({}, {}, CFG, sink, documents=docs_ok, photos=[], agents=rec.agents(calls),
+                                  planner=rec.planner, judge=rec.judge)
+    assert out is not None
+    assert [s.step_id for s in sink.steps][:6] == ["intake", "documents", "client", "rules", "photos", "plan"]
+    assert all(s.parent is None for s in sink.steps[:5])
+    assert [r.step for r in sink.check_results] == ["intake", "documents", "client", "policy", "photos"]
+    assert sink.read_fields["lat"] == 45.6 and sink.read_fields["lon"] == 27.7
+    assert sink.read_fields["damage_type"] == "flood" and sink.read_fields["amount_claimed"] == 48000
+    assert len(calls) == 6 and all(t.claim["lat"] == 45.6 for _, t in rec.tasks)
+    early = [f for r in sink.check_results for f in r.flags]
+    assert rec.plan_flags == [early] and rec.judge_flags == [early]
+    assert sink.steps[0].case_id == "C-1042"
+
+
+async def test_expired_policy_pauses_before_the_agents(sink, docs_expired):
+    rec = Recorder()
+    out = await run_investigation({}, {}, CFG, sink, documents=docs_expired, photos=[], agents=rec.agents([]),
+                                  planner=rec.planner, judge=rec.judge)
+    assert out is None and sink.steps[-1].step_id == "paused"
+    assert sink.steps[-1].outputs == {"failed_rules": ["policy_active"]}
+    assert [s.step_id for s in sink.steps] == ["intake", "documents", "client", "rules", "photos", "paused"]
+    assert not any(s.actor.startswith("agent:") for s in sink.steps)
+    assert sink.ev == [] and rec.plan_flags == [] and sink.check_results[-1].step == "photos"
+
+
+async def test_resume_starts_at_the_plan_and_the_judge_gets_the_flags(sink, tmp_path):
+    from PIL import Image
+    Image.new("RGB", (32, 32), "white").save(tmp_path / "a.jpg")
+    early = [Flag(step="client", code="cnp_mismatch", field="cnp", severity="warn", reason="CNP diferit."),
+             Flag(step="policy", code="policy_active", severity="fail", reason="Expirată.")]
+    rules = [RuleFlag(rule="policy_active", passed=False, reason="Expirată.")]
+    again = JudgeOut(marks={}, tensions=["t"], action="redispatch",
+                     redispatch=[{"agent": "news", "question": "Mai e ceva?"}])
+    rec = Recorder(again, STOP)
+    agents = _flipping_agents()
+    seen = []
+
+    async def photo(task, ctx):
+        seen.append(task.claim.get("photo_findings"))
+        return await _flipping_agents()["photo_forensics"](task, ctx)
+    agents["photo_forensics"] = photo
+    out = await run_investigation(claim(), POLICY, CFG, sink, photos=[tmp_path / "a.jpg"], earlier_photos=[],
+                                  resume={"early_flags": [f.model_dump() for f in early],
+                                          "rule_flags": [r.model_dump() for r in rules]},
+                                  agents=agents, planner=rec.planner, judge=rec.judge)
+    ids = [s.step_id for s in sink.steps]
+    assert ids[:2] == ["continue", "plan"] and "rules" not in ids and "photos" not in ids
+    assert sink.steps[0].actor == "adjuster" and sink.steps[0].type == "decision"
+    assert "r1.dispatch" in ids and "r2.judge" in ids
+    assert rec.plan_flags == [early] and rec.judge_flags == [early, early]
+    assert sink.check_results == []
+    assert seen and any(m["metric"] == "a.jpg:copy_in_other_claim" for m in seen[0])
+    assert any(g.kind == "coverage" for g in out.gates) and out.recommendation != "fast_track"
+    assert [c.reason for c in out.contributions if c.agent == "client"] == ["CNP diferit."]
+
+
+async def test_claim_form_without_event_date_pauses_without_raising(sink, docs_no_date, tmp_path):
+    from PIL import Image
+    Image.new("RGB", (32, 32), "white").save(tmp_path / "a.jpg")
+    rec = Recorder()
+    out = await run_investigation({}, {}, CFG, sink, documents=docs_no_date, photos=[tmp_path / "a.jpg"],
+                                  agents=rec.agents([]), planner=rec.planner, judge=rec.judge)
+    assert out is None and sink.steps[-1].step_id == "paused"
+    assert "policy_active" in sink.steps[-1].outputs["failed_rules"]
+    assert [r.step for r in sink.check_results] == ["intake", "documents", "client", "policy", "photos"]
+
+
+async def test_no_coordinates_makes_location_agents_inconclusive(sink):
+    calls = []
+    c = {k: v for k, v in claim().items() if k not in ("lat", "lon")}
+    await run_investigation(c, POLICY, CFG, sink, agents=recording_agents(calls), planner=planner,
+                            judge=judge_script(STOP))
+    located = {"meteo", "satellite", "risk_zones", "street_view"}
+    assert sorted(n for _, n, _ in calls) == ["news", "photo_forensics"]
+    for e in sink.ev:
+        if e.agent in located:
+            assert e.verdict == "inconclusive" and e.gaps == ["Adresa nu a putut fi localizată"]
+            assert e.strength == 0 and e.data_quality == 0 and e.hypothesis
+    dispatch = next(s for s in sink.steps if s.step_id == "r1.dispatch")
+    assert {a["agent"] for a in dispatch.outputs["agents"]} >= located
