@@ -28,7 +28,7 @@ PAGE = "https://mapping.emergency.copernicus.eu/activations/{code}/"
 ROLE = "harta Copernicus a zonei inundate: adresa este în interiorul sau în afara zonei cartografiate."
 CATEGORY = {"flood": "flood", "storm": "storm"}
 LAYER_PREFERENCE = ("maximumFloodExtentA", "observedEventA")
-EDGE_TOLERANCE_M = 300   # outside the mapped flood but this close to its edge: never counts against the claim
+EDGE_TOLERANCE_M = 500   # outside the mapped flood but this close to its edge: never counts against the claim
 GUIDANCE = ("Delimitarea din imagini radar are o incertitudine de ±20–30 m la margine, iar Copernicus ratează des "
             "apa de pe străzi și din zonele înguste (între case, sub copaci, în curți). O casă în afara zonei, la cel "
             f"mult {EDGE_TOLERANCE_M} m de margine, este în marja de incertitudine: NU infirmă dauna, marchează "

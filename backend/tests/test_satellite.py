@@ -55,20 +55,20 @@ async def test_point_150_m_outside(sink, route, fake_llm):
     assert "±" in seen[0][1] or "incertitudine" in seen[0][1].lower()
 
 
-async def test_contradicts_within_300_m_of_the_edge_becomes_inconclusive(sink, route, fake_llm):
+async def test_contradicts_within_500_m_of_the_edge_becomes_inconclusive(sink, route, fake_llm):
     route(routes())
     fake_llm({"verdict": "contradicts", "strength": 0.8, "data_quality": 0.7, "reasoning_steps": ["afară"], "gaps": []})
-    lon = 27.80 - 250 / (111_320 * cos(radians(45.635)))
+    lon = 27.80 - 318 / (111_320 * cos(radians(45.635)))
     e = await go(sink, lat=45.635, lon=lon)
-    assert e.verdict == "inconclusive" and any("300 m" in g for g in e.gaps)
+    assert e.verdict == "inconclusive" and any("500 m" in g for g in e.gaps)
 
 
-async def test_contradicts_beyond_300_m_stays(sink, route, fake_llm):
+async def test_contradicts_beyond_500_m_stays(sink, route, fake_llm):
     route(routes())
     seen = fake_llm({"verdict": "contradicts", "strength": 0.8, "data_quality": 0.7, "reasoning_steps": ["afară"], "gaps": []})
-    lon = 27.80 - 600 / (111_320 * cos(radians(45.635)))
+    lon = 27.80 - 700 / (111_320 * cos(radians(45.635)))
     e = await go(sink, lat=45.635, lon=lon)
-    assert e.verdict == "contradicts" and "300 m" in seen[0][1]
+    assert e.verdict == "contradicts" and "500 m" in seen[0][1]
 
 
 async def test_no_activation_for_the_event_is_inconclusive_never_outside(sink, route, fake_llm):
