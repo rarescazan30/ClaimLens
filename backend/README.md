@@ -61,10 +61,14 @@ Before the demo: run each case once with `RECORD=1` and the network on, commit `
 
 ## Deploy (Railway)
 
-1. New project → Deploy from GitHub repo → root directory `backend`.
+Railway builds from the **repository root** (not `backend/`), so the demo claims, documents and saved answers in
+`demo/` are included. `requirements.txt`, `.python-version` and `railway.json` at the root configure it.
+
+1. New project → Deploy from GitHub repo → this repository. Leave the root directory empty.
 2. Add a volume mounted at `/data`; set `DATA_DIR=/data`.
-3. Add the keys from `.env` as variables.
-4. Open `/health` on the generated address and give that address to the frontend.
+3. Add the keys from `.env` as variables (`OPENROUTER_API_KEY`, `GOOGLE_API_KEY`, `MAPILLARY_TOKEN`).
+4. Settings → Networking → Generate Domain. Open `https://<domain>/health`: it must answer `{"ok": true}`.
+5. To start the demo from fresh claims: set `RESET_DEMO=1`, redeploy once, then delete the variable.
 
 ## API
 
