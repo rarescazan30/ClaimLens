@@ -1,0 +1,67 @@
+// Click-through smoke test of the main reviewer flows: node tools/interact.mjs
+import puppeteer from 'puppeteer-core';
+import { preview } from 'vite';
+const server = await preview({ preview: { port: 4174, strictPort: true }, logLevel: 'silent' });
+const browser = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+await page.setViewport({ width: 1440, height: 900 });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const text = (sel) => page.$eval(sel, (el) => el.textContent.trim());
+const clickText = async (t) => {
+  const ok = await page.evaluate((t) => {
+    const el = [...document.querySelectorAll('button, a')].find((b) => b.textContent.trim().includes(t));
+    if (!el) return false; el.click(); return true;
+  }, t);
+  if (!ok) throw new Error('no control: ' + t);
+  await sleep(350);
+};
+const log = (k, v) => console.log(k.padEnd(34), v);
+
+await page.goto('http://localhost:4174/#/', { waitUntil: 'networkidle0' });
+await sleep(300);
+await page.click('.section-toggle'); await sleep(300);
+log('queue rows', await page.$$eval('button.q-row', (r) => r.length));
+await page.click('button.q-row'); await sleep(400);
+log('drawer title', await text('.drawer h2'));
+await page.keyboard.press('Escape'); await sleep(200);
+log('drawer closed', (await page.$('.drawer')) === null);
+await clickText('Investigate'); log('filtered rows', await page.$$eval('button.q-row', (r) => r.length));
+
+await page.click('a.new-card'); await sleep(500);
+log('headline before', await text('.stage-title'));
+await clickText('Start investigation'); await sleep(2500);
+log('headline at ~2.5s', await text('.stage-title'));
+await page.click('.speed-btn'); await page.click('.speed-btn'); await sleep(3200);
+log('headline at 4x', await text('.stage-title'));
+await page.click('.node[aria-label^="Documents"]'); await sleep(300);
+log('pinned detail', await text('.detail h2'));
+await page.click('button[aria-label="Correct Claimed amount"]'); await sleep(200);
+await page.$eval('.item-edit input', (i) => (i.value = ''));
+await page.type('.item-edit input', '36,400 RON'); await page.keyboard.press('Enter'); await sleep(300);
+log('edited chip', await page.$$eval('.chip.c-you', (c) => c.length));
+await clickText('Skip to verdict'); await sleep(900);
+log('headline at end', await text('.stage-title'));
+await clickText('See why'); await sleep(900);
+log('report score', await text('.verdict-hero .score-num'));
+await page.click('.contrib-row .icon-btn'); await sleep(900);
+log('score, top finding set aside', await text('.verdict-hero .score-num'));
+await page.click('.contrib-row.is-off .icon-btn'); await sleep(900);
+log('score restored', await text('.verdict-hero .score-num'));
+await clickText('Choose another route'); await clickText('Confirm override');
+log('override error', await text('.form-error'));
+await clickText('Ask for more'); await page.type('#ask-q', 'Did neighbours file claims?'); await clickText('Send to orchestrator');
+log('requests queued', await page.$$eval('.requests li', (r) => r.length));
+await clickText('Approve recommendation');
+log('decision', await text('.decision.is-done .decision-title'));
+await page.click('.fold summary'); await sleep(200); await page.click('.reason-steps button'); await sleep(500);
+log('jumped to', await text('.stage-title'));
+await clickText('Claims queue'); await sleep(500);
+await page.click('.section-toggle'); await sleep(300);
+log('queue: verdict rows now', await page.$$eval('button.q-row', (r) => r.length));
+await page.click('button[aria-label^="Switch to"]'); await sleep(200);
+log('theme', await page.evaluate(() => document.documentElement.dataset.theme));
+console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no console errors');
+await browser.close(); server.httpServer.close(); process.exit(0);
