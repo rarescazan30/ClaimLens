@@ -362,3 +362,25 @@ async def test_question_run_with_stored_flags_keeps_them_every_round(sink):
     assert [g.reason for g in out.gates if g.kind == "coverage"] == ["Adresa e la 900 m."]   # stored, not re-run
     assert all([c.reason for c in s.contributions if c.agent == "client"] == ["CNP diferit."] for _, s in sink.scores)
     assert rec.plan_flags == []
+
+
+async def test_footprints_are_looked_up_once_the_client_step_has_located_the_house(sink, docs_ok):
+    rec, asked = Recorder(), []
+
+    def footprints_for(lat, lon, day):
+        asked.append((lat, lon, day))
+        return [{"id": "EMSR758-Pechea"}]
+    await run_investigation({"footprints": [{"id": "stale"}]}, {}, CFG, sink, documents=docs_ok, photos=[],
+                            agents=rec.agents([]), planner=rec.planner, judge=rec.judge,
+                            footprints_for=footprints_for)
+    assert asked == [(45.6, 27.7, "2024-09-14")]
+    assert rec.tasks and all(t.claim["footprints"] == [{"id": "EMSR758-Pechea"}] for _, t in rec.tasks)
+
+
+async def test_no_footprints_when_the_house_cannot_be_located(sink, tmp_path, route):
+    route({"nominatim": []})
+    rec, asked = Recorder(), []
+    await run_investigation({"footprints": [{"id": "stale"}]}, {}, CFG, sink, documents=_docs(tmp_path), photos=[],
+                            agents=rec.agents([]), planner=rec.planner, judge=rec.judge,
+                            footprints_for=lambda *a: asked.append(a) or [{"id": "x"}])
+    assert asked == [] and all(t.claim["footprints"] == [] for _, t in rec.tasks)

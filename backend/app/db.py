@@ -170,6 +170,9 @@ class Store:
         self._exec("UPDATE claim SET status=? WHERE id=?", (status, claim_id))
         self._notify(claim_id, "status", {"status": status})
 
+    def set_run_mode(self, claim_id: str, mode: str) -> None:
+        self._exec("UPDATE claim SET run_mode=? WHERE id=?", (mode, claim_id))
+
     def reset_claim(self, claim_id: str) -> None:
         self._exec("DELETE FROM evidence WHERE claim_id=?", (claim_id,))
         self._exec("DELETE FROM trace_step WHERE case_id=?", (claim_id,))

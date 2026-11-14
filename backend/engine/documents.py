@@ -256,6 +256,64 @@ def to_claim(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tuple[dict, d
     return ({k: v for k, v in claim.items() if v is not None}, {k: v for k, v in policy.items() if v is not None})
 
 
+def _amount_text(x) -> str:
+    x = float(x)
+    return str(int(x)) if x.is_integer() else f"{x:.2f}"   # never "123.456" (read as a thousands separator)
+
+
+def from_claim(claim: dict, policy: dict) -> tuple[dict[str, str], dict[str, str]]:
+    """The reverse of to_claim: form fields for the two PDFs, from the API's claim and policy dicts.
+
+    The claim may also carry the policyholder's data, which has no column of its own: holder_name, cnp, phone,
+    email, iban. Values the dicts do not have stay empty (the documents check flags them).
+    """
+    damage = {v: k for k, v in _DAMAGE.items()}
+    risks = {v: k for k, v in _RISKS.items()}
+
+    def text(v) -> str:
+        return "" if v is None else str(v).strip()
+
+    def day(v) -> str:
+        return text(v)[:10]
+
+    def amount(v) -> str:
+        try:
+            return _amount_text(v) if v is not None and v != "" else ""
+        except (TypeError, ValueError):
+            return text(v)
+    photos = claim.get("photos")
+    claim_fields = {
+        "numar_dosar": text(claim.get("id")),
+        "numar_polita": text(claim.get("policy_id") or policy.get("id")),
+        "nume_asigurat": text(claim.get("holder_name") or policy.get("holder_name")),
+        "cnp": text(claim.get("cnp")),
+        "telefon": text(claim.get("phone")),
+        "email": text(claim.get("email")),
+        "iban": text(claim.get("iban")),
+        "adresa_daunei": text(claim.get("address")),
+        "tip_dauna": damage.get(claim.get("damage_type"), text(claim.get("damage_type"))),
+        "data_evenimentului": day(claim.get("event_date")),
+        "data_notificarii": day(claim.get("notified_at")),
+        "descriere": text(claim.get("description")),
+        "suma_solicitata": amount(claim.get("amount_claimed")),
+        "numar_fotografii": str(len(photos)) if isinstance(photos, list) else "",
+    }
+    covered = policy.get("covered_risks")
+    policy_fields = {
+        "numar_polita": text(policy.get("id")),
+        "produs": text(policy.get("product")),
+        "nume_asigurat": text(policy.get("holder_name")),
+        "cnp": text(policy.get("cnp")),
+        "adresa_asigurata": text(policy.get("address")),
+        "valabila_de_la": day(policy.get("valid_from")),
+        "valabila_pana_la": day(policy.get("valid_to")),
+        "zile_asteptare": text(policy.get("waiting_days")),
+        "riscuri_acoperite": ", ".join(risks.get(r, text(r)) for r in covered) if isinstance(covered, list) else text(covered),
+        "suma_asigurata": amount(policy.get("sum_insured")),
+    }
+    return claim_fields, policy_fields
+
+
 # ---------------------------------------------------------------- steps
 
 def check_intake(docs: dict[str, Path | None], photos: list[Path], declared_photos: int | None) -> StepResult:

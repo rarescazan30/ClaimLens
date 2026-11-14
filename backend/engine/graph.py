@@ -122,8 +122,13 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
                             prior: list[Evidence] | None = None, hypotheses: list[Hypothesis] | None = None,
                             documents: dict[str, Path | None] | None = None, photos: list[Path] | None = None,
                             earlier_photos: list[Path] | None = None, resume: dict | None = None,
+                            footprints_for: Callable[[float, float, str], list[dict]] | None = None,
                             agent_timeout: float = 60) -> ScoreResult | None:
-    """Returns None when the claim pauses on a failed policy rule (documents path only)."""
+    """Returns None when the claim pauses on a failed policy rule (documents path only).
+
+    footprints_for(lat, lon, event_date) looks up the stored event footprints; on the documents path the house is
+    only located in the client step, so the footprints are looked up there.
+    """
     if agents is None:
         from agents import AGENTS as agents  # noqa: N811
     claim, policy = dict(claim), dict(policy)   # the intake steps fill these in place; the caller's stay untouched
@@ -185,6 +190,10 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
         point = claim_point or policy_point
         if point is not None:
             claim["lat"], claim["lon"] = point.lat, point.lon
+        if footprints_for is not None:
+            house = intake.house_of(claim)
+            claim["footprints"] = (footprints_for(house[0], house[1], claim["event_date"])
+                                   if house and claim.get("event_date") else [])
         report("client", "client", "observation", "Datele clientului", result,
                {"coordinates": {"lat": claim.get("lat"), "lon": claim.get("lon"),
                                 "from": "claim" if claim_point else ("policy" if policy_point else None)}}, t0=t0)

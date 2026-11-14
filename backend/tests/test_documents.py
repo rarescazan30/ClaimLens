@@ -137,3 +137,23 @@ def test_missing_claim_form_and_photo_mismatch():
 def test_intake_all_good():
     r = check_intake({"claim_form": Path("c.pdf"), "policy": Path("p.pdf")}, [Path("a.jpg")], 1)
     assert r.flags == [] and r.step == "intake" and len(r.items) == 3
+
+
+def test_from_claim_round_trips_through_the_pdfs(tmp_path):
+    from engine.documents import from_claim
+    claim = {"id": "C-7", "policy_id": "P-7", "damage_type": "flood", "event_date": "2024-09-14T00:00:00",
+             "notified_at": "2024-09-16", "address": "Str. X 1", "description": "apă", "amount_claimed": 123.456,
+             "photos": ["a.jpg", "b.jpg"], "cnp": "1800101123456", "phone": "0722123456"}
+    policy = {"id": "P-7", "holder_name": "Ana Pop", "address": "Str. X 1", "valid_from": "2024-01-01",
+              "valid_to": "2024-12-31", "waiting_days": 0, "covered_risks": ["flood", "earthquake"],
+              "sum_insured": 100000, "product": "PAD"}
+    cf, pf = from_claim(claim, policy)
+    assert cf["nume_asigurat"] == "Ana Pop" and cf["tip_dauna"] == "inundație" and cf["numar_fotografii"] == "2"
+    assert cf["suma_solicitata"] == "123.46" and pf["riscuri_acoperite"] == "inundație, cutremur"
+    write_document(cf, "claim_form", tmp_path / "c.pdf")
+    write_document(pf, "policy", tmp_path / "p.pdf")
+    c, p = to_claim(read_document(tmp_path / "c.pdf", "claim_form"), read_document(tmp_path / "p.pdf", "policy"))
+    assert c == {"id": "C-7", "policy_id": "P-7", "damage_type": "flood", "event_date": "2024-09-14",
+                 "notified_at": "2024-09-16", "address": "Str. X 1", "description": "apă",
+                 "amount_claimed": 123.46, "declared_photos": 2}
+    assert p == {**policy, "covered_risks": ["flood", "earthquake"]}
