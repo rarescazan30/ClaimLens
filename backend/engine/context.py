@@ -52,7 +52,7 @@ class AgentContext:
             self._step("observation", f"{source_name} nu a răspuns", outputs={"error": str(e)[:300]},
                        sources=[source_name], status="failed")
             raise
-        self._step("observation", f"Răspuns de la {source_name}", outputs={"preview": _preview(data)},
+        self._step("observation", f"Răspuns de la {source_name}", outputs={"preview": _preview(data), "replayed": http.served_from_cache()},
                    sources=[source_name])
         return data
 

@@ -28,6 +28,7 @@ def isolated_cache(tmp_path, monkeypatch):
     """Every test gets an empty cache and live mode unless it says otherwise."""
     monkeypatch.setenv("CACHE_DIR", str(tmp_path / "cache"))
     monkeypatch.delenv("REPLAY", raising=False)
+    monkeypatch.delenv("RECORD", raising=False)
     monkeypatch.delenv("REPLAY_AGENTS", raising=False)
 
 

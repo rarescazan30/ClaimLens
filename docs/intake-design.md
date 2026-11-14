@@ -201,9 +201,9 @@ Today the backend answers **any request it has made before from disk, even with 
 
 | Mode | Set by | Reads saved answers | Calls the outside world | Saves answers |
 | --- | --- | --- | --- | --- |
-| **Live** (default) | nothing | never | always | yes, so the run can be replayed later |
+| **Live** (default) | nothing | never | always | no — the run itself is kept in the database and replays in the app |
 | **Replay** | `REPLAY=1` | always | never | no |
-| **Record** | `RECORD=1` | never | always | yes, overwriting, to refresh the saved demo answers |
+| **Record** | `RECORD=1` | never | always | yes, overwriting `demo/cache/`, to refresh the saved demo answers |
 
 In live mode each agent fetches its data again and every AI step (plan, agent verdicts, Judge) is asked again, so
 the result can differ from run to run. The trace marks each step as live or replayed, and the app shows which mode

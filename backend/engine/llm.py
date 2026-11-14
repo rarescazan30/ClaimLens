@@ -1,4 +1,4 @@
-"""LLM calls through OpenRouter. Always JSON out; cached and replayable like every other external call."""
+"""LLM calls through OpenRouter. Always JSON out; replayed from saved answers in replay mode, saved in record mode."""
 from __future__ import annotations
 
 import base64
@@ -8,7 +8,8 @@ import re
 
 import httpx
 
-from engine.http import CacheMiss, SourceError, cache_get, cache_put, make_key, replay_on
+from engine.http import CacheMiss, SourceError, _from_cache, cache_get, cache_put, make_key
+from engine.modes import run_mode
 
 URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -56,11 +57,13 @@ def _parse(text: str) -> dict:
 async def llm_json(system: str, user: str, *, model: str = "fast", images: list[bytes] | None = None) -> dict:
     mid = model_id(model)
     key = make_key(mid, system, user, [make_key(base64.b64encode(i).decode()) for i in images or []])
-    saved = cache_get("llm", key)
-    if saved is not None:
+    _from_cache.set(False)
+    if run_mode() == "replay":
+        saved = cache_get("llm", key)
+        if saved is None:
+            raise CacheMiss(f"no saved LLM answer for model {mid}")
+        _from_cache.set(True)
         return saved
-    if replay_on():
-        raise CacheMiss(f"no saved LLM answer for model {mid}")
 
     content: list | str = user
     if images:
@@ -74,7 +77,8 @@ async def llm_json(system: str, user: str, *, model: str = "fast", images: list[
     for _ in range(2):
         try:
             out = _parse(await _complete(payload))
-            cache_put("llm", key, out)
+            if run_mode() == "record":
+                cache_put("llm", key, out)
             return out
         except (ValueError, LLMError) as e:  # invalid JSON, or a provider hiccup (timeout, 429, 5xx)
             last = e

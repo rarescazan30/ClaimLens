@@ -1,6 +1,7 @@
 """One door to the outside world: every external request is retried once, saved to disk, and replayable.
 
-REPLAY=1 makes fetch() read only from the cache, so a whole investigation runs with no network.
+Modes (engine/modes.py): live never reads or writes the cache; REPLAY=1 reads only from the cache, so a whole
+investigation runs with no network; RECORD=1 runs for real and overwrites the saved answers.
 Secrets (key/token params, Authorization headers) are left out of both the cache key and the saved file.
 """
 from __future__ import annotations
@@ -9,10 +10,13 @@ import base64
 import hashlib
 import json
 import os
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Callable
 
 import httpx
+
+from engine.modes import run_mode
 
 UA = "ClaimLens-hackathon/0.1"
 SECRET_PARAMS = {"key", "access_token", "token", "apikey", "api_key"}
@@ -32,8 +36,16 @@ def cache_dir() -> Path:
     return Path(os.environ.get("CACHE_DIR") or default)
 
 
+_from_cache: ContextVar[bool] = ContextVar("served_from_cache", default=False)
+
+
+def served_from_cache() -> bool:
+    """True if the most recent fetch/llm_json in this task was answered from disk."""
+    return _from_cache.get()
+
+
 def replay_on() -> bool:
-    return os.environ.get("REPLAY", "") not in ("", "0")
+    return run_mode() == "replay"
 
 
 def make_key(*parts: Any) -> str:
@@ -57,12 +69,15 @@ async def fetch(url: str, *, params: dict | None = None, method: str = "GET", js
                 validate: Callable[[Any], bool] | None = None) -> Any:
     public_params = {k: v for k, v in (params or {}).items() if k.lower() not in SECRET_PARAMS}
     key = make_key(method, url, public_params, json_body, data)
-    saved = cache_get("http", key)
-    if saved is not None:
+    _from_cache.set(False)
+    if replay if replay is not None else replay_on():
+        saved = cache_get("http", key)
+        if saved is None:
+            raise CacheMiss(f"no saved response for {method} {url}")
+        _from_cache.set(True)
         body = saved["body"]
         return base64.b64decode(body) if saved.get("bytes") else body
-    if replay if replay is not None else replay_on():
-        raise CacheMiss(f"no saved response for {method} {url}")
+    recording = run_mode() == "record"
 
     last: Exception | None = None
     async with httpx.AsyncClient(transport=TRANSPORT, timeout=timeout, follow_redirects=True) as client:
@@ -74,9 +89,9 @@ async def fetch(url: str, *, params: dict | None = None, method: str = "GET", js
                 body: Any = r.content if as_bytes else (r.text if as_text else r.json())
                 if validate is not None and not validate(body):
                     raise ValueError("response did not look like the expected data")
-                if as_bytes:
+                if recording and as_bytes:
                     cache_put("http", key, {"url": url, "bytes": True, "body": base64.b64encode(body).decode()})
-                else:
+                elif recording:
                     cache_put("http", key, {"url": url, "params": public_params, "body": body})
                 return body
             except (httpx.HTTPError, ValueError) as e:

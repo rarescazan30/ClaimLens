@@ -47,13 +47,17 @@ curl -X POST localhost:8000/claims/C-1042/rerun
 
 Meteo, satellite, risk zones and GDELT need no key.
 
-## Replay mode (offline demo)
+## Run modes (live, replay, record)
 
-Every external response and every model answer is saved under `demo/cache/`. With `REPLAY=1` nothing touches
-the network; a request that was never saved fails loudly as a cache miss. `REPLAY_AGENTS=news,street_view`
-forces only those agents to saved responses.
+| Mode | Set by | Reads `demo/cache/` | Calls the outside world | Writes `demo/cache/` |
+| --- | --- | --- | --- | --- |
+| Live (default) | nothing | never | always | no |
+| Replay | `REPLAY=1` | always; a missing answer fails as a cache miss | never | no |
+| Record | `RECORD=1` | never | always | yes, overwriting |
 
-Before the demo: run each case once with the network on, commit `demo/cache/`, then run again with `REPLAY=1`.
+`REPLAY_AGENTS=news,street_view` forces only those agents to saved responses, whatever the mode.
+
+Before the demo: run each case once with `RECORD=1` and the network on, commit `demo/cache/`, then run again with `REPLAY=1`.
 
 ## Deploy (Railway)
 
