@@ -54,13 +54,13 @@ def make_key(*parts: Any) -> str:
 
 def cache_get(bucket: str, key: str) -> Any | None:
     path = cache_dir() / bucket / f"{key}.json"
-    return json.loads(path.read_text()) if path.exists() else None
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
 def cache_put(bucket: str, key: str, value: Any) -> None:
     path = cache_dir() / bucket / f"{key}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False))
+    path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 
 async def fetch(url: str, *, params: dict | None = None, method: str = "GET", json_body: Any = None,

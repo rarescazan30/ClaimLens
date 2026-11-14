@@ -54,7 +54,7 @@ def seed(store: Store, cases_dir: Path | None = None) -> None:
             store.save_weight_config(w)
     cases_dir = cases_dir or DEMO / "cases"
     for path in sorted(cases_dir.glob("*.json")):
-        case = json.loads(path.read_text())
+        case = json.loads(path.read_text(encoding="utf-8"))
         if _documents(case):
             claim, policy = _from_documents(case, documents_dir(cases_dir))
             if policy.get("id"):
@@ -67,4 +67,4 @@ def seed(store: Store, cases_dir: Path | None = None) -> None:
         if "claim" in case and store.get_claim(case["claim"]["id"]) is None:
             store.upsert_claim(case["claim"])
     for path in sorted((cases_dir.parent / "footprints").glob("*.json")) if (cases_dir.parent / "footprints").exists() else []:
-        store.save_footprint(json.loads(path.read_text()))
+        store.save_footprint(json.loads(path.read_text(encoding="utf-8")))

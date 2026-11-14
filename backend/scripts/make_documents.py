@@ -22,7 +22,7 @@ def main() -> None:
     if not has_unicode_font():
         sys.exit("No Unicode TrueType font found: the PDFs would lose their diacritics. Not writing them.")
     for src in sorted((DEMO / "cases" / "sources").glob("*.json")):
-        case = json.loads(src.read_text())
+        case = json.loads(src.read_text(encoding="utf-8"))
         out = DEMO / "documents" / case["out"]
         out.mkdir(parents=True, exist_ok=True)
         write_document(case["claim_form"], "claim_form", out / "claim.pdf")
