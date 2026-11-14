@@ -46,13 +46,13 @@ describe('buildCase: flood claim C-1042 (three rounds)', () => {
     const run = c.runs.find((r) => r.agent === 'photo_forensics')!;
     expect(run.calls).toEqual([]);
     expect(run.verdict).toBe('inconclusive');
-    expect(run.short).toBe('No photos on file');
+    expect(run.short).toBe('Fără fotografii');
   });
 
   it('reads the key numbers from the measured findings', () => {
-    expect(c.runs.find((r) => r.agent === 'satellite' && r.round === 1)!.short).toBe('150 m outside the flood');
-    expect(c.runs.find((r) => r.agent === 'risk_zones' && r.round === 2)!.short).toBe('13 m above the flood');
-    expect(c.runs.find((r) => r.agent === 'meteo' && r.round === 1)!.short).toBe('47.9 mm in 24 h');
+    expect(c.runs.find((r) => r.agent === 'satellite' && r.round === 1)!.short).toBe('La 150 m de zona inundată');
+    expect(c.runs.find((r) => r.agent === 'risk_zones' && r.round === 2)!.short).toBe('13 m peste nivelul apei');
+    expect(c.runs.find((r) => r.agent === 'meteo' && r.round === 1)!.short).toBe('47,9 mm în 24 h');
   });
 
   it('marks a source that failed as failed', () => {
@@ -99,7 +99,7 @@ describe('buildCase: storm claim C-1038', () => {
   });
 
   it('leads the weather finding with gusts, not rain', () => {
-    expect(c.runs.find((r) => r.agent === 'meteo')!.short).toBe('90.4 km/h gusts');
+    expect(c.runs.find((r) => r.agent === 'meteo')!.short).toBe('Rafale de 90,4 km/h');
   });
 });
 
@@ -180,6 +180,6 @@ describe('buildQueueRow', () => {
     expect(row.claimant).toBe('Persoană Sintetică Unu');
     expect(row.place).toBe('Pechea, jud. Galați');
     expect(row.outcome).toBe('antifraud_referral');
-    expect(row.signals[0]).toBe('Risk zones: House 13 m above the flood edge');
+    expect(row.signals[0]).toBe('Zone de risc: Casa este cu 13 m mai sus decât marginea inundației');
   });
 });

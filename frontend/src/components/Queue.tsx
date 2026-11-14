@@ -31,7 +31,7 @@ export function Queue() {
     return (
       <div className="page queue">
         <div className="card">
-          <Empty title="The backend is not answering" body={`${error} Start it (see backend/README.md), then reload this page. The address is set by VITE_API_URL, now ${API_URL}.`} />
+          <Empty title="Serverul nu răspunde" body={`${error} Porniți serverul (vezi backend/README.md), apoi reîncărcați pagina. Adresa se setează în VITE_API_URL (acum ${API_URL}).`} />
         </div>
       </div>
     );
@@ -39,7 +39,7 @@ export function Queue() {
     return (
       <div className="page queue">
         <div className="card loading-card">
-          <span className="spinner" /> Loading claims
+          <span className="spinner" /> Se încarcă dosarele
         </div>
       </div>
     );
@@ -53,13 +53,13 @@ export function Queue() {
   return (
     <div className="page queue">
       <div className="case-layout">
-        <nav className="side-nav" aria-label="Queue sections">
+        <nav className="side-nav" aria-label="Secțiunile listei">
           <div className="side-group">
-            <p className="side-label">Queue</p>
+            <p className="side-label">Dosare</p>
             {fresh.length > 0 && (
               <button type="button" className="side-btn" onClick={() => goTo('new-claims')}>
                 <Inbox size={16} />
-                <span className="side-name">New claims</span>
+                <span className="side-name">Noi</span>
                 <span className="side-meta">{fresh.length}</span>
               </button>
             )}
@@ -74,12 +74,12 @@ export function Queue() {
               }}
             >
               <ListChecks size={16} />
-              <span className="side-name">Verdict ready</span>
+              <span className="side-name">Cu verdict</span>
               <span className="side-meta">{ready.length}</span>
             </button>
           </div>
-          <div className="side-group" role="group" aria-label="Filter by outcome">
-            <p className="side-label">By route</p>
+          <div className="side-group" role="group" aria-label="Filtrați după recomandare">
+            <p className="side-label">După recomandare</p>
             {(Object.keys(OUTCOMES) as Outcome[]).map((f) => {
               const Icon = OUTCOME_ICON[f];
               const on = showReady && filter === f;
@@ -106,43 +106,43 @@ export function Queue() {
         <div className="case-main">
           <header className="page-head">
             <h1>
-              Strongest claims, <span className="hl">paid first.</span>
+              Dosarele cele mai sigure, <span className="hl">primele la plată.</span>
             </h1>
             <ul className="stats">
               <li className="stat" style={{ '--i': 0 } as React.CSSProperties}>
-                <span className="stat-label">Claims</span>
+                <span className="stat-label">Dosare</span>
                 <b className="stat-num">
                   <CountUp value={rows.length} />
                 </b>
-                <span className="stat-sub">on your desk</span>
+                <span className="stat-sub">în total</span>
               </li>
               <li className="stat s-accent" style={{ '--i': 1 } as React.CSSProperties}>
-                <span className="stat-label">Waiting</span>
+                <span className="stat-label">De investigat</span>
                 <b className="stat-num">
                   <CountUp value={fresh.length} />
                 </b>
-                <span className="stat-sub">no verdict yet</span>
+                <span className="stat-sub">fără verdict</span>
               </li>
               <li className="stat s-good" style={{ '--i': 2 } as React.CSSProperties}>
-                <span className="stat-label">Fast-track</span>
+                <span className="stat-label">Plată rapidă</span>
                 <b className="stat-num">
                   <CountUp value={count('fast_track')} />
                 </b>
-                <span className="stat-sub">ready to pay</span>
+                <span className="stat-sub">gata de plată</span>
               </li>
               <li className="stat s-bad" style={{ '--i': 3 } as React.CSSProperties}>
-                <span className="stat-label">Flagged</span>
+                <span className="stat-label">Antifraudă</span>
                 <b className="stat-num">
                   <CountUp value={count('antifraud_referral')} />
                 </b>
-                <span className="stat-sub">need a closer look</span>
+                <span className="stat-sub">de verificat atent</span>
               </li>
             </ul>
           </header>
 
           {rows.length === 0 && (
             <div className="card">
-              <Empty title="No claims yet" body="The backend has no claims. Demo claims are loaded from demo/cases when it starts." />
+              <Empty title="Niciun dosar" body="Serverul nu are dosare. Dosarele demo se încarcă din demo/cases la pornire." />
             </div>
           )}
 
@@ -150,9 +150,9 @@ export function Queue() {
             <section className="queue-section" id="new-claims">
               <div className="section-head">
                 <h2>
-                  <span className="sec-n">01</span>New claims
+                  <span className="sec-n">01</span>Dosare noi
                 </h2>
-                <span className="chip is-accent">{fresh.length} waiting</span>
+                <span className="chip is-accent">{fresh.length === 1 ? '1 nou' : `${fresh.length} noi`}</span>
               </div>
               <div className="new-grid">
                 {fresh.map((q, i) => {
@@ -170,12 +170,12 @@ export function Queue() {
                             <span className="mono-value">{q.id}</span> · {q.typeLabel} · {q.place}
                           </p>
                         </div>
-                        <span className="chip">Filed {q.filed}</span>
+                        <span className="chip">Avizat {q.filed}</span>
                       </div>
                       {q.description && <p className="new-desc">“{q.description}”</p>}
                       <span className="btn btn-primary">
                         <Play size={14} fill="currentColor" />
-                        {running ? 'Watch the investigation' : 'Open to investigate'}
+                        {running ? 'Urmăriți investigația' : 'Deschideți dosarul'}
                       </span>
                     </a>
                   );
@@ -190,20 +190,20 @@ export function Queue() {
                 <h2>
                   <button type="button" className="section-toggle" aria-expanded={showReady} aria-controls="verdict-ready" onClick={() => setShowReady(!showReady)}>
                     <span className="sec-n">{fresh.length > 0 ? '02' : '01'}</span>
-                    Verdict ready
+                    Dosare cu verdict
                     <span className="chip">{ready.length}</span>
                     <ChevronDown size={18} className="section-chev" aria-hidden="true" />
                   </button>
                 </h2>
-                {showReady && filter !== 'all' && <span className="chip is-accent">{OUTCOMES[filter].label} only</span>}
+                {showReady && filter !== 'all' && <span className="chip is-accent">Filtru: {OUTCOMES[filter].label.toLowerCase()}</span>}
               </div>
               {showReady && (
                 <div className="card table-card" id="verdict-ready">
                   <div className="q-row q-head" aria-hidden="true">
-                    <span>Claimant</span>
-                    <span>Claim</span>
-                    <span>Score</span>
-                    <span>Route</span>
+                    <span>Asigurat</span>
+                    <span>Daună</span>
+                    <span>Scor</span>
+                    <span>Recomandare</span>
                     <span />
                   </div>
                   <ul>
@@ -223,12 +223,12 @@ export function Queue() {
                                 <Icon size={14} />
                                 {q.typeLabel}
                               </span>
-                              <span className="row-sub">Filed {q.filed}</span>
+                              <span className="row-sub">Avizat {q.filed}</span>
                             </span>
-                            <span>{q.score !== undefined && q.band ? <BandPill score={q.score} band={q.band} /> : <span className="row-sub">No score</span>}</span>
+                            <span>{q.score !== undefined && q.band ? <BandPill score={q.score} band={q.band} /> : <span className="row-sub">Fără scor</span>}</span>
                             <span>
                               {q.outcome && <OutcomeTag outcome={q.outcome} />}
-                              {q.decided && <span className="row-sub"> · decided</span>}
+                              {q.decided && <span className="row-sub"> · decis</span>}
                             </span>
                             <ChevronRight size={16} className="q-chev" />
                           </button>
@@ -236,7 +236,7 @@ export function Queue() {
                       );
                     })}
                   </ul>
-                  {visible.length === 0 && <p className="table-empty">{ready.length ? 'No claims on this route right now.' : 'No claim has a verdict yet.'}</p>}
+                  {visible.length === 0 && <p className="table-empty">{ready.length ? 'Niciun dosar nu are această recomandare.' : 'Încă niciun dosar nu are verdict.'}</p>}
                 </div>
               )}
             </section>
@@ -246,16 +246,16 @@ export function Queue() {
 
       {peek && (
         <div className="drawer-wrap" onClick={() => setPeek(null)}>
-          <aside className="drawer" role="dialog" aria-modal="true" aria-label={`Summary for ${peek.claimant}`} onClick={(e) => e.stopPropagation()}>
+          <aside className="drawer" role="dialog" aria-modal="true" aria-label={`Rezumat: ${peek.claimant}`} onClick={(e) => e.stopPropagation()}>
             <header>
               <div>
                 <p className="eyebrow">{peek.id}</p>
                 <h2>{peek.claimant}</h2>
                 <p className="row-sub">
-                  {peek.typeLabel} · {peek.place} · filed {peek.filed}
+                  {peek.typeLabel} · {peek.place} · avizat {peek.filed}
                 </p>
               </div>
-              <button type="button" className="icon-btn" aria-label="Close summary" autoFocus onClick={() => setPeek(null)}>
+              <button type="button" className="icon-btn" aria-label="Închideți rezumatul" autoFocus onClick={() => setPeek(null)}>
                 <X size={16} />
               </button>
             </header>
@@ -268,7 +268,7 @@ export function Queue() {
                     <BandPill score={peek.score} band={peek.band} />
                     {peek.outcome && (
                       <p className="row-sub">
-                        {peek.decided ? 'Decided' : 'Recommended'}: {OUTCOMES[peek.outcome].action.toLowerCase()}
+                        {peek.decided ? 'Decis' : 'Recomandare'}: {OUTCOMES[peek.outcome].action.toLowerCase()}
                       </p>
                     )}
                   </div>
@@ -278,7 +278,7 @@ export function Queue() {
             )}
             {peek.signals.length > 0 && (
               <>
-                <h3>Strongest signals</h3>
+                <h3>Cele mai puternice dovezi</h3>
                 <ul className="signals">
                   {peek.signals.map((s) => (
                     <li key={s}>{s}</li>
@@ -287,7 +287,7 @@ export function Queue() {
               </>
             )}
             <a className="btn btn-primary" href={`#/case/${peek.id}?tab=report`}>
-              Open the case
+              Deschideți dosarul
               <ArrowRight size={14} />
             </a>
           </aside>

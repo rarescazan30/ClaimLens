@@ -1,10 +1,10 @@
-import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Map as MapIcon, Play, Radio, Scale, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Map as MapIcon, Play, Radio, RotateCcw, Scale, SkipForward, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { API_URL } from '../api/client';
 import { useCase, type CaseActions } from '../api/hooks';
 import { activeStage, currentRound, fmtClock, laneStates, loopState, scoreAt, stageStatuses } from '../lib/derive';
 import { useRun } from '../lib/hooks';
-import { agentName, BANDS, isAgent, ORDER, OUTCOMES, STAGES } from '../lib/meta';
+import { agentName, BANDS, isAgent, nr, ORDER, OUTCOMES, STAGES } from '../lib/meta';
 import { fmtScore, pointsOf } from '../lib/score';
 import type { AgentId, CaseFile, DetailItem, StageId } from '../lib/types';
 import type { Tone } from './Aurora';
@@ -12,7 +12,6 @@ import { ClaimCard, MapCard, ScoreCard, ScoreNumber, type GateState } from './Ca
 import { DecisionPanel } from './DecisionPanel';
 import { EvidenceDrawer } from './EvidenceDrawer';
 import { Pipeline } from './Pipeline';
-import { ReplayBar } from './ReplayBar';
 import { Report } from './Report';
 import { StageDetail } from './StageDetail';
 import { Empty, Kicker, PhotoGrid } from './ui';
@@ -21,14 +20,14 @@ function ScoreRing({ score }: { score: number }) {
   const r = 44;
   const len = 2 * Math.PI * r;
   return (
-    <div className="score-ring" role="img" aria-label={`Score ${fmtScore(score)} out of 100`}>
+    <div className="score-ring" role="img" aria-label={`Scor ${fmtScore(score)} din 100`}>
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <circle className="ring-bg" cx="50" cy="50" r={r} />
         <circle className="ring-fg" cx="50" cy="50" r={r} strokeDasharray={`${(score / 100) * len} ${len}`} />
       </svg>
       <span className="ring-num">
         <strong>{fmtScore(score)}</strong>
-        <small>out of 100</small>
+        <small>din 100</small>
       </span>
     </div>
   );
@@ -36,16 +35,38 @@ function ScoreRing({ score }: { score: number }) {
 
 // Resting headlines carry the accent on their second half; live ones stay plain so they read at a glance.
 const HEADLINE_SPLIT: Record<string, [string, string]> = {
-  'Ready to investigate': ['Ready to', 'investigate.'],
-  'Ready to replay': ['Ready to', 'replay.'],
-  'Waiting for your decision': ['Waiting for', 'your decision.'],
-  'Decision logged': ['Decision', 'logged.'],
+  'Dosarul așteaptă investigația': ['Dosarul așteaptă', 'investigația.'],
+  'Investigația s-a încheiat': ['Investigația', 's-a încheiat.'],
+  'Decizia vă aparține': ['Decizia', 'vă aparține.'],
+  'Decizia a fost înregistrată': ['Decizia a fost', 'înregistrată.'],
 };
 
+/** Erasing a finished run is two clicks: the first asks, the second does it. */
+function RerunButton({ busy, onRerun }: { busy: boolean; onRerun: () => void }) {
+  const [arming, setArming] = useState(false);
+  if (!arming)
+    return (
+      <button type="button" className="btn btn-quiet" disabled={busy} onClick={() => setArming(true)}>
+        <RotateCcw size={14} />
+        Reluați investigația
+      </button>
+    );
+  return (
+    <>
+      <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => { setArming(false); onRerun(); }}>
+        Da, ștergeți rezultatul actual
+      </button>
+      <button type="button" className="btn btn-quiet" onClick={() => setArming(false)}>
+        Renunțați
+      </button>
+    </>
+  );
+}
+
 const DOCK_GROUPS = [
-  { id: 'claim', label: 'The claim' },
-  { id: 'run', label: 'Investigation' },
-  { id: 'result', label: 'Result' },
+  { id: 'claim', label: 'Dosarul' },
+  { id: 'run', label: 'Investigația' },
+  { id: 'result', label: 'Rezultatul' },
 ] as const;
 
 interface LedgerLine {
@@ -58,13 +79,13 @@ interface LedgerLine {
 function LiveScore({ score, band, phase, lines, onOpen }: { score?: number; band: string; phase: string; lines: LedgerLine[]; onOpen: () => void }) {
   const waiting = score === undefined;
   return (
-    <button type="button" className={`card live-score b-${band}${waiting ? ' is-waiting' : ''}`} onClick={onOpen} aria-label={waiting ? 'Plausibility score: waiting for evidence. Open score details' : `Plausibility score ${fmtScore(score)}. Open score details`}>
+    <button type="button" className={`card live-score b-${band}${waiting ? ' is-waiting' : ''}`} onClick={onOpen} aria-label={waiting ? 'Scor de plauzibilitate: se așteaptă dovezile. Deschideți detaliile' : `Scor de plauzibilitate ${fmtScore(score)}. Deschideți detaliile`}>
       <span className="live-score-top">
-        <span>Plausibility so far</span>
-        <span className={`chip pill${waiting ? '' : ' is-live'}`}>{phase === 'idle' ? 'Not started' : waiting ? 'Waiting' : 'Building'}</span>
+        <span>Plauzibilitate</span>
+        <span className={`chip pill${waiting ? '' : ' is-live'}`}>{phase === 'idle' ? 'Neînceput' : waiting ? 'În așteptare' : 'Provizoriu'}</span>
       </span>
       <span className="live-score-num">{waiting ? '–' : <ScoreNumber score={score} ms={700} />}</span>
-      <span className="live-score-sub">{waiting ? 'Appears after the first round of agents' : `${BANDS[band as keyof typeof BANDS].label} · out of 100`}</span>
+      <span className="live-score-sub">{waiting ? 'Apare după prima rundă de agenți' : `${BANDS[band as keyof typeof BANDS].label} · din 100`}</span>
       {lines.length > 0 && (
         <span className="ledger">
           {lines.slice(0, 4).map((l) => (
@@ -85,16 +106,16 @@ export function CaseView({ id, initialT, initialTab }: { id: string; initialT?: 
   if (error && !c)
     return (
       <div className="page">
-        <a className="back" href="#/"><ArrowLeft size={15} /> Claims queue</a>
-        <div className="card"><Empty title="The backend is not answering" body={`${error} The address is set by VITE_API_URL, now ${API_URL}.`} /></div>
+        <a className="back" href="#/"><ArrowLeft size={15} /> Lista de dosare</a>
+        <div className="card"><Empty title="Serverul nu răspunde" body={`${error} Adresa se setează în VITE_API_URL (acum ${API_URL}).`} /></div>
       </div>
     );
-  if (c === undefined) return <div className="page"><div className="card loading-card"><span className="spinner" /> Loading case</div></div>;
+  if (c === undefined) return <div className="page"><div className="card loading-card"><span className="spinner" /> Se încarcă dosarul</div></div>;
   if (c === null)
     return (
       <div className="page">
-        <a className="back" href="#/"><ArrowLeft size={15} /> Claims queue</a>
-        <div className="card"><Empty title={`No claim ${id}`} body="The backend has no claim with this number." /></div>
+        <a className="back" href="#/"><ArrowLeft size={15} /> Lista de dosare</a>
+        <div className="card"><Empty title={`Dosarul ${id} nu există`} body="Nu există niciun dosar cu acest număr." /></div>
       </div>
     );
   return <CaseInner key={c.id} c={c} live={live} actions={actions} initialT={initialT} initialTab={initialTab} />;
@@ -138,18 +159,6 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live]);
 
-  // Space toggles the replay unless the user is typing.
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement;
-      if (live || e.code !== 'Space' || el.closest('input, textarea, button, [role="button"], a')) return;
-      e.preventDefault();
-      run.toggle();
-    };
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  }, [run.toggle, live]);
-
   const never = c.status === 'received' && !live; // never investigated
   const started = !never && (live || run.time > 0 || run.playing);
   const t = started ? run.time : -1;
@@ -182,11 +191,11 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
   const sourceCount = new Set(evidence.map((e) => e.source)).size;
   const verdictItems: DetailItem[] = verdictWindow && now
     ? [
-        { label: 'Plausibility score', value: `${fmtScore(now.score)} · ${BANDS[now.band].label}`, status: now.band === 'unlikely' ? 'fail' : now.band === 'uncertain' ? 'flag' : 'ok' },
-        { label: 'Coverage gate', value: coverage === 'flagged' ? 'Flagged' : 'Passed', status: coverage === 'flagged' ? 'fail' : 'ok' },
-        { label: 'Authenticity gate', value: gateTripped ? 'Flagged' : c.photos.length ? 'Passed' : 'No photos to check', status: gateTripped ? 'fail' : c.photos.length ? 'ok' : 'info' },
-        { label: 'Recommended route', value: OUTCOMES[now.recommendation].label, status: 'info' },
-        { label: 'Case file assembled', value: `${evidence.length} findings · ${sourceCount} sources`, status: 'ok' },
+        { label: 'Scor de plauzibilitate', value: `${fmtScore(now.score)} · ${BANDS[now.band].label}`, status: now.band === 'unlikely' ? 'fail' : now.band === 'uncertain' ? 'flag' : 'ok' },
+        { label: 'Acoperirea poliței', value: coverage === 'flagged' ? 'Semnalat' : 'În regulă', status: coverage === 'flagged' ? 'fail' : 'ok' },
+        { label: 'Autenticitatea fotografiilor', value: gateTripped ? 'Semnalat' : c.photos.length ? 'În regulă' : 'Nicio fotografie de verificat', status: gateTripped ? 'fail' : c.photos.length ? 'ok' : 'info' },
+        { label: 'Recomandare', value: OUTCOMES[now.recommendation].label, status: 'info' },
+        { label: 'Dovezi strânse', value: `${nr(evidence.length, 'rezultat', 'rezultate')} · ${nr(sourceCount, 'sursă', 'surse')}`, status: 'ok' },
       ].map((x, i, all) => ({ ...x, id: `v${i}`, at: verdictWindow.at + ((i + 1) * verdictWindow.dur) / (all.length + 1) }) as DetailItem)
     : [];
 
@@ -198,17 +207,20 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
 
   const liveMeta = active ? STAGES.find((s) => s.id === active)! : null;
   const askedThisRound = c.questions.some((q) => q.round === round);
+  const roundRuns = c.runs.filter((r) => r.round === round).length;
   const headline = never
-    ? 'Ready to investigate'
+    ? 'Dosarul așteaptă investigația'
     : !started
-      ? 'Ready to replay'
+      ? 'Investigația s-a încheiat'
       : c.decision && done
-        ? 'Decision logged'
+        ? 'Decizia a fost înregistrată'
         : liveMeta
           ? active === 'agents' && round > 1
-            ? `Re-checking with ${c.runs.filter((r) => r.round === round).length || 'the'} agent${c.runs.filter((r) => r.round === round).length === 1 ? '' : 's'}`
+            ? roundRuns
+              ? `${roundRuns === 1 ? 'Un agent verifică' : `${nr(roundRuns, 'agent', 'agenți')} verifică`} din nou`
+              : 'Agenții verifică din nou'
             : liveMeta.live
-          : 'Waiting for your decision';
+          : 'Decizia vă aparține';
   const stepNo = active ? STAGES.findIndex((s) => s.id === active) + 1 : done ? STAGES.length : 0;
 
   const select = (stage: StageId, agent?: AgentId) => {
@@ -226,7 +238,7 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
   const feed = [
     ...ORDER.flatMap((sid) => (c.details[sid] ?? []).map((i) => ({ at: i.at, text: `${i.label}${i.value ? `: ${i.value}` : ''}` }))),
     ...c.runs.map((r) => ({ at: r.at + r.dur, text: `${agentName(r.agent)}: ${r.finding}` })),
-    ...c.judge.map((j) => ({ at: j.at + j.dur, text: `Judge: ${j.summary}` })),
+    ...c.judge.map((j) => ({ at: j.at + j.dur, text: `Arbitru: ${j.summary}` })),
   ]
     .filter((x) => x.at <= t)
     .sort((x, y) => x.at - y.at);
@@ -250,37 +262,34 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
 
   // Read top to bottom in the order an adjuster works: what was claimed, what the run is doing, what it concluded.
   const dock: { id: Panel; icon: typeof Gauge; label: string; meta?: string; alert?: boolean; group: 'claim' | 'run' | 'result' }[] = [
-    { id: 'claim', icon: FileText, label: 'Claim', group: 'claim' },
-    { id: 'photos', icon: Camera, label: 'Photos', meta: flaggedPhotos ? `${flaggedPhotos} flagged` : String(c.photos.length), alert: flaggedPhotos > 0, group: 'claim' },
-    ...(c.map ? [{ id: 'map' as const, icon: MapIcon, label: 'Map', group: 'claim' as const }] : []),
-    { id: 'step', icon: ListChecks, label: 'Step details', meta: STAGES.find((x) => x.id === shown)!.short, group: 'run' },
-    { id: 'score', icon: Gauge, label: 'Score', meta: now ? fmtScore(now.score) : undefined, group: 'run' },
-    { id: 'verdict', icon: Scale, label: 'Full report', group: 'result' },
+    { id: 'claim', icon: FileText, label: 'Dosar', group: 'claim' },
+    { id: 'photos', icon: Camera, label: 'Fotografii', meta: flaggedPhotos ? `${flaggedPhotos} semnalate` : String(c.photos.length), alert: flaggedPhotos > 0, group: 'claim' },
+    ...(c.map ? [{ id: 'map' as const, icon: MapIcon, label: 'Hartă', group: 'claim' as const }] : []),
+    { id: 'step', icon: ListChecks, label: 'Detalii pas', meta: STAGES.find((x) => x.id === shown)!.short, group: 'run' },
+    { id: 'score', icon: Gauge, label: 'Scor', meta: now ? fmtScore(now.score) : undefined, group: 'run' },
+    { id: 'verdict', icon: Scale, label: 'Raport complet', group: 'result' },
   ];
 
   return (
     <div className="page case">
-      <div className="run-progress" aria-hidden="true">
-        <span style={{ transform: `scaleX(${started && !live ? Math.min(1, run.time / c.duration) : 0})` }} />
-      </div>
-      <a className="back" href="#/">
-        <ArrowLeft size={15} /> Claims queue
-      </a>
       <div className="case-context">
+        <a className="back" href="#/">
+          <ArrowLeft size={15} /> Lista de dosare
+        </a>
         <span className="case-eyebrow">
-          {c.typeLabel} claim · {c.place}
+          {c.typeLabel} · {c.place}
         </span>
         <span className="case-facts">
           {c.claimed} · {c.lag}
         </span>
         <span className={`live-chip${live || (run.playing && !done) ? ' is-on' : ''}`}>
           <span className="live-dot is-on" />
-          {live ? 'Live investigation' : never ? 'Not investigated yet' : done ? 'Investigation complete' : run.playing ? 'Replaying the investigation' : 'Replay paused'}
+          {live ? 'Investigație în curs' : never ? 'Neinvestigat' : done ? 'Investigație încheiată' : run.playing ? 'Se redă investigația' : 'Redare în pauză'}
         </span>
       </div>
 
       <div className="case-layout">
-      <nav className="side-nav" aria-label="Case panels">
+      <nav className="side-nav" aria-label="Secțiunile dosarului">
         {DOCK_GROUPS.map((g) => (
           <div className="side-group" key={g.id}>
             <p className="side-label">{g.label}</p>
@@ -299,7 +308,7 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
       <div className="case-main">
       {actionError && (
         <p className="form-error action-error" role="alert">
-          The backend refused that: {actionError}
+          Serverul a refuzat cererea: {actionError}
         </p>
       )}
       {c.error && (
@@ -311,7 +320,7 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
       <section className="stage-head" aria-live="polite">
         {started && (
           <Kicker n={String(stepNo || 1).padStart(2, '0')}>
-            {`${liveMeta ? liveMeta.short : 'Review'} · ${fmtClock(run.time)}${round > 1 ? ` · round ${round}` : ''}`}
+            {`${liveMeta ? liveMeta.short : 'Decizie'} · ${fmtClock(run.time)}${round > 1 ? ` · runda ${round}` : ''}`}
           </Kicker>
         )}
         <h1 className={`stage-title${(live || run.playing) && !done ? ' is-working' : ''}`} key={headline}>
@@ -323,38 +332,45 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
             headline
           )}
         </h1>
-        {started && (
+        {started && !done && (
         <p className="stage-sub">
-          {done
-              ? c.decision
-                ? 'Your decision is recorded. The full report keeps every source.'
-                : 'The Judge has stopped. Approve the recommendation, or open the full report to see why.'
-              : liveMeta
+          {liveMeta
                 ? active === 'agents' && round > 1
                   ? askedThisRound
-                    ? 'An agent is answering your question.'
-                    : 'The Judge found points it could not settle and sent specific agents back with narrower questions.'
+                    ? 'Un agent răspunde la întrebarea dumneavoastră.'
+                    : 'Arbitrul a găsit lucruri neclare și le-a cerut unor agenți să verifice din nou, cu întrebări mai precise.'
                   : liveMeta.help
-                : 'The recommendation is ready for you.'}
+                : 'Recomandarea este gata.'}
         </p>
         )}
         <div className="stage-cta">
           {never ? (
             <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={() => act(actions.start)}>
               <Play size={15} fill="currentColor" />
-              Start investigation
+              Începeți investigația
             </button>
           ) : !started ? (
             <button type="button" className="btn btn-primary is-large" onClick={run.play}>
               <Play size={15} fill="currentColor" />
-              Replay investigation
+              Revedeți investigația
             </button>
-          ) : pinned && !done ? (
-            <button type="button" className="btn btn-secondary" onClick={() => { setPinned(null); setAgentFocus(null); }}>
-              <Radio size={14} />
-              Follow live step
-            </button>
-          ) : null}
+          ) : (
+            <>
+              {pinned && !done && (
+                <button type="button" className="btn btn-secondary" onClick={() => { setPinned(null); setAgentFocus(null); }}>
+                  <Radio size={14} />
+                  Urmăriți pasul curent
+                </button>
+              )}
+              {!live && !done && (
+                <button type="button" className="btn btn-quiet" onClick={run.finish}>
+                  Treceți la verdict
+                  <SkipForward size={14} />
+                </button>
+              )}
+              {done && <RerunButton busy={busy} onRerun={() => act(actions.start)} />}
+            </>
+          )}
         </div>
       </section>
       {!done && <LiveScore score={now?.score} band={band} phase={phase} lines={ledger} onOpen={() => toggle('score')} />}
@@ -363,30 +379,29 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
       <section className={`card rail-card tone-${tone}`}>
         <Pipeline status={status} lanes={lanes} loop={loop} round={round} active={active} selected={shown} tone={tone} started={started} onSelect={select} />
       </section>
-      {!never && <ReplayBar c={c} run={run} live={live} busy={busy} onRerun={() => act(actions.start)} />}
 
-      {done && now && (
+      {done && now && panel !== 'verdict' && (
         <section className={`card verdict-strip b-${now.band}`}>
           <ScoreRing score={now.score} />
           <div className="verdict-strip-text">
             <h2>{BANDS[now.band].label}</h2>
-            <p className="verdict-route">Recommended: {OUTCOMES[now.recommendation].action.toLowerCase()}</p>
+            <p className="verdict-route">Recomandare: {OUTCOMES[now.recommendation].action.toLowerCase()}</p>
             {c.rationale && <p>{c.rationale}</p>}
           </div>
           <div className="verdict-strip-actions">
             {c.decision ? (
               <span className="chip st-done">
                 <Check size={12} strokeWidth={3} />
-                {OUTCOMES[c.decision.outcome].label} · logged {c.decision.at}
+                {OUTCOMES[c.decision.outcome].label} · înregistrat {c.decision.at}
               </span>
             ) : (
               <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={approve}>
                 <Check size={15} strokeWidth={2.6} />
-                Approve
+                Aprobați
               </button>
             )}
             <button type="button" className="btn btn-secondary is-large" onClick={() => setPanel('verdict')}>
-              See why
+              Vedeți de ce
               <ArrowRight size={15} />
             </button>
           </div>
@@ -395,13 +410,13 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
 
       {!panel && !done && started && (
         <p className="ticker" key={latest?.text ?? 'hint'} aria-live="polite">
-          {latest ? latest.text : 'Starting…'}
+          {latest ? latest.text : 'Pornește investigația…'}
         </p>
       )}
 
       {panel && (
         <div className={`panel${panel === 'step' || panel === 'verdict' ? '' : ' is-narrow'}`} key={panel}>
-          <button type="button" className="icon-btn panel-close" aria-label="Close panel" onClick={() => setPanel(null)}>
+          <button type="button" className="icon-btn panel-close" aria-label="Închideți panoul" onClick={() => setPanel(null)}>
             <X size={16} />
           </button>
           {panel === 'step' && (
@@ -415,8 +430,8 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
           {panel === 'photos' && (
             <section className="card">
               <header className="card-head">
-                <h3>Claimant photos</h3>
-                <span className="chip">{c.photos.length} file{c.photos.length === 1 ? '' : 's'}</span>
+                <h3>Fotografiile depuse</h3>
+                <span className="chip">{nr(c.photos.length, 'fișier', 'fișiere')}</span>
               </header>
               <PhotoGrid photos={c.photos} t={t} />
             </section>
@@ -441,13 +456,13 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
             ) : (
               <div className="card">
                 <Empty
-                  title="The report is assembled when the Judge stops"
-                  body={never ? 'Start the investigation to build it.' : live ? `The run is at step ${stepNo || 1} of ${STAGES.length}.` : 'The replay has not reached the verdict yet.'}
+                  title="Raportul apare la finalul investigației"
+                  body={never ? 'Începeți investigația ca să îl obțineți.' : live ? `Investigația este la pasul ${stepNo || 1} din ${STAGES.length}.` : 'Redarea nu a ajuns încă la verdict.'}
                 />
                 {!never && !live && (
                   <div className="empty-actions">
                     <button type="button" className="btn btn-secondary" onClick={run.finish}>
-                      Skip to verdict
+                      Treceți la verdict
                     </button>
                   </div>
                 )}

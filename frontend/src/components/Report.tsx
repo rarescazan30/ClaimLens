@@ -1,7 +1,7 @@
 import { ChevronDown, EyeOff, Scale, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { fmtClock } from '../lib/derive';
-import { agentName, AGENTS, BANDS, isAgent, OUTCOMES } from '../lib/meta';
+import { agentName, AGENTS, BANDS, isAgent, nr, OUTCOMES } from '../lib/meta';
 import { baseOf, fmtScore, pointsOf } from '../lib/score';
 import type { CaseFile, Evidence, ScoreStep } from '../lib/types';
 import { Aurora, type Tone } from './Aurora';
@@ -41,9 +41,9 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
   const planWindow = c.windows.find((w) => w.stage === 'plan');
   const steps = [
     ...(planWindow
-      ? [{ at: planWindow.at, icon: Workflow, who: 'Orchestrator', text: `Set ${c.plan.hypotheses.length} hypotheses and dispatched ${c.plan.dispatch.filter((d) => !d.skipped).length} of ${AGENTS.length} agents.` }]
+      ? [{ at: planWindow.at, icon: Workflow, who: 'Plan', text: `A stabilit ${nr(c.plan.hypotheses.length, 'ipoteză', 'ipoteze')} și a trimis ${c.plan.dispatch.filter((d) => !d.skipped).length} din cei ${AGENTS.length} agenți.` }]
       : []),
-    ...c.judge.map((j) => ({ at: j.at, icon: Scale, who: `Judge, round ${j.round}`, text: j.summary })),
+    ...c.judge.map((j) => ({ at: j.at, icon: Scale, who: `Arbitru, runda ${j.round}`, text: j.summary })),
   ];
 
   return (
@@ -57,7 +57,7 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
             <div>
               <h2>{BANDS[score.band].label}</h2>
               <p className="verdict-route">
-                Recommended: <b>{OUTCOMES[score.recommendation].action.toLowerCase()}</b>
+                Recomandare: <b>{OUTCOMES[score.recommendation].action.toLowerCase()}</b>
               </p>
             </div>
           </div>
@@ -68,106 +68,80 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
       </section>
 
       <div className="report-grid">
-        <section className="card contrib">
-          <header className="card-head">
-            <div>
-              <h3>What moved the score</h3>
-              <p className="card-sub">Points each finding adds or removes. Setting one aside recomputes the score without it and cannot be undone.</p>
-            </div>
-            <span className="chip">Starts at {baseOf(score)}</span>
-          </header>
-          <div className="contrib-axis" aria-hidden="true">
-            <span />
-            <span className="axis-labels">
-              <i>Against the claim</i>
-              <i>For the claim</i>
-            </span>
-          </div>
-          <ul className="contrib-rows">
-            {rows.map(({ e, off, delta }) => {
-              const Icon = AGENT_ICON[e.agent];
-              const w = (Math.abs(delta) / max) * 50;
-              const sign = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
-              return (
-                <li key={e.id} className={`contrib-row is-${sign}${off ? ' is-off' : ''}`}>
-                  <div className="contrib-what">
-                    <span className="agent-ico">
-                      <Icon size={15} />
-                    </span>
-                    <div>
-                      <p className="contrib-title">{e.title}</p>
-                      <p className="contrib-src">
-                        <b>{agentName(e.agent)}</b>
-                        {e.round > 1 ? `, round ${e.round}` : ''} · {e.source}
-                      </p>
-                      {e.detail && <p className="contrib-src">{e.detail}</p>}
-                    </div>
-                  </div>
-                  <div className="contrib-bar" role="img" aria-label={`${delta > 0 ? 'Adds' : delta < 0 ? 'Removes' : 'No effect:'} ${Math.abs(delta)} points`}>
-                    <span className="contrib-zero" />
-                    {sign !== 'zero' && <span className="contrib-fill" style={{ width: `${w}%`, [delta > 0 ? 'left' : 'right']: '50%' }} />}
-                  </div>
-                  <span className="contrib-delta">{off ? 'Set aside' : delta === 0 ? 'No effect' : `${delta > 0 ? '+' : '−'}${Math.abs(delta)}`}</span>
-                  {off || c.decision ? (
-                    <span className="contrib-spacer" />
-                  ) : arming === e.id ? (
-                    <button type="button" className="btn btn-quiet contrib-confirm" disabled={busy} onClick={() => { setArming(null); onReject(e.id); }} onBlur={() => setArming(null)}>
-                      Confirm
-                    </button>
-                  ) : (
-                    <button type="button" className="icon-btn" onClick={() => setArming(e.id)} aria-label={`Set aside finding: ${e.title}`} title="Set this finding aside (cannot be undone)">
-                      <EyeOff size={14} />
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <footer className="contrib-foot">
-            <span>
-              {counted.length} finding{counted.length === 1 ? '' : 's'} counted, the latest from each agent
-              {aside.length ? ` · ${aside.length} set aside` : ''}
-              {context ? ` · policy context ${pointsOf(score.score, context.delta_logit) > 0 ? '+' : '−'}${Math.abs(pointsOf(score.score, context.delta_logit))}` : ''}
-            </span>
-          </footer>
-        </section>
-
         <div className="report-side">
-          <section className="card">
-            <header className="card-head">
-              <h3>Hard gates</h3>
-            </header>
-            <ul className="gates is-large">
-              <li className={coverageGate || !c.rulesPassed ? 'g-flagged' : 'g-passed'}>
-                <span className="gate-dot" />
-                <div>
-                  Coverage and conditions
-                  <span>{coverageGate ? coverageGate.reason : 'Policy active, peril covered, notified in time'}</span>
-                </div>
-                <b>{coverageGate || !c.rulesPassed ? 'Flagged' : 'Passed'}</b>
-              </li>
-              <li className={gateTripped ? 'g-flagged' : c.photos.length ? 'g-passed' : 'g-pending'}>
-                <span className="gate-dot" />
-                <div>
-                  Evidence authenticity
-                  <span>{gateTripped ? gateTripped.reason : c.photos.length ? 'No photo was found published before the event' : 'The claim has no photos, so nothing was checked'}</span>
-                </div>
-                <b>{gateTripped ? 'Flagged' : c.photos.length ? 'Passed' : 'Not checked'}</b>
-              </li>
+          <details className="card contrib fold">
+            <summary>
+              <h3>Ce a influențat scorul</h3>
+              <span className="chip" title="Scorul înainte de rezultatele agenților">Scor inițial: {baseOf(score)}</span>
+              <ChevronDown size={16} className="fold-chev" />
+            </summary>
+            <p className="card-sub contrib-intro">Câte puncte a adăugat sau a scăzut fiecare rezultat. Dacă excludeți un rezultat, scorul se recalculează fără el; operația nu se poate anula.</p>
+            <div className="contrib-axis" aria-hidden="true">
+              <span />
+              <span className="axis-labels">
+                <i>Împotriva daunei</i>
+                <i>Pentru daună</i>
+              </span>
+            </div>
+            <ul className="contrib-rows">
+              {rows.map(({ e, off, delta }) => {
+                const Icon = AGENT_ICON[e.agent];
+                const w = (Math.abs(delta) / max) * 50;
+                const sign = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+                return (
+                  <li key={e.id} className={`contrib-row is-${sign}${off ? ' is-off' : ''}`}>
+                    <div className="contrib-what">
+                      <span className="agent-ico">
+                        <Icon size={15} />
+                      </span>
+                      <div>
+                        <p className="contrib-title">{e.title}</p>
+                        <p className="contrib-src">
+                          <b>{agentName(e.agent)}</b>
+                          {e.round > 1 ? `, runda ${e.round}` : ''} · {e.source}
+                        </p>
+                        {e.detail && <p className="contrib-src">{e.detail}</p>}
+                      </div>
+                    </div>
+                    <div className="contrib-bar" role="img" aria-label={delta === 0 ? 'Fără efect' : `${delta > 0 ? 'Adaugă' : 'Scade'} ${Math.abs(delta)} puncte`}>
+                      <span className="contrib-zero" />
+                      {sign !== 'zero' && <span className="contrib-fill" style={{ width: `${w}%`, [delta > 0 ? 'left' : 'right']: '50%' }} />}
+                    </div>
+                    <span className="contrib-delta">{off ? 'Exclus' : delta === 0 ? 'Fără efect' : `${delta > 0 ? '+' : '−'}${Math.abs(delta)}`}</span>
+                    {off || c.decision ? (
+                      <span className="contrib-spacer" />
+                    ) : arming === e.id ? (
+                      <button type="button" className="btn btn-quiet contrib-confirm" disabled={busy} onClick={() => { setArming(null); onReject(e.id); }} onBlur={() => setArming(null)}>
+                        Confirmați
+                      </button>
+                    ) : (
+                      <button type="button" className="icon-btn" onClick={() => setArming(e.id)} aria-label={`Excludeți rezultatul: ${e.title}`} title="Excludeți acest rezultat (definitiv)">
+                        <EyeOff size={14} />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
-            <p className="card-note">A flagged gate sends the case to a person, whatever the score says.</p>
-          </section>
+            <footer className="contrib-foot">
+              <span>
+                {nr(counted.length, 'rezultat luat în calcul', 'rezultate luate în calcul')} (cel mai recent de la fiecare agent)
+                {aside.length ? ` · ${aside.length} excluse` : ''}
+                {context ? ` · contextul poliței ${pointsOf(score.score, context.delta_logit) > 0 ? '+' : '−'}${Math.abs(pointsOf(score.score, context.delta_logit))}` : ''}
+              </span>
+            </footer>
+          </details>
 
           <details className="card fold">
             <summary>
-              <h3>How the verdict was reached</h3>
-              <span className="chip">{steps.length} decisions</span>
+              <h3>Cum s-a ajuns la verdict</h3>
+              <span className="chip">{nr(steps.length, 'decizie', 'decizii')}</span>
               <ChevronDown size={16} className="fold-chev" />
             </summary>
             <ol className="reason-steps">
               {steps.map((s) => (
                 <li key={`${s.who}-${s.at}`}>
-                  <button type="button" onClick={() => onJump(s.at)} title="Jump to this moment in the replay">
+                  <button type="button" onClick={() => onJump(s.at)} title="Vedeți acest pas">
                     <span className="agent-ico">
                       <s.icon size={14} />
                     </span>
@@ -184,8 +158,8 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
 
           <details className="card fold" open={flaggedPhotos > 0}>
             <summary>
-              <h3>Claimant photos</h3>
-              <span className={`chip${flaggedPhotos ? ' v-contradicts' : ''}`}>{flaggedPhotos ? `${flaggedPhotos} of ${c.photos.length} flagged` : `${c.photos.length} on file`}</span>
+              <h3>Fotografiile depuse</h3>
+              <span className={`chip${flaggedPhotos ? ' v-contradicts' : ''}`}>{flaggedPhotos ? `${flaggedPhotos} din ${c.photos.length} semnalate` : `${c.photos.length} la dosar`}</span>
               <ChevronDown size={16} className="fold-chev" />
             </summary>
             <PhotoGrid photos={c.photos} t={c.duration} />
@@ -194,13 +168,40 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
           {c.map && (
             <details className="card fold">
               <summary>
-                <h3>Map</h3>
+                <h3>Hartă</h3>
                 <span className="chip">{c.place}</span>
                 <ChevronDown size={16} className="fold-chev" />
               </summary>
               <MapCard c={c} t={c.duration} />
             </details>
           )}
+        </div>
+
+        <div className="report-side">
+          <section className="card">
+            <header className="card-head">
+              <h3>Condiții obligatorii</h3>
+            </header>
+            <ul className="gates is-large">
+              <li className={coverageGate || !c.rulesPassed ? 'g-flagged' : 'g-passed'}>
+                <span className="gate-dot" />
+                <div>
+                  Acoperire și condiții
+                  <span>{coverageGate ? coverageGate.reason : 'Poliță activă, risc acoperit, avizare în termen'}</span>
+                </div>
+                <b>{coverageGate || !c.rulesPassed ? 'Semnalat' : 'În regulă'}</b>
+              </li>
+              <li className={gateTripped ? 'g-flagged' : c.photos.length ? 'g-passed' : 'g-pending'}>
+                <span className="gate-dot" />
+                <div>
+                  Autenticitatea dovezilor
+                  <span>{gateTripped ? gateTripped.reason : c.photos.length ? 'Nicio fotografie nu a fost publicată înaintea evenimentului' : 'Dosarul nu are fotografii de verificat'}</span>
+                </div>
+                <b>{gateTripped ? 'Semnalat' : c.photos.length ? 'În regulă' : 'Neverificat'}</b>
+              </li>
+            </ul>
+            <p className="card-note">Dacă o condiție nu este îndeplinită, dosarul ajunge la un inspector, indiferent de scor.</p>
+          </section>
         </div>
       </div>
     </div>

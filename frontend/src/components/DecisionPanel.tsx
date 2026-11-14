@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { agentName, OUTCOMES } from '../lib/meta';
 import type { Decision, Outcome, Question } from '../lib/types';
 
-const REASONS = ['New information from the claimant', 'Evidence source not reliable', 'Site visit already done', 'Policy exception applies'];
+const REASONS = ['Informații noi de la asigurat', 'Sursă de dovezi nesigură', 'Inspecția a fost deja făcută', 'Se aplică o excepție din poliță'];
 
 interface Props {
   ready: boolean;
@@ -34,10 +34,10 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
         </span>
         <div>
           <p className="decision-title">
-            {decision.kind === 'approve' ? 'Recommendation approved' : 'Recommendation overridden'}: {OUTCOMES[decision.outcome].action.toLowerCase()}
+            {decision.kind === 'approve' ? 'Ați aprobat recomandarea' : 'Ați modificat recomandarea'}: {OUTCOMES[decision.outcome].action.toLowerCase()}
           </p>
           <p>
-            Logged {decision.at}.{decision.reason ? ` Reason: ${decision.reason}.` : ''}
+            Înregistrat {decision.at}.{decision.reason ? ` Motiv: ${decision.reason}.` : ''}
           </p>
         </div>
       </div>
@@ -47,8 +47,8 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
   if (!ready || !recommended) {
     return (
       <div className="decision is-waiting">
-        <p className="decision-title">Your decision opens when the verdict is in</p>
-        <p>The system only recommends. Nothing is paid or refused until you decide.</p>
+        <p className="decision-title">Puteți decide după verdict</p>
+        <p>Sistemul doar recomandă. Nimic nu se plătește și nu se respinge fără decizia dumneavoastră.</p>
       </div>
     );
   }
@@ -59,27 +59,27 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
   return (
     <div className="decision">
       <div className="decision-rec">
-        <p className="eyebrow">Recommended next step</p>
+        <p className="eyebrow">Recomandare</p>
         <p className="decision-title">{rec.action}</p>
         <p>{rec.desc}</p>
       </div>
       <div className="decision-actions">
         <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
           <Check size={15} strokeWidth={2.6} />
-          Approve recommendation
+          Aprobați recomandarea
         </button>
         <button type="button" className={`btn btn-secondary${mode === 'override' ? ' is-on' : ''}`} aria-expanded={mode === 'override'} onClick={() => setMode(mode === 'override' ? 'idle' : 'override')}>
-          Choose another route
+          Alegeți altă soluție
         </button>
         <button type="button" className={`btn btn-secondary${mode === 'ask' ? ' is-on' : ''}`} aria-expanded={mode === 'ask'} onClick={() => setMode(mode === 'ask' ? 'idle' : 'ask')}>
           <MessageSquarePlus size={15} />
-          Ask for more
+          Cereți verificări suplimentare
         </button>
       </div>
 
       {mode === 'override' && (
         <div className="decision-more">
-          <div className="route-options" role="radiogroup" aria-label="Route">
+          <div className="route-options" role="radiogroup" aria-label="Soluție">
             {others.map((r) => (
               <button type="button" key={r} role="radio" aria-checked={outcome === r} className={`route-option${outcome === r ? ' is-on' : ''}`} onClick={() => { setOutcome(r); setError(''); }}>
                 <b>{OUTCOMES[r].action}</b>
@@ -87,7 +87,7 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
               </button>
             ))}
           </div>
-          <p className="field-label">Why are you overriding?</p>
+          <p className="field-label">De ce schimbați recomandarea?</p>
           <div className="reason-chips">
             {REASONS.map((x) => (
               <button type="button" key={x} className={`chip is-button${reason === x ? ' is-on' : ''}`} aria-pressed={reason === x} onClick={() => { setReason(x); setError(''); }}>
@@ -101,13 +101,13 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
             className="btn btn-primary"
             disabled={busy}
             onClick={() => {
-              if (!outcome) return setError('Pick a route first');
-              if (!reason) return setError('Pick a reason. Overrides are logged with one.');
+              if (!outcome) return setError('Alegeți mai întâi o soluție.');
+              if (!reason) return setError('Alegeți un motiv. Orice schimbare se înregistrează cu motivul ei.');
               onOverride(outcome, reason);
               setMode('idle');
             }}
           >
-            Confirm override
+            Confirmați schimbarea
           </button>
         </div>
       )}
@@ -117,7 +117,7 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
           className="decision-more"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!question.trim()) return setError('Write the question first');
+            if (!question.trim()) return setError('Scrieți mai întâi întrebarea.');
             onAsk(question.trim());
             setQuestion('');
             setError('');
@@ -125,16 +125,16 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
           }}
         >
           <label className="field-label" htmlFor="ask-q">
-            What should the agents look into?
+            Ce doriți să mai verifice agenții?
           </label>
           <div className="ask-row">
-            <input id="ask-q" value={question} placeholder="Were gusts above 70 km/h on the next day too?" onChange={(e) => { setQuestion(e.target.value); setError(''); }} />
+            <input id="ask-q" value={question} placeholder="Au fost rafale de peste 70 km/h și a doua zi?" onChange={(e) => { setQuestion(e.target.value); setError(''); }} />
             <button type="submit" className="btn btn-primary" disabled={busy}>
               <Send size={14} />
-              Send to orchestrator
+              Trimiteți
             </button>
           </div>
-          <p className="card-note">This starts one more round of agents. The score and the recommendation can change.</p>
+          <p className="card-note">Agenții vor face încă o rundă de verificări, așa că scorul și recomandarea se pot schimba.</p>
           {error && <p className="form-error">{error}</p>}
         </form>
       )}
@@ -146,7 +146,7 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
               <span className="pulse-dot" />
               <span>{q.text}</span>
               <span className="chip">
-                Round {q.round}
+                Runda {q.round}
                 {q.agent ? ` · ${agentName(q.agent)}` : ''}
               </span>
             </li>

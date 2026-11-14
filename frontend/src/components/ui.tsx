@@ -6,7 +6,7 @@ import type { Band, Outcome, Photo, Status, Verdict } from '../lib/types';
 
 export function StatusIcon({ status }: { status: Status }) {
   const Icon = status === 'ok' ? Check : status === 'flag' ? CircleAlert : status === 'fail' ? X : Info;
-  const label = status === 'ok' ? 'Passed' : status === 'flag' ? 'Flagged' : status === 'fail' ? 'Failed' : 'Note';
+  const label = status === 'ok' ? 'În regulă' : status === 'flag' ? 'Semnalat' : status === 'fail' ? 'Neîndeplinit' : 'Notă';
   return (
     <span className={`status-ico s-${status}`} role="img" aria-label={label}>
       <Icon size={12} strokeWidth={3} />
@@ -31,9 +31,9 @@ export function CountUp({ value }: { value: number }) {
 }
 
 const VERDICT_TEXT: Record<Verdict, string> = {
-  supports: 'Supports the claim',
-  contradicts: 'Contradicts the claim',
-  inconclusive: 'Inconclusive',
+  supports: 'Susține dauna',
+  contradicts: 'Contrazice dauna',
+  inconclusive: 'Neconcludent',
 };
 
 export function VerdictChip({ verdict }: { verdict: Verdict }) {
@@ -61,7 +61,7 @@ export function OutcomeTag({ outcome }: { outcome: Outcome }) {
 
 /** The claimant's photos, as served by the backend, with the forensic agent's checks once they are known. */
 export function PhotoGrid({ photos, t }: { photos: Photo[]; t: number }) {
-  if (!photos.length) return <Empty title="No photos on this claim" body="The claim was filed without photos, so there is nothing for the photo checks to look at." />;
+  if (!photos.length) return <Empty title="Nicio fotografie" body="Dosarul a fost depus fără fotografii, deci nu există nimic de verificat." />;
   return (
     <ul className="photos">
       {photos.map((p) => {
@@ -69,12 +69,12 @@ export function PhotoGrid({ photos, t }: { photos: Photo[]; t: number }) {
         return (
           <li key={p.name} className={`photo${known ? ` s-${p.status}` : ' is-waiting'}`}>
             <div className="photo-thumb is-real">
-              <img src={p.url} alt={`Claimant photo ${p.name}`} loading="lazy" />
+              <img src={p.url} alt={`Fotografie depusă: ${p.name}`} loading="lazy" />
               {known && <StatusIcon status={p.status} />}
             </div>
             <div className="photo-meta">
               <span className="mono">{p.name}</span>
-              {known ? p.notes.map((n) => <span key={n} className="photo-note">{n}</span>) : <span className="photo-note">Not checked yet</span>}
+              {known ? p.notes.map((n) => <span key={n} className="photo-note">{n}</span>) : <span className="photo-note">Neverificată încă</span>}
             </div>
           </li>
         );

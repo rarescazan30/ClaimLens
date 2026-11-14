@@ -20,7 +20,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`${API_URL}${path}`, init);
   } catch {
-    throw new ApiError(0, `The backend at ${API_URL} is not reachable.`);
+    throw new ApiError(0, `Serverul de la ${API_URL} nu răspunde.`);
   }
   if (!res.ok) {
     let detail = `${res.status} ${res.statusText}`;
