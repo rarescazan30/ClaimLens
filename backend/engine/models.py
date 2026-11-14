@@ -81,6 +81,7 @@ class Contribution(BaseModel):
     agent: str
     round: int
     delta_logit: float
+    reason: str | None = None
 
 
 class ScoreResult(BaseModel):
@@ -91,6 +92,28 @@ class ScoreResult(BaseModel):
     gates: list[Gate] = []
 
 
+class CheckItem(BaseModel):
+    id: str
+    label: str
+    value: str | None = None
+    status: Literal["ok", "flag", "fail", "info"]
+    reason: str | None = None
+
+
+class Flag(BaseModel):
+    step: Literal["intake", "documents", "client", "policy", "photos"]
+    code: str
+    field: str | None = None
+    severity: Literal["warn", "fail"]
+    reason: str
+
+
+class StepResult(BaseModel):
+    step: Literal["intake", "documents", "client", "policy", "photos"]
+    items: list[CheckItem] = []
+    flags: list[Flag] = []
+
+
 class Sink(Protocol):
     """Everything the engine tells the outside world. The API implements it with SQLite + the live stream."""
 
@@ -99,3 +122,14 @@ class Sink(Protocol):
     def score(self, s: ScoreResult, round: int) -> None: ...
     def hypotheses(self, h: list[Hypothesis]) -> None: ...
     def flags(self, f: list[RuleFlag]) -> None: ...
+    def checks(self, result: StepResult) -> None: ...
+    def claim_read(self, fields: dict) -> None: ...
+
+
+class ReadDocument(BaseModel):
+    """What the code read from one PDF. `fields` holds raw text by field name; `missing` lists names with no value."""
+
+    kind: Literal["claim_form", "policy"]
+    fields: dict[str, str] = {}
+    missing: list[str] = []
+    readable: bool = True

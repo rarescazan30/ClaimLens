@@ -2,7 +2,7 @@ import { CalendarDays, FileText, MapPin, ShieldCheck, Wallet } from 'lucide-reac
 import { useEffect, useMemo, useState } from 'react';
 import { getFloodExtent, type GeoJSON } from '../api/client';
 import { useEased } from '../lib/hooks';
-import { BANDS } from '../lib/meta';
+import { BANDS, nr } from '../lib/meta';
 import { fmtScore } from '../lib/score';
 import type { Band, CaseFile, LatLon } from '../lib/types';
 import { Empty } from './ui';
@@ -24,7 +24,7 @@ export function ScoreMeter({ score, band, compact = false }: { score: number; ba
   const eased = useEased(score);
   return (
     <div className={`meter b-${band}${compact ? ' is-compact' : ''}`}>
-      <div className="meter-track" role="img" aria-label={`Plausibility score ${fmtScore(score)} out of 100, ${BANDS[band].label}`}>
+      <div className="meter-track" role="img" aria-label={`Scor de plauzibilitate ${fmtScore(score)} din 100, ${BANDS[band].label}`}>
         {BAND_ORDER.map((b) => (
           <span key={b.id} className={`meter-seg b-${b.id}${b.id === band ? ' is-on' : ''}`} style={{ flexGrow: b.to - b.from }} />
         ))}
@@ -42,7 +42,7 @@ export function ScoreMeter({ score, band, compact = false }: { score: number; ba
 }
 
 export type GateState = 'pending' | 'passed' | 'flagged' | 'none';
-const GATE_TEXT: Record<GateState, string> = { pending: 'Pending', passed: 'Passed', flagged: 'Flagged', none: 'No photos to check' };
+const GATE_TEXT: Record<GateState, string> = { pending: 'În așteptare', passed: 'În regulă', flagged: 'Semnalat', none: 'Nicio fotografie' };
 
 export function ScoreCard({
   score,
@@ -63,15 +63,15 @@ export function ScoreCard({
   return (
     <section className={`card score-card b-${band ?? 'uncertain'} phase-${has ? phase : 'idle'}`}>
       <header className="card-head">
-        <h3>Plausibility score</h3>
-        <span className="chip">{phase === 'idle' ? 'Not started' : phase === 'base' ? 'Waiting for evidence' : phase === 'provisional' ? 'Provisional' : 'Final'}</span>
+        <h3>Scor de plauzibilitate</h3>
+        <span className="chip">{phase === 'idle' ? 'Neînceput' : phase === 'base' ? 'Se așteaptă dovezile' : phase === 'provisional' ? 'Provizoriu' : 'Final'}</span>
       </header>
       <div className="score-row">
         <span className="score-num">{has ? <ScoreNumber score={score} /> : '–'}</span>
         <div>
-          <p className="score-band">{has ? BANDS[band].label : 'Waiting for evidence'}</p>
+          <p className="score-band">{has ? BANDS[band].label : 'Se așteaptă dovezile'}</p>
           <p className="score-sub">
-            {has ? `${evidenceCount} finding${evidenceCount === 1 ? '' : 's'} weighed` : 'The score appears after the first round of agents'}
+            {has ? `${nr(evidenceCount, 'rezultat cântărit', 'rezultate cântărite')}` : 'Scorul apare după prima rundă de agenți'}
           </p>
         </div>
       </div>
@@ -79,12 +79,12 @@ export function ScoreCard({
       <ul className="gates">
         <li className={`g-${coverage}`}>
           <span className="gate-dot" />
-          Coverage gate
+          Acoperire
           <b>{GATE_TEXT[coverage]}</b>
         </li>
         <li className={`g-${authenticity === 'none' ? 'pending' : authenticity}`}>
           <span className="gate-dot" />
-          Authenticity gate
+          Autenticitate
           <b>{GATE_TEXT[authenticity]}</b>
         </li>
       </ul>
@@ -94,16 +94,16 @@ export function ScoreCard({
 
 export function ClaimCard({ c }: { c: CaseFile }) {
   const rows = [
-    { icon: MapPin, label: 'Loss address', value: c.address },
-    { icon: CalendarDays, label: 'Event', value: `${c.typeLabel}, ${c.eventDate}` },
-    { icon: FileText, label: 'Filed', value: `${c.filed} · ${c.lag.replace('Filed ', '')}` },
-    { icon: ShieldCheck, label: 'Policy', value: c.policy },
-    { icon: Wallet, label: 'Claimed', value: c.claimed },
+    { icon: MapPin, label: 'Adresa daunei', value: c.address },
+    { icon: CalendarDays, label: 'Eveniment', value: `${c.typeLabel}, ${c.eventDate}` },
+    { icon: FileText, label: 'Avizat', value: `${c.filed} · ${c.lag.replace('Avizată ', '')}` },
+    { icon: ShieldCheck, label: 'Poliță', value: c.policy },
+    { icon: Wallet, label: 'Suma solicitată', value: c.claimed },
   ];
   return (
     <section className="card claim-card">
       <header className="card-head">
-        <h3>The claim</h3>
+        <h3>Dosarul</h3>
         <span className="chip">{c.id}</span>
       </header>
       {c.description && <p className="claim-desc">“{c.description}”</p>}
@@ -202,22 +202,22 @@ export function MapCard({ c, t }: { c: CaseFile; t: number }) {
   const waterVisible = water && water.x > 8 && water.x < VW - 8 && water.y > 8 && water.y < VH - 8;
   const bar = niceScale(half / 3);
   const distance = m.distanceM !== undefined ? `${Math.round(m.distanceM)} m` : '';
-  const zoneLabel = `Flood mapped by Copernicus (${m.activation}${m.mapDate ? `, ${m.mapDate.slice(0, 10)}` : ''})`;
+  const zoneLabel = `Zonă inundată, hartă Copernicus (${m.activation}${m.mapDate ? `, ${m.mapDate.slice(0, 10)}` : ''})`;
 
   return (
     <section className="card map-card">
       <header className="card-head">
-        <h3>Where it happened</h3>
+        <h3>Locul daunei</h3>
         <span className="chip">{c.place}</span>
       </header>
       {geo === null ? (
-        <Empty title="The flood map could not be loaded" body="The backend did not return the mapped flood for this claim. The distances in the findings still stand." />
+        <Empty title="Harta inundației nu s-a încărcat" body="Serverul nu a trimis harta pentru acest dosar. Distanțele din rezultate rămân valabile." />
       ) : (
         <div className={`map kind-flood${zone && geo ? ' has-zone' : ''}`}>
           <svg
             viewBox={`0 0 ${VW} ${VH}`}
             role="img"
-            aria-label={m.inside ? 'Map: the house is inside the mapped flood' : `Map: the house is ${distance} outside the mapped flood`}
+            aria-label={m.inside ? 'Hartă: casa este în zona inundată' : `Hartă: casa este la ${distance} de zona inundată`}
           >
             <rect width={VW} height={VH} className="map-land" />
             <path className="map-zone" d={zonePath} fillRule="evenodd" />
@@ -234,7 +234,7 @@ export function MapCard({ c, t }: { c: CaseFile; t: number }) {
               <g className="map-station">
                 <circle cx={water.x} cy={water.y} r="4" />
                 <text x={water.x + 8} y={water.y + 4}>
-                  {m.water?.name ?? 'Nearest water'}
+                  {m.water?.name ?? 'Cea mai apropiată apă'}
                 </text>
               </g>
             )}
@@ -246,7 +246,7 @@ export function MapCard({ c, t }: { c: CaseFile; t: number }) {
               <g className="map-elev" transform={`translate(${house.x - 104} ${house.y + 14})`}>
                 <rect width="94" height="24" rx="12" />
                 <text x="47" y="16" textAnchor="middle">
-                  {m.elevationDiffM! >= 0 ? `${m.elevationDiffM} m higher` : `${Math.abs(m.elevationDiffM!)} m lower`}
+                  {m.elevationDiffM! >= 0 ? `${m.elevationDiffM} m mai sus` : `${Math.abs(m.elevationDiffM!)} m mai jos`}
                 </text>
               </g>
             )}
@@ -262,11 +262,11 @@ export function MapCard({ c, t }: { c: CaseFile; t: number }) {
       <ul className="map-legend">
         <li>
           <span className="lg lg-house" />
-          Insured house
+          Casa asigurată
         </li>
         <li className={zone && geo ? '' : 'is-off'}>
           <span className="lg lg-zone" />
-          {geo === undefined ? 'Loading the flood map' : zone ? zoneLabel : 'Flood map not loaded yet'}
+          {geo === undefined ? 'Se încarcă harta inundației' : zone ? zoneLabel : 'Harta inundației nu este încă disponibilă'}
         </li>
       </ul>
     </section>

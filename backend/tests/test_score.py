@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from engine.models import Evidence, Finding, RuleFlag, WeightConfig
+from engine.models import Evidence, Finding, Flag, RuleFlag, WeightConfig
 from engine.score import compute_score
 
 CFG = WeightConfig(damage_type="flood", p0=0.5, weights={"meteo": 2.0, "risk_zones": 2.0, "photo_forensics": 2.0},
@@ -73,3 +73,26 @@ def test_agent_without_weight_contributes_zero():
 def test_no_evidence_is_the_prior():
     r = compute_score([], CFG, OK)
     assert (r.score, r.band, r.recommendation) == (50.0, "uncertain", "standard_review")
+
+
+def test_each_client_flag_costs_a_quarter_logit_capped_at_one():
+    flags = [Flag(step="client", code=f"c{i}", severity="warn", reason=f"r{i}") for i in range(6)]
+    r = compute_score([], CFG, [], 0.0, flags)
+    lines = [c for c in r.contributions if c.agent == "client"]
+    assert [c.delta_logit for c in lines] == [-0.25] * 4 + [0.0, 0.0]
+    assert [c.reason for c in lines] == [f"r{i}" for i in range(6)]
+    assert r.score == round(100 / (1 + math.exp(1.0)), 1)
+    assert r.gates == []
+
+
+def test_document_flags_count_and_other_steps_do_not():
+    flags = [Flag(step=s, code="x", severity="warn", reason=s) for s in ("intake", "policy", "photos", "documents")]
+    r = compute_score([], CFG, [], 0.0, flags)
+    lines = [c for c in r.contributions if c.agent == "client"]
+    assert [(c.delta_logit, c.reason) for c in lines] == [(-0.25, "documents")]
+
+
+def test_no_data_flags_changes_nothing():
+    r = compute_score([], CFG, [], 0.0)
+    assert not [c for c in r.contributions if c.agent == "client"]
+    assert r.score == 50.0

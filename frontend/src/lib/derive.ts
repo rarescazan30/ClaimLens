@@ -25,7 +25,7 @@ export function stageStatuses(c: CaseFile, t: number, decided: boolean): Record<
     const lastStart = Math.max(...ended.map((w) => w.at));
     const idx = ORDER.indexOf(id);
     const restarted = c.windows.some((w) => ORDER.indexOf(w.stage) < idx && w.at > lastStart && w.at <= t);
-    out[id] = restarted ? 'requeued' : c.flags.includes(id) ? 'flag' : 'done';
+    out[id] = restarted ? 'requeued' : c.flaggedStages.includes(id) ? 'flag' : 'done';
   }
   return out;
 }
@@ -48,7 +48,7 @@ export function laneStates(c: CaseFile, t: number): Record<AgentId, LaneState> {
   const out = {} as Record<AgentId, LaneState>;
   for (const { id } of AGENTS) {
     if (c.plan.dispatch.find((x) => x.agent === id)?.skipped) {
-      out[id] = planned ? { state: 'skipped', reason: 'Not relevant for this type of claim' } : { state: 'idle' };
+      out[id] = planned ? { state: 'skipped', reason: 'Nu este relevant pentru acest tip de daună' } : { state: 'idle' };
       continue;
     }
     const started = c.runs.filter((r) => r.agent === id && r.at <= t);

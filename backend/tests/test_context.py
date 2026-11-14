@@ -68,3 +68,13 @@ async def test_failed_keyed_call_does_not_put_the_key_in_the_trace(sink, monkeyp
     with pytest.raises(http.SourceError):
         await ctx.fetch("Google Street View", "https://maps.test/meta", params={"key": "AIzaSECRET"})
     assert "AIzaSECRET" not in "".join(s.model_dump_json() for s in sink.steps)
+
+
+async def test_answer_step_says_whether_it_was_replayed(sink, ok, monkeypatch):
+    monkeypatch.setenv("RECORD", "1")
+    await AgentContext("C-1", "meteo", 1, sink).fetch("Open-Meteo", "https://x.test/r")
+    assert sink.steps[-1].outputs["replayed"] is False
+    monkeypatch.delenv("RECORD")
+    monkeypatch.setenv("REPLAY", "1")
+    await AgentContext("C-1", "meteo", 1, sink).fetch("Open-Meteo", "https://x.test/r")
+    assert sink.steps[-1].outputs["replayed"] is True

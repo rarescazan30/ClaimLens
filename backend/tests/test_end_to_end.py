@@ -77,6 +77,7 @@ async def test_fraud_story_live_then_offline(sink, tmp_path, monkeypatch):
     from tests.conftest import FakeSink
     monkeypatch.setattr(http, "TRANSPORT", httpx.MockTransport(network))
     monkeypatch.setattr(llm, "_complete", model)
+    monkeypatch.setenv("RECORD", "1")  # the offline half below needs the answers saved
 
     live = await investigate(sink, tmp_path)
     rounds = [r for r, _ in sink.scores]
@@ -99,6 +100,7 @@ async def test_fraud_story_live_then_offline(sink, tmp_path, monkeypatch):
         raise llm.LLMError("no network")
     monkeypatch.setattr(http, "TRANSPORT", httpx.MockTransport(cut))
     monkeypatch.setattr(llm, "_complete", no_model)
+    monkeypatch.delenv("RECORD")
     monkeypatch.setenv("REPLAY", "1")
     offline_sink = FakeSink()
     offline = await investigate(offline_sink, tmp_path)

@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import json
 from datetime import date, timedelta
-from math import asin, cos, radians, sin, sqrt
 
 from engine.context import AgentContext
 from engine.graph import AgentTask
+from engine.geo import haversine_m  # noqa: F401  (re-exported for the agents)
 from engine.http import SourceError
 from engine.models import Evidence, Finding
 
@@ -77,8 +77,3 @@ def event_day(task: AgentTask) -> date:
 def day_range(task: AgentTask, before: int, after: int) -> tuple[str, str]:
     d = event_day(task)
     return (d - timedelta(days=before)).isoformat(), (d + timedelta(days=after)).isoformat()
-
-
-def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    a = sin(radians(lat2 - lat1) / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(radians(lon2 - lon1) / 2) ** 2
-    return 2 * 6_371_000 * asin(sqrt(a))

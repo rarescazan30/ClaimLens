@@ -445,6 +445,12 @@
     "agent": "context",
     "round": 0,
     "delta_logit": 0.0
+   },
+   {
+    "agent": "client",
+    "round": 1,
+    "delta_logit": -0.2,
+    "reason": "Numărul de telefon nu are un format românesc valid."
    }
   ],
   "gates": [
@@ -465,5 +471,131 @@
    "score": 12.4,
    "band": "unlikely"
   }
- ]
+ ],
+ "checks": {
+  "intake": {
+   "step": "intake",
+   "items": [
+    {
+     "id": "claim_form",
+     "label": "Cererea de despăgubire",
+     "value": "claim_form.pdf",
+     "status": "ok",
+     "reason": null
+    },
+    {
+     "id": "policy",
+     "label": "Polița",
+     "value": "policy.pdf",
+     "status": "ok",
+     "reason": null
+    },
+    {
+     "id": "photos",
+     "label": "Fotografii",
+     "value": "2",
+     "status": "ok",
+     "reason": null
+    }
+   ],
+   "flags": []
+  },
+  "documents": {
+   "step": "documents",
+   "items": [
+    {
+     "id": "cerere.numar_dosar",
+     "label": "Număr dosar",
+     "value": "C-1042",
+     "status": "ok",
+     "reason": null
+    }
+   ],
+   "flags": []
+  },
+  "client": {
+   "step": "client",
+   "items": [
+    {
+     "id": "name",
+     "label": "Numele asiguratului",
+     "value": "Persoană Sintetică Unu",
+     "status": "ok",
+     "reason": null
+    },
+    {
+     "id": "telefon",
+     "label": "Telefon",
+     "value": "0722 12 345",
+     "status": "flag",
+     "reason": "Numărul de telefon nu are un format românesc valid."
+    }
+   ],
+   "flags": [
+    {
+     "step": "client",
+     "code": "phone_invalid",
+     "field": "telefon",
+     "severity": "warn",
+     "reason": "Numărul de telefon nu are un format românesc valid."
+    }
+   ]
+  },
+  "policy": {
+   "step": "policy",
+   "items": [
+    {
+     "id": "policy_active",
+     "label": "Poliță activă",
+     "value": null,
+     "status": "ok",
+     "reason": "Poliță activă la data evenimentului"
+    }
+   ],
+   "flags": []
+  },
+  "photos": {
+   "step": "photos",
+   "items": [
+    {
+     "id": "photos",
+     "label": "Verificarea fotografiilor",
+     "value": null,
+     "status": "ok",
+     "reason": null
+    }
+   ],
+   "flags": []
+  }
+ },
+ "flags": [
+  {
+   "step": "client",
+   "code": "phone_invalid",
+   "field": "telefon",
+   "severity": "warn",
+   "reason": "Numărul de telefon nu are un format românesc valid."
+  }
+ ],
+ "documents": {
+  "claim_form": {
+   "numar_dosar": "C-1042",
+   "numar_polita": "P-7731",
+   "nume_asigurat": "Persoană Sintetică Unu",
+   "telefon": "0722 12 345",
+   "adresa_daunei": "Str. Exemplu 12, Pechea, jud. Galați",
+   "tip_dauna": "inundație",
+   "data_evenimentului": "2024-09-14",
+   "suma_solicitata": "48000"
+  },
+  "policy": {
+   "numar_polita": "P-7731",
+   "nume_asigurat": "Persoană Sintetică Unu",
+   "valabila_de_la": "2024-02-01",
+   "valabila_pana_la": "2025-01-31",
+   "riscuri_acoperite": "inundație, cutremur, alunecare de teren",
+   "suma_asigurata": "100000"
+  }
+ },
+ "run_mode": "replay"
 }

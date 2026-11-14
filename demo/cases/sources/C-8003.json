@@ -1,0 +1,18 @@
+{
+  "_note": "The flood claim (C-8001) with a policy that expired before the event, so the run pauses on policy_active. Own policy number (P-8003) so it does not overwrite P-8001 in the store. Regenerate the PDFs with: cd backend && .venv/bin/python scripts/make_documents.py",
+  "out": "paused",
+  "claim_form": {
+    "numar_polita": "P-8003", "tip_dauna": "inundație", "data_evenimentului": "14.09.2024",
+    "data_notificarii": "16.09.2024", "adresa_daunei": "DJ255 nr. 19, Pechea, jud. Galați",
+    "latitudine": "45.6319", "longitudine": "27.8017",
+    "descriere": "Gospodărie inundată, apă de aproximativ 1 m în curte și în casă. Pereți din chirpici prăbușiți parțial, acoperiș căzut, gard din lemn distrus, pardoseală și mobilier compromise."
+  },
+  "policy": {
+    "numar_polita": "P-8003", "produs": "PAD", "riscuri_acoperite": "inundații, cutremure de pământ, alunecări de teren",
+    "suma_asigurata": "100.000 RON", "nume_asigurat": "Mircea Popescu", "cnp": "1780514170015",
+    "email": "mircea.popescu@example.com", "telefon": "0700 000 101",
+    "adresa_titular": "DJ255 nr. 19, Pechea, jud. Galați", "valabila_de_la": "01/02/2023",
+    "valabila_pana_la": "31/01/2024", "zile_asteptare": "0 zile",
+    "adresa_asigurata": "DJ255 nr. 19, Pechea, jud. Galați", "latitudine": "45.6319", "longitudine": "27.8017"
+  }
+}

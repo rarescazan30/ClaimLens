@@ -1,19 +1,22 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { listQueue } from '../api/hooks';
+import { isNewClaim } from '../lib/early';
 import { navigate } from '../lib/hooks';
-import { OUTCOMES } from '../lib/meta';
+import { nr, OUTCOMES } from '../lib/meta';
 import { fmtScore } from '../lib/score';
 import type { QueueCase } from '../lib/types';
 
 const stateText = (r: QueueCase) =>
-  r.status === 'received'
-    ? 'Ready to investigate'
+  r.status === 'paused'
+    ? 'Oprit'
+    : r.status === 'received'
+    ? 'Neinvestigat'
     : r.status === 'investigating'
-      ? 'Investigating'
+      ? 'În investigație'
       : r.score !== undefined && r.outcome
         ? `${fmtScore(r.score)} · ${OUTCOMES[r.outcome].label}`
-        : 'Waiting for a decision';
+        : 'Așteaptă decizia';
 
 /** Quick switcher: every open claim in one short list. */
 export function ClaimMenu({ open, current, onClose }: { open: boolean; current?: string; onClose: () => void }) {
@@ -28,20 +31,18 @@ export function ClaimMenu({ open, current, onClose }: { open: boolean; current?:
     return () => window.removeEventListener('keydown', on);
   }, [open, onClose]);
   if (!open) return null;
-  const waiting = (r: QueueCase) => Number(r.status === 'received' || r.status === 'investigating');
+  const waiting = (r: QueueCase) => Number(isNewClaim(r.status));
   const sorted = [...rows].sort((a, b) => waiting(b) - waiting(a));
   return (
     <>
-      <button type="button" className="menu-scrim" onClick={onClose} aria-label="Close claim list" />
-      <div className="claim-menu" role="dialog" aria-label="Claims">
+      <button type="button" className="menu-scrim" onClick={onClose} aria-label="Închideți lista" />
+      <div className="claim-menu" role="dialog" aria-label="Dosare">
         <div className="claim-menu-head">
           <div>
-            <span className="eyebrow">Your desk</span>
-            <h2>
-              {rows.length} claim{rows.length === 1 ? '' : 's'}
-            </h2>
+            <span className="eyebrow">Dosarele dumneavoastră</span>
+            <h2>{nr(rows.length, 'dosar', 'dosare')}</h2>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Închideți">
             <X size={16} />
           </button>
         </div>

@@ -21,8 +21,10 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.db import Store
-from app.seed import DEMO, seed
-from engine import http
+from app.seed import documents_dir, seed
+from engine import http, modes
+from engine.documents import from_claim, read_document, write_document
+from engine.client import _mask
 from engine.graph import run_investigation
 from engine.models import TraceStep
 from engine.rules import context_term
@@ -34,7 +36,9 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 OUTCOMES = ("fast_track", "standard_review", "antifraud_referral")
 CLAIM_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 PHOTO_TYPES = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
-RUN_KEYS = ("rule_flags", "hypotheses", "score_detail", "score", "band", "recommendation")
+RUN_KEYS = ("rule_flags", "hypotheses", "score_detail", "score", "band", "recommendation",
+            "documents", "checks", "early_flags", "run_mode")   # not part of the claim the engine or the UI reads
+DOCUMENT_KINDS = ("claim_form", "policy")
 
 
 class DecisionIn(BaseModel):
@@ -49,7 +53,8 @@ class QuestionIn(BaseModel):
 
 def create_app(cases_dir: Path | None = None) -> FastAPI:
     data_dir = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parents[1] / "data")
-    photo_roots = [data_dir / "photos", DEMO / "cases" / "photos"]
+    photo_roots = [data_dir / "photos", documents_dir(cases_dir)]        # demo photos sit with their documents
+    document_roots = [data_dir / "documents", documents_dir(cases_dir)]
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -83,47 +88,72 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, "Dosar inexistent")
         return c
 
-    def photo_file(name: str) -> Path | None:
-        for root in photo_roots:
+    def inside(roots: list[Path], name: str) -> Path | None:
+        """The file `name` under the first root that has it; None if absent or if the name leaves the folder."""
+        for root in roots:
             p = (root / name).resolve()
             if p.is_file() and root.resolve() in p.parents:
                 return p
         return None
 
+    def photo_file(name: str) -> Path | None:
+        return inside(photo_roots, name)
+
+    def document_files(claim: dict) -> dict[str, Path | None]:
+        names = claim.get("documents") or {}
+        return {k: inside(document_roots, names[k]) if isinstance(names.get(k), str) else None
+                for k in DOCUMENT_KINDS}
+
     # ---- running investigations
-    async def investigate(claim_id: str, question: str | None = None) -> None:
+    async def investigate(claim_id: str, question: str | None = None, resume: bool = False) -> None:
+        """One run. A claim with documents is read from its PDFs (or resumed after a pause); a claim stored
+        without documents (old demo data) runs exactly as before, from its stored fields."""
         s = store()
+        status = "awaiting_decision"
         try:
             claim = s.get_claim(claim_id)
             policy = s.get_policy(claim["policy_id"]) or {}
             cfg = s.weight_config(claim["damage_type"]) or s.weight_config("flood")
             engine_claim = {k: v for k, v in claim.items() if k not in RUN_KEYS}
-            engine_claim["photo_paths"] = [str(p) for p in map(photo_file, claim.get("photos") or []) if p]
+            photos = [p for p in map(photo_file, claim.get("photos") or []) if p]
             # only claims filed before this one: the earlier claimant is never penalised for a later copy
-            engine_claim["other_photo_paths"] = [
-                str(p) for c in s.claims_before(claim_id) for p in map(photo_file, c.get("photos") or []) if p]
-            if claim.get("lat") is not None:
+            earlier = [p for c in s.claims_before(claim_id) for p in map(photo_file, c.get("photos") or []) if p]
+            engine_claim["photo_paths"] = [str(p) for p in photos]
+            engine_claim["other_photo_paths"] = [str(p) for p in earlier]
+            if claim.get("lat") is not None and claim.get("event_date"):
                 engine_claim["footprints"] = s.footprints_near(claim["lat"], claim["lon"], claim["event_date"])
             kwargs = dict(app.state.engine_kwargs)
+            stored = {"early_flags": claim.get("early_flags") or [], "rule_flags": claim.get("rule_flags") or []}
             if question:
                 kwargs |= {"extra_question": question, "prior": s.evidence_for(claim_id),
                            "hypotheses": [h for h in _hyps(claim)] or None}
-            await run_investigation(engine_claim, policy, cfg, s.for_claim(claim_id), **kwargs)
+                if claim.get("early_flags") is not None:   # read from documents: keep the flags of the early steps
+                    kwargs["resume"] = stored
+            elif resume:
+                kwargs |= {"resume": stored, "photos": photos, "earlier_photos": earlier,
+                           "footprints_for": s.footprints_near}
+            elif claim.get("documents"):
+                kwargs |= {"documents": document_files(claim), "photos": photos, "earlier_photos": earlier,
+                           "footprints_for": s.footprints_near}
+            result = await run_investigation(engine_claim, policy, cfg, s.for_claim(claim_id), **kwargs)
+            if result is None:
+                status = "paused"
         except Exception as e:  # never leave a case stuck in 'investigating'
             s.for_claim(claim_id).trace(TraceStep(
                 case_id=claim_id, step_id=f"error.{uuid.uuid4().hex[:6]}", actor="engine", type="escalation",
                 summary=f"Investigația s-a oprit cu o eroare: {type(e).__name__}: {e}. Dosarul merge la evaluator.",
                 status="failed"))
         finally:
-            s.set_status(claim_id, "awaiting_decision")
+            s.set_status(claim_id, status)
 
     def _hyps(claim: dict):
         from engine.models import Hypothesis
         return [Hypothesis(**h) for h in claim.get("hypotheses") or []]
 
-    def start(claim_id: str, question: str | None = None) -> None:
+    def start(claim_id: str, question: str | None = None, resume: bool = False) -> None:
         store().set_status(claim_id, "investigating")  # before the task starts, so a second start is refused
-        task = asyncio.get_running_loop().create_task(investigate(claim_id, question))
+        store().set_run_mode(claim_id, modes.run_mode())
+        task = asyncio.get_running_loop().create_task(investigate(claim_id, question, resume))
         app.state.tasks.add(task)
         task.add_done_callback(app.state.tasks.discard)
 
@@ -160,13 +190,6 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                 raise HTTPException(422, f"Lipsește câmpul '{field}'")
         if claim["damage_type"] not in AGENTS_FOR:
             raise HTTPException(422, f"Tip de daună necunoscut. Acceptate: {', '.join(AGENTS_FOR)}")
-        if claim.get("lat") is None or claim.get("lon") is None:
-            try:
-                hits = await http.fetch("https://nominatim.openstreetmap.org/search",
-                                        params={"q": claim["address"], "format": "json", "limit": 1})
-                claim["lat"], claim["lon"] = float(hits[0]["lat"]), float(hits[0]["lon"])
-            except (http.SourceError, IndexError, KeyError, ValueError):
-                raise HTTPException(422, "Adresa nu a putut fi localizată. Trimiteți lat/lon.")
         claim["id"] = claim.get("id") or f"C-{uuid.uuid4().hex[:6].upper()}"
         if not isinstance(claim["id"], str) or not CLAIM_ID.match(claim["id"]):   # the id becomes a folder name
             raise HTTPException(422, "ID de dosar invalid: doar litere, cifre, '-' și '_' (maximum 40)")
@@ -183,8 +206,15 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
             target.write_bytes(await up.read())
             names.append(f"{claim['id']}/{target.name}")
         claim["photos"] = names or claim.get("photos") or []
-        allowed = {"id", "policy_id", "damage_type", "event_date", "notified_at", "address", "lat", "lon",
-                   "description", "amount_claimed", "photos"}
+        # The two PDFs are the claim's source of truth: the run reads them back and locates the address itself
+        # (lat/lon sent in the JSON are not used).
+        folder = data_dir / "documents" / claim["id"]
+        folder.mkdir(parents=True, exist_ok=True)
+        for kind, fields in zip(DOCUMENT_KINDS, from_claim(claim, s.get_policy(claim["policy_id"]) or {})):
+            write_document(fields, kind, folder / f"{kind}.pdf")
+        claim["documents"] = {kind: f"{claim['id']}/{kind}.pdf" for kind in DOCUMENT_KINDS}
+        allowed = {"id", "policy_id", "damage_type", "event_date", "notified_at", "address",
+                   "description", "amount_claimed", "photos", "documents"}
         s.upsert_claim({k: v for k, v in claim.items() if k in allowed})
         start(claim["id"])
         return {"id": claim["id"]}
@@ -198,14 +228,31 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                    for t in s.trace_for(claim_id) if t.step_id.endswith(".score")]
         return {
             "claim": {k: v for k, v in c.items() if k not in RUN_KEYS},
-            "policy": s.get_policy(c["policy_id"]),
+            "policy": _masked(s.get_policy(c["policy_id"])),
             "rule_flags": c["rule_flags"] or [],
             "hypotheses": c["hypotheses"] or [],
             "not_relevant_agents": [a for a in ALL_AGENTS if a not in AGENTS_FOR.get(c["damage_type"], ALL_AGENTS)],
             "evidence": s.evidence_rows(claim_id),
             "score": c["score_detail"],
             "score_history": history,
+            "checks": c.get("checks") or {},
+            "flags": c.get("early_flags") or [],
+            "documents": read_documents(c),
+            "run_mode": c.get("run_mode"),
         }
+
+    def read_documents(claim: dict) -> dict:
+        """Each PDF's read fields ({} for one that is missing or unreadable); {} for a claim without documents."""
+        if not claim.get("documents"):
+            return {}
+        return {kind: _masked(read_document(path, kind).fields if path else {})
+                for kind, path in document_files(claim).items()}
+
+    def _masked(d: dict | None) -> dict | None:
+        """The personal ID number is never sent to the browser in full: only its last 4 digits."""
+        if not d or not d.get("cnp"):
+            return d
+        return {**d, "cnp": _mask(str(d["cnp"]))}
 
     @app.get("/claims/{claim_id}/trace")
     def get_trace(claim_id: str):
@@ -252,9 +299,19 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
         start(claim_id)
         return {"id": claim_id, "status": "investigating"}
 
+    @app.post("/claims/{claim_id}/continue")
+    async def continue_run(claim_id: str):
+        if claim_or_404(claim_id)["status"] != "paused":
+            raise HTTPException(409, "Investigația nu este oprită; nu are ce continua")
+        start(claim_id, resume=True)
+        return {"id": claim_id, "status": "investigating"}
+
     @app.post("/claims/{claim_id}/question")
     async def question(claim_id: str, body: QuestionIn):
-        refuse_if_running(claim_or_404(claim_id))
+        c = claim_or_404(claim_id)
+        refuse_if_running(c)
+        if c["status"] == "paused":
+            raise HTTPException(409, "Investigația este oprită: continuați investigația sau decideți")
         if not body.question.strip():
             raise HTTPException(422, "Întrebarea este goală")
         start(claim_id, body.question.strip())
@@ -264,7 +321,10 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
     async def decide(claim_id: str, body: DecisionIn):
         c = claim_or_404(claim_id)
         refuse_if_running(c)
-        if c["recommendation"] is None:
+        paused = c["status"] == "paused"   # no recommendation yet: only another outcome, with a reason
+        if paused and body.decision == "approve":
+            raise HTTPException(409, "Nu există încă o recomandare")
+        if c["recommendation"] is None and not paused:
             raise HTTPException(409, "Dosarul nu a fost încă investigat")
         if body.decision == "approve":
             outcome, reason = c["recommendation"], body.reason
@@ -290,10 +350,11 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
         if evidence_id not in [r["id"] for r in rows]:
             raise HTTPException(404, "Dovadă inexistentă în acest dosar")
         s.reject_evidence(evidence_id)
-        from engine.models import RuleFlag
+        from engine.models import Flag, RuleFlag
         cfg = s.weight_config(c["damage_type"]) or s.weight_config("flood")
+        early = [Flag(**f) for f in c["early_flags"]] if c.get("early_flags") is not None else None
         result = compute_score(s.evidence_for(claim_id), cfg, [RuleFlag(**f) for f in c["rule_flags"] or []],
-                               context_term(c, s.get_policy(c["policy_id"]) or {}))
+                               context_term(c, s.get_policy(c["policy_id"]) or {}), data_flags=early)
         s.for_claim(claim_id).score(result, max((r["round"] for r in rows), default=1))
         return result.model_dump()
 
@@ -349,6 +410,15 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
         if f is None:
             raise HTTPException(404, "Amprentă inexistentă")
         return f
+
+    @app.get("/documents/{claim_id}/{name}")
+    def document(claim_id: str, name: str):
+        kind = name.removesuffix(".pdf")
+        c = store().get_claim(claim_id)
+        p = document_files(c).get(kind) if c and kind in DOCUMENT_KINDS and name == f"{kind}.pdf" else None
+        if p is None:
+            raise HTTPException(404, "Document inexistent")
+        return FileResponse(p, media_type="application/pdf")
 
     @app.get("/photos/{name:path}")
     def photo(name: str):

@@ -30,18 +30,22 @@ def engine(delay=0.0, verdicts=None):
                             verdict=verdicts.get(name, "supports"), strength=0.5, data_quality=0.5)
         return run
 
-    async def planner(c, p, f):
+    async def planner(c, p, f, **kw):
         return HYP
 
-    async def judge(h, e, s, r, question=None):
+    async def judge(h, e, s, r, question=None, **kw):
         if question:
             return JudgeOut(action="redispatch", redispatch=[{"agent": "news", "question": question}])
         return JudgeOut(marks={"H1": "confirmed"}, action="stop")
     return {"agents": {a: make(a) for a in ALL_AGENTS}, "planner": planner, "judge": judge}
 
 
+GEO = {"nominatim": [{"lat": "45.6", "lon": "27.8", "addresstype": "house"}]}   # every address → the house
+
+
 @pytest.fixture
-def client(tmp_path, monkeypatch):
+def client(tmp_path, monkeypatch, route):
+    route(GEO)   # the client step geocodes the addresses read from the documents; never the real network
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     app = create_app(cases_dir=tmp_path / "nocases")
     app.state.engine_kwargs = engine()
@@ -112,7 +116,7 @@ def test_stream_opened_mid_run_gets_past_then_live_steps_without_duplicates(clie
     cid = create(client)
     time.sleep(0.1)
     ids = [d["step_id"] for n, d in events(client, cid) if n == "trace"]
-    assert ids[0] == "rules" and ids[-1] == "final" and len(ids) == len(set(ids))
+    assert ids[0] == "intake" and ids[-1] == "final" and len(ids) == len(set(ids))
 
 
 def test_rerun_or_question_during_a_run_is_refused(client):
@@ -215,7 +219,7 @@ def flood_engine(seen_footprints):
 
 
 def test_flood_extent_is_served_for_the_map(client, route):
-    route({"s3.test": SQUARE})
+    route({**GEO, "s3.test": SQUARE})
     client.app.state.engine_kwargs = flood_engine([])
     cid = create(client)
     wait(client, cid)
@@ -227,7 +231,7 @@ def test_flood_extent_is_served_for_the_map(client, route):
 
 
 def test_deciding_a_flood_claim_saves_the_event_footprint_for_the_next_claim(client, route):
-    route({"s3.test": SQUARE})
+    route({**GEO, "s3.test": SQUARE})
     seen = []
     client.app.state.engine_kwargs = flood_engine(seen)
     first = create(client)
@@ -304,9 +308,203 @@ def test_photo_copy_check_only_looks_at_earlier_claims(client):
 
 
 def test_decision_is_saved_even_when_the_footprint_cannot_be_built(client, route):
-    route({"s3.test": {"not": "geojson"}})
+    route({**GEO, "s3.test": {"not": "geojson"}})
     client.app.state.engine_kwargs = flood_engine([])
     cid = create(client)
     wait(client, cid)
     assert client.post(f"/claims/{cid}/decision", json={"decision": "approve"}).status_code == 200
     assert client.get(f"/claims/{cid}").json()["claim"]["status"] == "decided"
+
+
+# ---- intake: documents, the pause, continue ------------------------------------------------------
+EXPIRED = {**POLICY, "id": "P-EXP", "valid_to": "2024-06-30"}
+
+
+def paused_claim(client):
+    client.app.state.store.upsert_policy(EXPIRED)
+    cid = create(client, policy_id="P-EXP")
+    wait(client, cid, "paused")
+    return cid
+
+
+def test_claim_with_expired_policy_pauses_and_can_continue(client):
+    cid = paused_claim(client)
+    body = client.get(f"/claims/{cid}").json()
+    assert set(body["checks"]) == {"intake", "documents", "client", "policy", "photos"}
+    assert "policy_active" in [f["code"] for f in body["flags"]]
+    assert body["score"] is None and body["evidence"] == []
+    ev = events(client, cid)                                   # the stream closes on the pause
+    assert ev[-1] == ("status", {"status": "paused"}) and ev[-2][1]["step_id"] == "paused"
+    assert client.post(f"/claims/{cid}/question", json={"question": "?"}).status_code == 409
+
+    r = client.post(f"/claims/{cid}/continue")
+    assert r.status_code == 200 and r.json() == {"id": cid, "status": "investigating"}
+    assert client.post(f"/claims/{cid}/continue").status_code == 409    # pressed twice
+    wait(client, cid)
+    body = client.get(f"/claims/{cid}").json()
+    ids = [t["step_id"] for t in client.get(f"/claims/{cid}/trace").json()]
+    assert ids[:7] == ["intake", "documents", "client", "rules", "photos", "paused", "continue"]
+    assert ids[7] == "plan" and ids[-1] == "final" and len(ids) == len(set(ids))
+    assert len(body["evidence"]) == 6 and body["score"]["recommendation"] != "fast_track"
+    assert any(g["kind"] == "coverage" for g in body["score"]["gates"])
+    assert client.post(f"/claims/{cid}/continue").status_code == 409    # not paused any more
+
+
+def test_continue_is_refused_unless_the_claim_is_paused(client):
+    cid = create(client)
+    wait(client, cid)
+    assert client.post(f"/claims/{cid}/continue").status_code == 409
+    assert client.post("/claims/nope/continue").status_code == 404
+
+
+def test_paused_claim_can_be_decided_only_with_an_outcome_and_reason(client):
+    cid = paused_claim(client)
+    r = client.post(f"/claims/{cid}/decision", json={"decision": "approve"})
+    assert r.status_code == 409 and r.json()["detail"] == "Nu există încă o recomandare"
+    assert client.post(f"/claims/{cid}/decision", json={"decision": "modify", "reason": "x"}).status_code == 422
+    assert client.post(f"/claims/{cid}/decision",
+                       json={"decision": "modify", "outcome": "standard_review"}).status_code == 422
+    r = client.post(f"/claims/{cid}/decision",
+                    json={"decision": "modify", "outcome": "standard_review", "reason": "Poliță expirată"})
+    assert r.status_code == 200 and r.json()["outcome"] == "standard_review"
+    c = client.get(f"/claims/{cid}").json()["claim"]
+    assert (c["status"], c["decision"], c["outcome"], c["decision_reason"]) == \
+        ("decided", "modify", "standard_review", "Poliță expirată")
+
+
+def test_documents_are_served_and_cannot_escape_their_folder(client, tmp_path):
+    from engine.documents import read_document
+    cid = create(client)
+    wait(client, cid)
+    for name, kind, field, value in (("claim_form.pdf", "claim_form", "numar_polita", "P-1"),
+                                     ("policy.pdf", "policy", "nume_asigurat", "Test")):
+        r = client.get(f"/documents/{cid}/{name}")
+        assert r.status_code == 200 and r.content.startswith(b"%PDF")
+        (tmp_path / "copy.pdf").write_bytes(r.content)
+        assert read_document(tmp_path / "copy.pdf", kind).fields[field] == value
+    assert client.get(f"/documents/{cid}/other.pdf").status_code == 404
+    assert client.get(f"/documents/{cid}/..%2F..%2Fclaimlens.db").status_code in (400, 404)
+    assert client.get("/documents/nope/claim_form.pdf").status_code == 404
+    store = client.app.state.store                    # a stored path that points outside the folders
+    store.upsert_claim({**CLAIM, "id": "X-1", "documents": {"claim_form": "../claimlens.db", "policy": "../../x"}})
+    assert client.get("/documents/X-1/claim_form.pdf").status_code == 404
+    assert client.get("/claims/X-1").json()["documents"] == {"claim_form": {}, "policy": {}}
+
+
+def test_case_response_has_checks_flags_documents_and_run_mode(client):
+    cid = create(client, cnp="1800101123457")         # bad check digit → one client flag
+    wait(client, cid)
+    body = client.get(f"/claims/{cid}").json()
+    assert set(body["checks"]) == {"intake", "documents", "client", "policy", "photos"}
+    assert set(body["checks"]["client"]) == {"step", "items", "flags"}
+    assert "cnp_invalid" in [f["code"] for f in body["flags"]]
+    assert body["documents"]["claim_form"]["numar_polita"] == "P-1"
+    assert body["documents"]["claim_form"]["tip_dauna"] == "inundație"
+    assert body["documents"]["policy"]["nume_asigurat"] == "Test"
+    assert body["run_mode"] == "live"
+    assert not {"documents", "checks", "early_flags", "run_mode"} & set(body["claim"])
+    assert body["claim"]["lat"] == 45.6 and body["claim"]["lon"] == 27.8   # from geocoding the read address
+    cnp = next(f["reason"] for f in body["flags"] if f["code"] == "cnp_invalid")
+    assert cnp in [c["reason"] for c in body["score"]["contributions"] if c["agent"] == "client"]
+    store = client.app.state.store                    # a claim stored the old way, without documents
+    store.upsert_claim({**CLAIM, "id": "OLD-1"})
+    old = client.get("/claims/OLD-1").json()
+    assert (old["checks"], old["flags"], old["documents"], old["run_mode"]) == ({}, [], {}, None)
+
+
+def test_rerun_of_a_paused_claim_starts_from_the_documents(client, tmp_path):
+    from engine.documents import read_document, write_document
+    cid = paused_claim(client)
+    assert client.post(f"/claims/{cid}/rerun").status_code == 200
+    wait(client, cid, "paused")
+    ids = [t["step_id"] for t in client.get(f"/claims/{cid}/trace").json()]
+    assert ids == ["intake", "documents", "client", "rules", "photos", "paused"]
+    pdf = tmp_path / "documents" / cid / "policy.pdf"             # the policy is renewed in the PDF itself
+    fields = read_document(pdf, "policy").fields
+    write_document({**fields, "valabila_pana_la": "2025-06-30"}, "policy", pdf)
+    assert client.post(f"/claims/{cid}/rerun").status_code == 200
+    wait(client, cid)
+    ids = [t["step_id"] for t in client.get(f"/claims/{cid}/trace").json()]
+    assert ids[0] == "intake" and "paused" not in ids and ids[-1] == "final"
+
+
+def test_question_on_a_documents_claim_keeps_the_stored_flags(client):
+    seen = []
+    kw = engine()
+    base_judge = kw["judge"]
+
+    async def judge(h, e, s, r, question=None, early_flags=None, **rest):
+        seen.append((question, [f.code for f in early_flags or []]))
+        return await base_judge(h, e, s, r, question=question)
+    kw["judge"] = judge
+    client.app.state.engine_kwargs = kw
+    cid = paused_claim(client)
+    client.post(f"/claims/{cid}/continue")
+    time.sleep(0.05)
+    wait(client, cid)
+    seen.clear()
+    assert client.post(f"/claims/{cid}/question", json={"question": "A plouat și pe 15?"}).status_code == 200
+    time.sleep(0.05)
+    wait(client, cid)
+    assert seen and all("policy_active" in codes for _, codes in seen)
+    gates = client.get(f"/claims/{cid}").json()["score"]["gates"]
+    assert any(g["kind"] == "coverage" for g in gates)
+
+
+def test_seed_reads_claims_from_their_documents(tmp_path, monkeypatch):
+    from engine.documents import write_document
+    from app.main import create_app
+    cases = tmp_path / "cases"
+    docs = tmp_path / "documents" / "C-9"                     # documents live next to the cases folder
+    docs.mkdir(parents=True)
+    cases.mkdir()
+    write_document({"numar_polita": "P-9", "adresa_daunei": "Str. Y 2", "tip_dauna": "furtună",
+                    "data_evenimentului": "2024-09-14", "latitudine": "45.1", "longitudine": "27.1"},
+                   "claim_form", docs / "claim_form.pdf")
+    write_document({"numar_polita": "P-9", "nume_asigurat": "Ana Pop", "valabila_de_la": "2024-01-01",
+                    "valabila_pana_la": "2024-12-31", "riscuri_acoperite": "furtună", "suma_asigurata": "90000"},
+                   "policy", docs / "policy.pdf")
+    (cases / "new.json").write_text(json.dumps({"claim": {
+        "id": "C-9", "documents": {"claim_form": "C-9/claim_form.pdf", "policy": "C-9/policy.pdf"}, "photos": [],
+        "amount_claimed": 5000}}))
+    (cases / "old.json").write_text(json.dumps({"policy": POLICY, "claim": {**CLAIM, "id": "C-OLD"}}))
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    with TestClient(create_app(cases_dir=cases)) as c:
+        rows = {r["id"]: r for r in c.get("/claims").json()}
+        assert set(rows) == {"C-9", "C-OLD"} and rows["C-9"]["status"] == "received"
+        assert rows["C-9"]["damage_type"] == "storm" and rows["C-9"]["address"] == "Str. Y 2"
+        body = c.get("/claims/C-9").json()
+        assert body["policy"]["holder_name"] == "Ana Pop" and body["policy"]["sum_insured"] == 90000
+        assert body["claim"]["amount_claimed"] == 5000 and body["checks"] == {}
+        assert body["documents"]["claim_form"]["numar_polita"] == "P-9"
+        assert (body["claim"]["lat"], body["claim"]["lon"]) == (45.1, 27.1)
+        assert c.get("/documents/C-9/policy.pdf").content.startswith(b"%PDF")
+
+
+def test_rejecting_evidence_keeps_the_client_lines_of_a_documents_claim(client):
+    client.app.state.engine_kwargs = engine(verdicts={"risk_zones": "contradicts"})
+    cid = create(client, cnp="1800101123457")
+    wait(client, cid)
+    before = client.get(f"/claims/{cid}").json()
+    eid = [e["id"] for e in before["evidence"] if e["agent"] == "risk_zones"][0]
+    new = client.post(f"/claims/{cid}/evidence/{eid}/reject").json()
+    client_lines = [c for c in before["score"]["contributions"] if c["agent"] == "client"]
+    assert client_lines and [c for c in new["contributions"] if c["agent"] == "client"] == client_lines
+
+
+def test_claim_with_full_client_data_gets_no_flags_and_no_client_lines(client):
+    policy = {**POLICY, "id": "P-FULL", "cnp": "1800101123450", "unknown_key": "ignored"}
+    claim = {**CLAIM, "policy_id": "P-FULL", "cnp": "1800101123450", "telefon": "0722123456",
+             "email": "ana@example.ro", "iban": "RO49AAAA1B31007593840000"}
+    r = client.post("/claims", data={"data": json.dumps({"claim": claim, "policy": policy})})
+    assert r.status_code == 200, r.text
+    cid = r.json()["id"]
+    wait(client, cid)
+    body = client.get(f"/claims/{cid}").json()
+    assert body["flags"] == []
+    assert body["documents"]["policy"]["cnp"] == "•••••••••3450"     # never sent in full
+    assert "1800101123450" not in json.dumps(body, ensure_ascii=False)
+    assert body["documents"]["policy"]["telefon"] == "0722123456"   # the policyholder's data, on the policy
+    assert [c for c in body["score"]["contributions"] if c["agent"] == "client"] == []
+    assert body["policy"]["cnp"] == "•••••••••3450" and "unknown_key" not in body["policy"]
+

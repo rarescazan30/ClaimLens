@@ -11,22 +11,21 @@ import base64
 import io
 import os
 import re
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
-import imagehash
-from PIL import ExifTags, Image
+from PIL import Image
 
-from agents.common import conclude, event_day, haversine_m, main_hypothesis
+from agents.common import conclude, event_day, main_hypothesis
 from engine.context import AgentContext, BudgetExceeded
 from engine.graph import AgentTask
 from engine.http import SourceError
 from engine.models import Evidence, Finding
+from engine.photos import HASH_DISTANCE, check_photos, image_hash, read_exif  # noqa: F401  (re-exported)
 
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
 ROLE = "autenticitatea fotografiilor: metadate, copii în alte dosare sau pe web, ce arată imaginile."
 MAX_VISION_PHOTOS = 4
-HASH_DISTANCE = 6
 GUIDANCE = ("Lipsa metadatelor EXIF este frecventă (aplicații de mesagerie le șterg): singură este 'inconclusive'. "
             "O dată EXIF cu multe zile înaintea evenimentului, o copie în alt dosar sau o copie pe web publicată "
             "înainte de eveniment contrazic puternic (strength ≥ 0.8). O copie pe web fără dată nu e concludentă.")
@@ -47,45 +46,12 @@ def _vision_ok(data) -> bool:
     return bool(responses) and not any("error" in (r or {}) for r in responses)
 
 
-def _dms(value) -> float:
-    d, m, s = (float(x) for x in value)
-    return d + m / 60 + s / 3600
-
-
-def read_exif(img: Image.Image) -> tuple[date | None, tuple[float, float] | None]:
-    exif = img.getexif()
-    raw = exif.get_ifd(ExifTags.IFD.Exif).get(0x9003) or exif.get(0x0132)
-    taken = None
-    if raw:
-        try:
-            taken = datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S").date()
-        except ValueError:
-            pass
-    gps = exif.get_ifd(ExifTags.IFD.GPSInfo)
-    where = None
-    try:
-        if gps.get(2) and gps.get(4):
-            lat, lon = _dms(gps[2]), _dms(gps[4])
-            where = (-lat if gps.get(1) == "S" else lat, -lon if gps.get(3) == "W" else lon)
-    except (TypeError, ValueError, ZeroDivisionError):
-        pass
-    return taken, where
-
-
 def small_jpeg(img: Image.Image, side: int = 1024) -> bytes:
     img = img.convert("RGB")
     img.thumbnail((side, side))
     buf = io.BytesIO()
     img.save(buf, "JPEG", quality=85)
     return buf.getvalue()
-
-
-def _hash(path: str):
-    try:
-        with Image.open(path) as im:
-            return imagehash.phash(im)
-    except Exception:
-        return None
 
 
 async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
@@ -98,37 +64,31 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
     findings: list[Finding] = []
     gaps: list[str] = []
     readable: list[tuple[str, str, bytes]] = []          # (name, path, small jpeg)
-    other_hashes = [h for h in map(_hash, c.get("other_photo_paths") or []) if h is not None]
+    other_count = len([h for h in map(image_hash, c.get("other_photo_paths") or []) if h is not None])
 
     def f(name, check, value, source, unit=None, url=None):
         findings.append(Finding(metric=f"{name}:{check}", value=value, unit=unit, source=source, url=url))
 
-    # 1. local checks: EXIF and copies in other claims
+    # 1. local checks (EXIF, copies in other claims): reuse the intake step's result when it is there
+    pre = c.get("photo_findings")
+    if isinstance(pre, list):
+        findings.extend(x if isinstance(x, Finding) else Finding(**x) for x in pre)
+    else:
+        house = (c["lat"], c["lon"]) if c.get("lat") is not None and c.get("lon") is not None else None
+        findings.extend(check_photos([Path(p) for p in paths], str(event), house,
+                                     [Path(p) for p in c.get("other_photo_paths") or []])[1])
     for path in paths:
         name = Path(path).name
         try:
             with Image.open(path) as img:
                 img.load()
-                taken, where = read_exif(img)
                 jpeg = small_jpeg(img)
-                digest = imagehash.phash(img)
         except Exception:
-            f(name, "unreadable", True, "Fișier")
             gaps.append(f"{name} nu a putut fi citită ca imagine")
             continue
         readable.append((name, path, jpeg))
-        if taken is None and where is None:
-            f(name, "exif_missing", True, "EXIF")
-        if taken is not None:
-            f(name, "exif_date", taken.isoformat(), "EXIF")
-            days = (event - taken).days
-            f(name, "exif_days_before_event" if days >= 0 else "exif_days_after_event", abs(days), "EXIF", "zile")
-        if where is not None:
-            f(name, "exif_distance_to_address_km", round(haversine_m(c["lat"], c["lon"], *where) / 1000, 2), "EXIF", "km")
-        f(name, "copy_in_other_claim", any(digest - h <= HASH_DISTANCE for h in other_hashes),
-          "Comparare cu fotografiile din alte dosare")
     ctx.note("observation", f"Metadate citite pentru {len(readable)} din {len(paths)} fotografii; "
-                            f"comparate cu {len(other_hashes)} fotografii din alte dosare",
+                            f"comparate cu {other_count} fotografii din alte dosare",
              {"photos": [n for n, _, _ in readable]}, ["EXIF"])
     if not readable:
         return Evidence(agent=ctx.agent, round=ctx.round, hypothesis=main_hypothesis(task), verdict="inconclusive",

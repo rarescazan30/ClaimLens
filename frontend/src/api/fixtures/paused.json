@@ -1,0 +1,537 @@
+{
+ "detail": {
+  "claim": {
+   "id": "C-1042",
+   "policy_id": "P-7731",
+   "damage_type": "flood",
+   "event_date": "2025-03-02",
+   "notified_at": "2024-09-19",
+   "address": "Str. Exemplu 12, Pechea, jud. Galați",
+   "lat": 45.6059,
+   "lon": 27.78329,
+   "description": "Apă în casă, aproximativ 60 cm, pardoseală și mobilier distruse.",
+   "amount_claimed": 48000.0,
+   "photos": [],
+   "status": "paused",
+   "decision": null,
+   "outcome": null,
+   "decision_reason": null,
+   "decided_at": null,
+   "created_at": "2026-11-14T00:48:34Z"
+  },
+  "policy": {
+   "id": "P-7731",
+   "holder_name": "Persoană Sintetică Unu",
+   "address": "Str. Exemplu 12, Pechea, jud. Galați",
+   "lat": 45.6059,
+   "lon": 27.78329,
+   "valid_from": "2024-02-01",
+   "valid_to": "2025-01-31",
+   "waiting_days": 0,
+   "covered_risks": [
+    "flood",
+    "earthquake",
+    "landslide"
+   ],
+   "sum_insured": 100000.0,
+   "product": "PAD"
+  },
+  "rule_flags": [
+   {
+    "rule": "policy_active",
+    "passed": false,
+    "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+   },
+   {
+    "rule": "waiting_period",
+    "passed": true,
+    "reason": "Perioada de așteptare a trecut"
+   },
+   {
+    "rule": "risk_covered",
+    "passed": true,
+    "reason": "Riscul declarat este acoperit"
+   },
+   {
+    "rule": "address_match",
+    "passed": true,
+    "reason": "Adresa coincide cu polița"
+   },
+   {
+    "rule": "notified_in_time",
+    "passed": true,
+    "reason": "Notificat la 5 zile de la eveniment"
+   }
+  ],
+  "hypotheses": [],
+  "not_relevant_agents": [],
+  "evidence": [],
+  "score": null,
+  "score_history": [],
+  "checks": {
+   "intake": {
+    "step": "intake",
+    "items": [
+     {
+      "id": "claim_id",
+      "label": "Claim number",
+      "value": "C-1042",
+      "status": "info",
+      "reason": null
+     },
+     {
+      "id": "amount",
+      "label": "Amount claimed",
+      "value": "48000 RON",
+      "status": "info",
+      "reason": null
+     },
+     {
+      "id": "photos",
+      "label": "Photos attached",
+      "value": "0",
+      "status": "flag",
+      "reason": "Nicio fotografie"
+     }
+    ],
+    "flags": []
+   },
+   "documents": {
+    "step": "documents",
+    "items": [
+     {
+      "id": "claim_form",
+      "label": "Claim form read",
+      "value": "12 fields",
+      "status": "ok",
+      "reason": null
+     },
+     {
+      "id": "policy_doc",
+      "label": "Policy read",
+      "value": "9 fields",
+      "status": "ok",
+      "reason": null
+     }
+    ],
+    "flags": []
+   },
+   "client": {
+    "step": "client",
+    "items": [
+     {
+      "id": "holder",
+      "label": "Policyholder",
+      "value": "Persoană Sintetică Unu",
+      "status": "ok",
+      "reason": null
+     },
+     {
+      "id": "cnp",
+      "label": "CNP",
+      "value": "123",
+      "status": "flag",
+      "reason": "CNP-ul din cerere nu are un format valid"
+     },
+     {
+      "id": "email",
+      "label": "Email",
+      "value": "nu-este-email",
+      "status": "flag",
+      "reason": "Adresa de e-mail din cerere nu este validă"
+     },
+     {
+      "id": "address",
+      "label": "Address located",
+      "value": "Pechea, Galați",
+      "status": "ok",
+      "reason": null
+     }
+    ],
+    "flags": [
+     {
+      "step": "client",
+      "code": "cnp_invalid",
+      "field": "cnp",
+      "severity": "warn",
+      "reason": "CNP-ul din cerere nu are un format valid"
+     },
+     {
+      "step": "client",
+      "code": "email_malformed",
+      "field": "email",
+      "severity": "warn",
+      "reason": "Adresa de e-mail din cerere nu este validă"
+     }
+    ]
+   },
+   "policy": {
+    "step": "policy",
+    "items": [
+     {
+      "id": "policy_active",
+      "label": "policy active",
+      "value": null,
+      "status": "fail",
+      "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+     },
+     {
+      "id": "waiting_period",
+      "label": "waiting period",
+      "value": null,
+      "status": "ok",
+      "reason": "Perioada de așteptare a trecut"
+     },
+     {
+      "id": "risk_covered",
+      "label": "risk covered",
+      "value": null,
+      "status": "ok",
+      "reason": "Riscul declarat este acoperit"
+     },
+     {
+      "id": "address_match",
+      "label": "address match",
+      "value": null,
+      "status": "ok",
+      "reason": "Adresa coincide cu polița"
+     },
+     {
+      "id": "notified_in_time",
+      "label": "notified in time",
+      "value": null,
+      "status": "ok",
+      "reason": "Notificat la 5 zile de la eveniment"
+     }
+    ],
+    "flags": [
+     {
+      "step": "policy",
+      "code": "policy_active",
+      "field": "event_date",
+      "severity": "fail",
+      "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+     }
+    ]
+   },
+   "photos": {
+    "step": "photos",
+    "items": [
+     {
+      "id": "count",
+      "label": "Photos",
+      "value": "0",
+      "status": "flag",
+      "reason": "Cererea nu are fotografii atașate"
+     }
+    ],
+    "flags": [
+     {
+      "step": "photos",
+      "code": "no_photos",
+      "field": null,
+      "severity": "warn",
+      "reason": "Cererea nu are fotografii atașate"
+     }
+    ]
+   }
+  },
+  "flags": [
+   {
+    "step": "client",
+    "code": "cnp_invalid",
+    "field": "cnp",
+    "severity": "warn",
+    "reason": "CNP-ul din cerere nu are un format valid"
+   },
+   {
+    "step": "client",
+    "code": "email_malformed",
+    "field": "email",
+    "severity": "warn",
+    "reason": "Adresa de e-mail din cerere nu este validă"
+   },
+   {
+    "step": "policy",
+    "code": "policy_active",
+    "field": "event_date",
+    "severity": "fail",
+    "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+   },
+   {
+    "step": "photos",
+    "code": "no_photos",
+    "field": null,
+    "severity": "warn",
+    "reason": "Cererea nu are fotografii atașate"
+   }
+  ],
+  "documents": {
+   "claim_form": {
+    "numar_dosar": "C-1042",
+    "nume": "Persoană Sintetică Unu",
+    "cnp": "123",
+    "adresa": "Str. Exemplu 12, Pechea, jud. Galați",
+    "data_eveniment": "2025-03-02",
+    "suma": "48000"
+   },
+   "policy": {
+    "numar_polita": "P-7731",
+    "titular": "Persoană Sintetică Unu",
+    "valabila_de_la": "2024-02-01",
+    "valabila_pana_la": "2025-01-31"
+   }
+  },
+  "run_mode": "live"
+ },
+ "trace": [
+  {
+   "case_id": "C-1042",
+   "step_id": "intake",
+   "parent": null,
+   "actor": "intake",
+   "type": "observation",
+   "summary": "Cerere citită",
+   "inputs": {},
+   "outputs": {
+    "items": [
+     {
+      "id": "claim_id",
+      "label": "Claim number",
+      "value": "C-1042",
+      "status": "info",
+      "reason": null
+     },
+     {
+      "id": "amount",
+      "label": "Amount claimed",
+      "value": "48000 RON",
+      "status": "info",
+      "reason": null
+     },
+     {
+      "id": "photos",
+      "label": "Photos attached",
+      "value": "0",
+      "status": "flag",
+      "reason": "Nicio fotografie"
+     }
+    ],
+    "flags": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:00Z",
+   "ended_at": "2026-11-14T09:00:00Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "documents",
+   "parent": null,
+   "actor": "documents",
+   "type": "observation",
+   "summary": "Documente citite",
+   "inputs": {},
+   "outputs": {
+    "items": [
+     {
+      "id": "claim_form",
+      "label": "Claim form read",
+      "value": "12 fields",
+      "status": "ok",
+      "reason": null
+     },
+     {
+      "id": "policy_doc",
+      "label": "Policy read",
+      "value": "9 fields",
+      "status": "ok",
+      "reason": null
+     }
+    ],
+    "flags": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:01Z",
+   "ended_at": "2026-11-14T09:00:01Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "client",
+   "parent": null,
+   "actor": "client",
+   "type": "observation",
+   "summary": "Date client verificate",
+   "inputs": {},
+   "outputs": {
+    "items": [
+     {
+      "id": "holder",
+      "label": "Policyholder",
+      "value": "Persoană Sintetică Unu",
+      "status": "ok",
+      "reason": null
+     },
+     {
+      "id": "cnp",
+      "label": "CNP",
+      "value": "123",
+      "status": "flag",
+      "reason": "CNP-ul din cerere nu are un format valid"
+     },
+     {
+      "id": "email",
+      "label": "Email",
+      "value": "nu-este-email",
+      "status": "flag",
+      "reason": "Adresa de e-mail din cerere nu este validă"
+     },
+     {
+      "id": "address",
+      "label": "Address located",
+      "value": "Pechea, Galați",
+      "status": "ok",
+      "reason": null
+     }
+    ],
+    "flags": [
+     {
+      "step": "client",
+      "code": "cnp_invalid",
+      "field": "cnp",
+      "severity": "warn",
+      "reason": "CNP-ul din cerere nu are un format valid"
+     },
+     {
+      "step": "client",
+      "code": "email_malformed",
+      "field": "email",
+      "severity": "warn",
+      "reason": "Adresa de e-mail din cerere nu este validă"
+     }
+    ],
+    "coordinates": {
+     "lat": 45.6059,
+     "lon": 27.78329
+    }
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:02Z",
+   "ended_at": "2026-11-14T09:00:02Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "rules",
+   "parent": null,
+   "actor": "rules",
+   "type": "decision",
+   "summary": "Verificare poliță: 4 din 5 reguli trecute",
+   "inputs": {},
+   "outputs": {
+    "flags": [
+     {
+      "step": "policy",
+      "code": "policy_active",
+      "field": "event_date",
+      "severity": "fail",
+      "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+     }
+    ],
+    "items": [
+     {
+      "id": "policy_active",
+      "label": "policy active",
+      "value": null,
+      "status": "fail",
+      "reason": "Polița nu era activă la data evenimentului (valabilă 2024-02-01 – 2025-01-31)"
+     },
+     {
+      "id": "waiting_period",
+      "label": "waiting period",
+      "value": null,
+      "status": "ok",
+      "reason": "Perioada de așteptare a trecut"
+     },
+     {
+      "id": "risk_covered",
+      "label": "risk covered",
+      "value": null,
+      "status": "ok",
+      "reason": "Riscul declarat este acoperit"
+     },
+     {
+      "id": "address_match",
+      "label": "address match",
+      "value": null,
+      "status": "ok",
+      "reason": "Adresa coincide cu polița"
+     },
+     {
+      "id": "notified_in_time",
+      "label": "notified in time",
+      "value": null,
+      "status": "ok",
+      "reason": "Notificat la 5 zile de la eveniment"
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:03Z",
+   "ended_at": "2026-11-14T09:00:03Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "photos",
+   "parent": null,
+   "actor": "photos",
+   "type": "observation",
+   "summary": "Fotografii verificate",
+   "inputs": {},
+   "outputs": {
+    "items": [
+     {
+      "id": "count",
+      "label": "Photos",
+      "value": "0",
+      "status": "flag",
+      "reason": "Cererea nu are fotografii atașate"
+     }
+    ],
+    "flags": [
+     {
+      "step": "photos",
+      "code": "no_photos",
+      "field": null,
+      "severity": "warn",
+      "reason": "Cererea nu are fotografii atașate"
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:04Z",
+   "ended_at": "2026-11-14T09:00:04Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "paused",
+   "parent": null,
+   "actor": "engine",
+   "type": "escalation",
+   "summary": "Pauză: regulă de poliță picată",
+   "inputs": {},
+   "outputs": {
+    "failed_rules": [
+     "policy_active"
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T09:00:04Z",
+   "ended_at": "2026-11-14T09:00:04Z"
+  }
+ ]
+}

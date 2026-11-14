@@ -117,9 +117,9 @@ step("r2.judge", "r2.dispatch", "judge", "decision", "Toate ipotezele critice au
 step("final", "r2.judge", "engine", "escalation", "Recomandare: trimitere la antifraudă. Decizia aparține evaluatorului.",
      {"recommendation": "antifraud_referral"})
 
-(OUT / "claim_fraud.json").write_text(json.dumps(claim, ensure_ascii=False, indent=1))
-(OUT / "trace_fraud.json").write_text(json.dumps(steps, ensure_ascii=False, indent=1))
+(OUT / "claim_fraud.json").write_text(json.dumps(claim, ensure_ascii=False, indent=1), encoding="utf-8")
+(OUT / "trace_fraud.json").write_text(json.dumps(steps, ensure_ascii=False, indent=1), encoding="utf-8")
 queue = [{k: claim["claim"][k] for k in ("id", "address", "damage_type", "event_date", "status")} |
          {"score": 12.4, "band": "unlikely", "recommendation": "antifraud_referral"}]
-(OUT / "claims_list.json").write_text(json.dumps(queue, ensure_ascii=False, indent=1))
+(OUT / "claims_list.json").write_text(json.dumps(queue, ensure_ascii=False, indent=1), encoding="utf-8")
 print(len(steps), "steps")

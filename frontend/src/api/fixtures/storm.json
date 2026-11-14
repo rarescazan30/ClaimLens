@@ -584,7 +584,11 @@
     "score": 79.5,
     "band": "likely"
    }
-  ]
+  ],
+  "checks": {},
+  "flags": [],
+  "documents": {},
+  "run_mode": null
  },
  "trace": [
   {
