@@ -137,6 +137,8 @@ Fișiere: `src/components/Report.tsx` și `src/components/CaseView.tsx`.
   sunt închise, coloanele se termină la aceeași înălțime.
 - **Scorul nu mai apare de două ori:** cât timp raportul este deschis, cardul-rezumat de sub diagramă (scor,
   verdict, „Aprobați”, „Vedeți de ce”) este ascuns, pentru că raportul conține deja toate aceste informații.
+- **Harta scoasă:** harta cu casa și zona inundată nu mai apare, nici în raport, nici ca „Hartă” în meniul
+  lateral. Distanțele (de exemplu „La 150 m de zona inundată”) rămân în rezultatele agenților.
 
 ## 6. Încadrarea pe ecran (1920×1080)
 
@@ -167,14 +169,14 @@ Fișiere: `src/components/CaseView.tsx` și `styles.css`.
 | `frontend/src/api/build.test.ts` | Rezultatele așteptate, actualizate la română |
 | `frontend/src/api/client.ts` | Mesajul „serverul nu răspunde”, în română |
 | `frontend/src/components/Cards.tsx` | Cardurile de scor, dosar și hartă, în română |
-| `frontend/src/components/CaseView.tsx` | Fără slider și bară de progres; butoanele mutate; un singur rând de context; antet compact; rezumatul ascuns cu raportul deschis; în română |
+| `frontend/src/components/CaseView.tsx` | Fără slider și bară de progres; fără „Hartă” în meniul lateral; butoanele mutate; un singur rând de context; antet compact; rezumatul ascuns cu raportul deschis; în română |
 | `frontend/src/components/ClaimMenu.tsx` | Lista rapidă de dosare, în română |
 | `frontend/src/components/DecisionPanel.tsx` | Panoul de decizie, în română |
 | `frontend/src/components/EvidenceDrawer.tsx` | Panoul cu dovezile unui agent, în română |
 | `frontend/src/components/Pipeline.tsx` | Fără eticheta rundei; în română |
 | `frontend/src/components/Queue.tsx` | Lista de dosare, în română |
 | `frontend/src/components/ReplayBar.tsx` | **Șters** |
-| `frontend/src/components/Report.tsx` | Secțiune pliabilă pentru scor; două coloane; „Scor inițial”; în română |
+| `frontend/src/components/Report.tsx` | Secțiune pliabilă pentru scor; două coloane; „Scor inițial”; fără secțiunea „Hartă”; în română |
 | `frontend/src/components/StageDetail.tsx` | Detaliile pașilor, în română |
 | `frontend/src/components/ui.tsx` | Etichete mici (stări, fotografii), în română |
 | `frontend/src/lib/derive.ts` | Un mesaj, în română |
@@ -197,6 +199,7 @@ Fișiere: `src/components/CaseView.tsx` și `styles.css`.
 - **Cod rămas nefolosit, inofensiv:**
   - Stilurile vechi ale barei de redare (`.replay`, `.scrub`) au rămas în `styles.css`.
   - Proprietatea `round` a componentei `Pipeline` nu mai este folosită.
-  - Ambele pot fi curățate oricând.
+  - Componenta `MapCard` din `Cards.tsx` nu mai este afișată nicăieri.
+  - Toate pot fi curățate oricând.
 - **Fișiere locale care nu intră în commit:** `.claude/launch.json` (pornirea serverelor) și `backend/uv.lock`
   (dacă reapare).

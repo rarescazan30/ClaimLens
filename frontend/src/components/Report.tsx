@@ -5,7 +5,7 @@ import { agentName, AGENTS, BANDS, isAgent, nr, OUTCOMES } from '../lib/meta';
 import { baseOf, fmtScore, pointsOf } from '../lib/score';
 import type { CaseFile, Evidence, ScoreStep } from '../lib/types';
 import { Aurora, type Tone } from './Aurora';
-import { MapCard, ScoreMeter } from './Cards';
+import { ScoreMeter } from './Cards';
 import { AGENT_ICON } from './icons';
 import { PhotoGrid } from './ui';
 
@@ -164,17 +164,6 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
             </summary>
             <PhotoGrid photos={c.photos} t={c.duration} />
           </details>
-
-          {c.map && (
-            <details className="card fold">
-              <summary>
-                <h3>Hartă</h3>
-                <span className="chip">{c.place}</span>
-                <ChevronDown size={16} className="fold-chev" />
-              </summary>
-              <MapCard c={c} t={c.duration} />
-            </details>
-          )}
         </div>
 
         <div className="report-side">

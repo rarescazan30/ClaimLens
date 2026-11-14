@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Map as MapIcon, Play, Radio, RotateCcw, Scale, SkipForward, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Play, Radio, RotateCcw, Scale, SkipForward, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { API_URL } from '../api/client';
 import { useCase, type CaseActions } from '../api/hooks';
@@ -8,7 +8,7 @@ import { agentName, BANDS, isAgent, nr, ORDER, OUTCOMES, STAGES } from '../lib/m
 import { fmtScore, pointsOf } from '../lib/score';
 import type { AgentId, CaseFile, DetailItem, StageId } from '../lib/types';
 import type { Tone } from './Aurora';
-import { ClaimCard, MapCard, ScoreCard, ScoreNumber, type GateState } from './Cards';
+import { ClaimCard, ScoreCard, ScoreNumber, type GateState } from './Cards';
 import { DecisionPanel } from './DecisionPanel';
 import { EvidenceDrawer } from './EvidenceDrawer';
 import { Pipeline } from './Pipeline';
@@ -121,7 +121,7 @@ export function CaseView({ id, initialT, initialTab }: { id: string; initialT?: 
   return <CaseInner key={c.id} c={c} live={live} actions={actions} initialT={initialT} initialTab={initialTab} />;
 }
 
-type Panel = 'step' | 'score' | 'map' | 'claim' | 'photos' | 'verdict';
+type Panel = 'step' | 'score' | 'claim' | 'photos' | 'verdict';
 
 function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; live: boolean; actions: CaseActions; initialT?: number; initialTab?: string }) {
   const finished = c.status === 'awaiting_decision' || c.status === 'decided';
@@ -264,7 +264,6 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
   const dock: { id: Panel; icon: typeof Gauge; label: string; meta?: string; alert?: boolean; group: 'claim' | 'run' | 'result' }[] = [
     { id: 'claim', icon: FileText, label: 'Dosar', group: 'claim' },
     { id: 'photos', icon: Camera, label: 'Fotografii', meta: flaggedPhotos ? `${flaggedPhotos} semnalate` : String(c.photos.length), alert: flaggedPhotos > 0, group: 'claim' },
-    ...(c.map ? [{ id: 'map' as const, icon: MapIcon, label: 'Hartă', group: 'claim' as const }] : []),
     { id: 'step', icon: ListChecks, label: 'Detalii pas', meta: STAGES.find((x) => x.id === shown)!.short, group: 'run' },
     { id: 'score', icon: Gauge, label: 'Scor', meta: now ? fmtScore(now.score) : undefined, group: 'run' },
     { id: 'verdict', icon: Scale, label: 'Raport complet', group: 'result' },
@@ -425,7 +424,6 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
             </StageDetail>
           )}
           {panel === 'score' && <ScoreCard score={now?.score} band={now?.band} evidenceCount={now?.contributions.filter((k) => isAgent(k.agent)).length ?? 0} phase={phase} coverage={coverage} authenticity={authenticity} />}
-          {panel === 'map' && c.map && <MapCard c={c} t={t} />}
           {panel === 'claim' && <ClaimCard c={c} />}
           {panel === 'photos' && (
             <section className="card">
