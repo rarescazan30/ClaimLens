@@ -170,7 +170,14 @@ def _font() -> str:
     return _font_name
 
 
+def has_unicode_font() -> bool:
+    """True when a TrueType font with Romanian diacritics was found on this machine (the writer can draw them)."""
+    return _font() != "Helvetica"
+
+
 def _drawable(s: str) -> str:
+    # Explicit fallback: without a Unicode TTF, Helvetica cannot draw ș/ț, so drawn text is transliterated to ASCII.
+    # Form-field values are unaffected (set as text by pypdf), and the readers never depend on fonts.
     if _font() != "Helvetica":
         return s
     return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()

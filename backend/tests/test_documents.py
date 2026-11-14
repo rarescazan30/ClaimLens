@@ -1,7 +1,9 @@
 from pathlib import Path
 
+import pytest
+
 from engine.documents import (
-    CLAIM_FIELDS, POLICY_FIELDS, check_documents, check_intake, read_document, to_claim, write_document,
+    CLAIM_FIELDS, POLICY_FIELDS, check_documents, check_intake, has_unicode_font, read_document, to_claim, write_document,
 )
 from engine.models import ReadDocument
 
@@ -44,6 +46,8 @@ def test_policy_round_trip(tmp_path):
 
 
 def test_flat_text_pdf_is_read_by_labels(tmp_path):
+    if not has_unicode_font():
+        pytest.skip("no Unicode TrueType font on this machine; the flat writer cannot draw diacritic labels")
     from engine.documents import write_flat_document
     write_flat_document(POLICY, "policy", tmp_path / "f.pdf")
     d = read_document(tmp_path / "f.pdf", "policy")
