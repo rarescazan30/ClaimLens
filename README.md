@@ -54,8 +54,12 @@ REPLAY=1 .venv/bin/uvicorn app.main:app --port 8000
 
 Leave it running. You should see `Uvicorn running on http://127.0.0.1:8000`.
 
-`REPLAY=1` means **saved answers**: the backend makes no outside calls and answers from `demo/cache/`, which holds
-real responses recorded with our keys. No keys needed, no cost, same result every time. This is how we demo.
+`REPLAY=1` means **saved answers**: the backend makes no outside calls and answers only from `demo/cache/`.
+No keys needed, no cost, same result every time. **The saved answers must be recorded again for the current demo
+claims** (`RECORD=1`, see below); until then a replayed run gets "unavailable" AI answers after the early checks.
+
+Three modes: **live** (default, no variable): every run really calls the sources and the AI, nothing saved is reused.
+**Replay** (`REPLAY=1`): only saved answers. **Record** (`RECORD=1`): live, and overwrites the saved answers.
 
 ### 3. Frontend (terminal 2)
 
@@ -108,19 +112,25 @@ cd frontend && npm test
 **Queue** (`http://localhost:5173`): every claim the backend holds. "New claims" are not investigated yet;
 "Verdict ready" are finished, sorted by score. Click one to open it.
 
-**Case screen**: a rail with 7 steps, played back like a video (play, pause, scrub, speed).
+**Case screen**: a rail with 10 steps, played back like a video (play, pause, scrub, speed).
 
 | Step on screen | What it really does |
 | --- | --- |
-| Claim | Shows the stored claim. Nothing is checked here. |
-| Policy check | Five fixed rules, no AI: policy active, waiting period over, peril covered, address matches the policy, notified in time. |
+| Claim | Are the claim form, the policy and the photos on file. |
+| Documents | Reads the two PDFs (claim form, policy) by code, no AI; flags missing or malformed fields. |
+| Client data | Checks the policyholder's ID number (checksum), phone, email; the house coordinates from the documents. Problems are flags and lower the score a little. |
+| Policy check | Six fixed rules, no AI: policy active, waiting period over, peril covered, address matches the policy (by map position), notified in time, amount within the sum insured. **A failed rule pauses the claim** before the agents: the adjuster continues it or decides. |
+| Photo check | Capture date and place, copies in earlier claims. Problems are flags the Judge weighs. |
 | Plan | The AI orchestrator writes 3–5 hypotheses to test. The agents sent are the fixed set for the damage type (all 6 for flood, 4 for storm). |
 | Agents | Each agent fetches real data and an AI reads it and gives a verdict. Click a lane to see what it found and every source it called. |
 | Judge | A separate AI call marks each hypothesis, lists contradictions, and either sends 1–2 agents back with a narrower question or stops (max 3 rounds). |
 | Verdict | The score, band and recommendation, as the backend computed them. |
 | Review | Your decision. The AI only recommends. |
 
-Buttons that change something (each one is a backend call): **Start investigation**, **Run again**,
+Every flag from the first five steps goes to the orchestrator and the Judge.
+
+Buttons that change something (each one is a backend call): **Start investigation**, **Continue investigation**
+(paused claim), **Run again**,
 **Approve**, **Choose another route** (with a reason), **Ask for more** (one more round on your question),
 **set aside** a finding in the full report (cannot be undone).
 
@@ -128,10 +138,12 @@ The demo claims:
 
 | Claim | Event | Result today |
 | --- | --- | --- |
-| C-1042, flood, Pechea | Real flood of 14.09.2024 (Copernicus EMSR758). The house is placed 150 m outside the mapped flood and 13 m higher than its edge. | 78 after round 1 → Judge asks for the height check → ~34, **antifraud referral** |
-| C-1038, storm, Galați | Real windstorm of 26.11.2023, gusts of 90 km/h | ~80, **standard review** |
+| C-8001, flood, Pechea (DJ255 nr. 19) | Real flood of 14.09.2024 | to be recorded with keys |
+| C-8002, storm, București (Str. Borșa 15) | Storm of 17.07.2025 | to be recorded with keys |
+| C-8003, flood, Pechea | Same as C-8001, but the policy expired on 31.01.2024 | **pauses** at the policy check |
 
-People, addresses and claims are synthetic; the events and all fetched data are real. Details:
+Documents and photos are in `demo/documents/` (from the demo team). People are synthetic. Both CNPs in the team's
+policies fail the official checksum, so each claim shows an "invalid CNP" flag. Details:
 [`demo/README.md`](demo/README.md).
 
 ---
@@ -187,17 +199,15 @@ Honest status, so nobody says more in the pitch than the code does.
 - **Street view finds nothing useful** at either demo address. **GDELT never answers** from our network; news
   comes from the AI web search.
 - **Satellite works only where Copernicus mapped the flood.** For our event, only the Pechea area.
-- **The address rule needs an exact match.** It passes because our synthetic addresses are identical; real
-  addresses with a missing "Str." or diacritic will fail it.
 - **"Ask for more"** works with real keys; on saved answers it gives a broken result.
 - **Not tested yet:** a live run with real keys in the new UI; the light theme and phone layout after the changes.
 
 ## Not built yet
 
-- **Client data validation, document parsing, photo pre-screen.** Planned for both backend and frontend; a plan
-  will be written before any work starts.
+- The claim form template has no amount claimed, claimant name/ID or bank account, so the amount rule and the
+  claim-vs-policy identity check cannot run on it (they work when those fields exist).
 - A screen to file a new claim (the backend supports it).
-- Photos for the two demo claims.
+- Photos with capture date and location inside the file (the demo photos are PNGs without them).
 - Users and login, undo, editing a claim, handing the decision to payment or the antifraud team.
 - The cross-claim "learning" (reusing a saved flood map for the next claim nearby) exists in code but has not been
   seen working.
