@@ -6409,3 +6409,192 @@ button.q-row:hover .q-chev {
 .flag-reason {
   overflow-wrap: anywhere;
 }
+
+/* =====================================================================
+   Steady pass. Same violet identity, fewer startup flourishes: a greyer dark ground, cards that
+   sit a step above it with a clear edge, a calmer accent, no glow, and tidier alignment.
+   ===================================================================== */
+:root {
+  --aurora-a: rgba(120, 100, 235, 0.09);
+  --aurora-b: rgba(104, 86, 220, 0.07);
+  --aurora-c: rgba(70, 190, 130, 0.04);
+  --line: rgba(40, 36, 80, 0.12);
+  --line-2: rgba(40, 36, 80, 0.2);
+  --r-xl: 18px;
+  --r-lg: 16px;
+}
+[data-theme='dark'] {
+  --bg: #16171b;
+  --surface: #24252b;
+  --surface-2: #2a2b32;
+  --surface-3: #34353d;
+  --ink: #f3f3f7;
+  --ink-2: #c3c3d0;
+  --ink-3: #9a9aab;
+  --line: rgba(220, 220, 240, 0.12);
+  --line-2: rgba(220, 220, 240, 0.2);
+  --accent: #b0a6ec;
+  --accent-strong: #b0a6ec;
+  --accent-fill: #6a5bc9;
+  --likely: #b0a6ec;
+  --info: #b0a6ec;
+  --glass: rgba(22, 23, 27, 0.82);
+  --glass-card: rgba(36, 37, 43, 0.96);
+  --aurora-a: rgba(92, 70, 210, 0.07);
+  --aurora-b: rgba(74, 56, 190, 0.05);
+  --aurora-c: rgba(60, 150, 100, 0.03);
+  --map-land: #23242a;
+  --map-road: #33343c;
+}
+
+/* the moving light behind the run stays, but quieter */
+.aurora:not(.is-ground) {
+  opacity: 0.55;
+}
+
+/* cards: a clear edge and a solid fill so they read at a glance */
+.card,
+.rail-card,
+.side-panel {
+  border: 1px solid var(--line-2);
+  box-shadow: var(--sh-2);
+}
+.rail-card {
+  border-radius: var(--r-xl);
+}
+.new-card:hover,
+.new-card:focus-visible,
+.live-score:hover {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: var(--sh-2);
+}
+
+/* headings: still the same grotesque, a little firmer and less tightly packed */
+h1,
+h2,
+.stage-title,
+.page-head h1,
+.verdict-strip-text h2,
+.claim-menu-head h2 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.btn-primary {
+  box-shadow: none;
+}
+
+/* claim cards: icon and text share one left edge; the filed date sits under the text instead of
+   squeezing the name into three lines */
+.new-top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  row-gap: 10px;
+  align-items: start;
+}
+.new-top > .chip {
+  grid-column: 2;
+  justify-self: start;
+}
+
+/* the pipeline's wiring is visible before a run starts, so the route reads at a glance */
+.seg.is-pending .seg-base,
+.lane.is-idle .lane-base,
+.loop.is-unused .loop-base {
+  stroke: color-mix(in srgb, var(--ink-3) 55%, transparent);
+  opacity: 1;
+}
+
+/* the moving light behind the whole page: a faint hint of colour, not a purple wash */
+.aurora.is-ground canvas {
+  opacity: 0.3;
+}
+
+/* the score breakdown folds like the other report sections; its parts sit close together when open */
+.contrib.fold {
+  align-self: start;
+}
+.contrib.fold > .contrib-intro,
+.contrib.fold > .contrib-axis,
+.contrib.fold > .contrib-rows {
+  margin-bottom: 12px;
+}
+
+/* report below the verdict: the three foldable sections on the left, the hard conditions on the right */
+.report-grid,
+.report-grid.is-even {
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+}
+@media (max-width: 1100px) {
+  .report-grid,
+  .report-grid.is-even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* three closed sections on the left reach the same height as the conditions card on the right */
+@media (min-width: 1101px) {
+  .report-grid > .report-side:first-child > .fold > summary {
+    padding-block: 25px;
+  }
+}
+
+/* A finished case fits a full-HD screen down to the verdict: the header turns into one compact block
+   (the replay clock above the title is noise once the run is over) and the diagram stops growing past 300px. */
+.stage-top.is-done {
+  padding: 0 0 18px;
+}
+.stage-top.is-done .kicker {
+  display: none;
+}
+.stage-top.is-done .stage-title {
+  margin: 0 0 6px;
+  font-size: clamp(30px, 2.6vw, 42px);
+}
+.stage-top.is-done .stage-cta {
+  margin-top: 12px;
+}
+.rail-svg {
+  max-height: 300px;
+}
+.case-context {
+  min-height: 44px;
+}
+.panel .verdict-hero {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  padding: 28px 32px 24px;
+}
+.panel .verdict-hero .score-num.is-xl {
+  font-size: clamp(56px, 4.6vw, 76px);
+}
+.panel .verdict-hero .verdict-why {
+  max-width: none;
+  font-size: 15px;
+}
+
+/* one row above the case: back link, claim type and place, the facts, and the run state on the right */
+.case-context {
+  gap: 48px;
+  align-items: center;
+  min-height: 40px;
+  margin: 0 0 14px;
+}
+.case-context .back {
+  margin: 0;
+  flex: none;
+}
+.page.case {
+  padding-top: 18px;
+}
+@media (max-width: 1100px) {
+  .case-context {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+}
+
+/* queue figures: each one centred in its column, so the four sit evenly across the row */
+.stats .stat {
+  align-items: center;
+  text-align: center;
+  padding: 18px 16px 18px;
+}

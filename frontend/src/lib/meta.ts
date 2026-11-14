@@ -2,75 +2,78 @@ import type { AgentId, Band, ClaimType, Mark, Outcome, StageId } from './types';
 
 export const APP_NAME = 'AsigIT';
 
+/** "1 agent", "3 agenți", "20 de agenți": Romanian counts take "de" from 20 up. */
+export const nr = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${n % 100 >= 20 || (n >= 100 && n % 100 === 0) ? 'de ' : ''}${many}`);
+
 /** The checkpoints on the rail. Each one is something the backend really does (see docs/frontend-integration.md). */
 export const STAGES: { id: StageId; short: string; live: string; title: string; help: string }[] = [
-  { id: 'intake', short: 'Claim', live: 'Reading the claim', title: 'The claim on file', help: 'What the backend holds for this claim: who, where, when, how much and which policy.' },
-  { id: 'documents', short: 'Documents', live: 'Reading the claim form and the policy', title: 'The two documents', help: 'The claim form and the policy PDF are read back by code, never an AI, and compared with what was filed.' },
-  { id: 'client', short: 'Client data', live: 'Checking the client data', title: 'Client data', help: 'Fixed checks on what the form says about the policyholder: ID number, phone, email, bank account and the address on the map.' },
-  { id: 'policy', short: 'Policy check', live: 'Validating claim conditions', title: 'Claim conditions', help: 'Fixed rules, no AI: was the policy active, is the peril covered, was the claim filed in time.' },
-  { id: 'photos', short: 'Photos', live: 'Checking the photos', title: 'Photo check', help: 'Are there photos, can they be read, and do they carry a date and place. Fixed checks, no AI.' },
-  { id: 'plan', short: 'Plan', live: 'Building the orchestrator plan', title: 'Orchestrator plan', help: 'The orchestrator turns the claim into things to prove and picks which agents to ask.' },
-  { id: 'agents', short: 'Agents', live: "Pulling data from the orchestrator's agents", title: 'Specialist agents', help: 'Each agent answers one question from one kind of source, then reports back.' },
-  { id: 'judge', short: 'Judge', live: 'Judge is weighing the evidence', title: 'Judge', help: 'The judge weighs the findings, looks for contradictions and decides whether to send agents back.' },
-  { id: 'verdict', short: 'Verdict', live: 'Building the case file', title: 'Verdict', help: 'Everything is assembled into a score, a recommended route and a file of sources.' },
-  { id: 'review', short: 'Review', live: 'Waiting for your decision', title: 'Your decision', help: 'The system only recommends. Nothing is paid or refused until you decide.' },
+  { id: 'intake', short: 'Dosar', live: 'Se citește dosarul', title: 'Dosarul depus', help: 'Datele din dosar: asiguratul, adresa, data evenimentului, suma și polița.' },
+  { id: 'documents', short: 'Documente', live: 'Se citesc formularul de daună și polița', title: 'Cele două documente', help: 'Formularul de daună și polița în PDF sunt citite automat, fără AI, și comparate cu datele din dosar.' },
+  { id: 'client', short: 'Date client', live: 'Se verifică datele clientului', title: 'Datele clientului', help: 'Verificări automate pe datele asiguratului din formular: CNP, telefon, e-mail, cont bancar și adresa pe hartă.' },
+  { id: 'policy', short: 'Poliță', live: 'Se verifică polița', title: 'Condițiile poliței', help: 'Verificări automate, fără AI: dacă polița era activă, dacă riscul este acoperit și dacă dauna a fost avizată la timp.' },
+  { id: 'photos', short: 'Fotografii', live: 'Se verifică fotografiile', title: 'Verificarea fotografiilor', help: 'Există fotografii, se pot citi și au dată și loc? Verificări automate, fără AI.' },
+  { id: 'plan', short: 'Plan', live: 'Se stabilește ce trebuie verificat', title: 'Planul de verificare', help: 'Sistemul stabilește ce trebuie dovedit și alege agenții care verifică fiecare lucru.' },
+  { id: 'agents', short: 'Agenți', live: 'Agenții caută informații', title: 'Agenții specializați', help: 'Fiecare agent verifică un singur lucru, folosind un singur tip de sursă.' },
+  { id: 'judge', short: 'Arbitru', live: 'Arbitrul analizează dovezile', title: 'Arbitrul', help: 'Arbitrul compară rezultatele, caută contradicții și decide dacă mai este nevoie de verificări.' },
+  { id: 'verdict', short: 'Verdict', live: 'Se întocmește raportul', title: 'Verdictul', help: 'Rezultatele se adună într-un scor, o recomandare și lista surselor folosite.' },
+  { id: 'review', short: 'Decizie', live: 'Decizia vă aparține', title: 'Decizia dumneavoastră', help: 'Sistemul doar recomandă. Nimic nu se plătește și nu se respinge fără decizia dumneavoastră.' },
 ];
 
 export const ORDER: StageId[] = STAGES.map((s) => s.id);
 
 /** The six backend agents, in the order the backend lists them. Ids are the backend's. */
 export const AGENTS: { id: AgentId; name: string; source: string }[] = [
-  { id: 'meteo', name: 'Weather', source: 'Open-Meteo reanalysis' },
-  { id: 'satellite', name: 'Satellite', source: 'Copernicus CEMS flood maps' },
-  { id: 'risk_zones', name: 'Risk zones', source: 'OpenStreetMap · Copernicus DEM' },
-  { id: 'photo_forensics', name: 'Photo forensics', source: 'EXIF · image hashing · web search' },
-  { id: 'street_view', name: 'Street view', source: 'Mapillary · Google Street View' },
-  { id: 'news', name: 'Local news', source: 'GDELT · news search' },
+  { id: 'meteo', name: 'Meteo', source: 'Reanaliză Open-Meteo' },
+  { id: 'satellite', name: 'Satelit', source: 'Hărți de inundație Copernicus CEMS' },
+  { id: 'risk_zones', name: 'Zone de risc', source: 'OpenStreetMap · Copernicus DEM' },
+  { id: 'photo_forensics', name: 'Analiză foto', source: 'EXIF · amprentă imagine · căutare web' },
+  { id: 'street_view', name: 'Imagini stradale', source: 'Mapillary · Google Street View' },
+  { id: 'news', name: 'Presă locală', source: 'GDELT · căutare știri' },
 ];
 
 export const isAgent = (id: string): id is AgentId => AGENTS.some((a) => a.id === id);
-export const agentName = (id: string) => AGENTS.find((a) => a.id === id)?.name ?? (id === 'context' ? 'Policy context' : id);
+export const agentName = (id: string) => AGENTS.find((a) => a.id === id)?.name ?? (id === 'context' ? 'Contextul poliței' : id);
 
 export const BANDS: Record<Band, { label: string; range: string }> = {
-  very_likely: { label: 'Very likely', range: '85–100' },
-  likely: { label: 'Likely', range: '65–84' },
-  uncertain: { label: 'Uncertain', range: '35–64' },
-  unlikely: { label: 'Unlikely', range: '0–34' },
+  very_likely: { label: 'Foarte plauzibil', range: '85–100' },
+  likely: { label: 'Plauzibil', range: '65–84' },
+  uncertain: { label: 'Incert', range: '35–64' },
+  unlikely: { label: 'Puțin plauzibil', range: '0–34' },
 };
 
 /** The three outcomes the backend knows. The AI only recommends one; the adjuster decides. */
 export const OUTCOMES: Record<Outcome, { label: string; action: string; desc: string }> = {
   fast_track: {
-    label: 'Fast-track',
-    action: 'Fast-track payment',
-    desc: 'Evidence is strong and consistent. Pay without a site visit.',
+    label: 'Plată rapidă',
+    action: 'Plată rapidă',
+    desc: 'Dovezile sunt solide și concordante. Se plătește fără inspecție.',
   },
   standard_review: {
-    label: 'Standard review',
-    action: 'Send to standard review',
-    desc: 'Plausible, with open points. An adjuster visits the site.',
+    label: 'Analiză standard',
+    action: 'Analiză standard',
+    desc: 'Dauna este plauzibilă, dar rămân puncte deschise. Un inspector merge la fața locului.',
   },
   antifraud_referral: {
-    label: 'Antifraud referral',
-    action: 'Refer to the antifraud team',
-    desc: 'Evidence contradicts the claim. Hand over with the full file.',
+    label: 'Antifraudă',
+    action: 'Trimitere la antifraudă',
+    desc: 'Dovezile contrazic dauna. Dosarul complet merge la echipa antifraudă.',
   },
 };
 
-export const TYPE_LABEL: Record<ClaimType, string> = { flood: 'Flood', storm: 'Storm' };
+export const TYPE_LABEL: Record<ClaimType, string> = { flood: 'Inundație', storm: 'Furtună' };
 
 export const MARK_TEXT: Record<Mark, string> = {
-  confirmed: 'Confirmed',
-  refuted: 'Refuted',
-  inconclusive: 'Inconclusive',
-  conflicting: 'In conflict',
+  confirmed: 'Confirmată',
+  refuted: 'Infirmată',
+  inconclusive: 'Neconcludentă',
+  conflicting: 'Contradictorie',
 };
 
-/** English labels for the backend's policy rules (backend/engine/rules.py). The reason text comes from the backend. */
+/** Labels for the backend's policy rules (backend/engine/rules.py). The reason text comes from the backend. */
 export const RULE_LABEL: Record<string, string> = {
-  policy_active: 'Policy active on the event date',
-  waiting_period: 'Waiting period over',
-  risk_covered: 'Peril covered by the policy',
-  address_match: 'Loss address matches the insured address',
-  notified_in_time: 'Notified in time',
+  policy_active: 'Polița era activă la data evenimentului',
+  waiting_period: 'Perioada de așteptare s-a încheiat',
+  risk_covered: 'Riscul este acoperit de poliță',
+  address_match: 'Adresa daunei este adresa asigurată',
+  notified_in_time: 'Avizare în termen',
 };

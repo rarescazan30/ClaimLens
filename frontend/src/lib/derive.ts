@@ -48,7 +48,7 @@ export function laneStates(c: CaseFile, t: number): Record<AgentId, LaneState> {
   const out = {} as Record<AgentId, LaneState>;
   for (const { id } of AGENTS) {
     if (c.plan.dispatch.find((x) => x.agent === id)?.skipped) {
-      out[id] = planned ? { state: 'skipped', reason: 'Not relevant for this type of claim' } : { state: 'idle' };
+      out[id] = planned ? { state: 'skipped', reason: 'Nu este relevant pentru acest tip de daună' } : { state: 'idle' };
       continue;
     }
     const started = c.runs.filter((r) => r.agent === id && r.at <= t);

@@ -1,4 +1,4 @@
-import { AGENTS, agentName, isAgent, ORDER, RULE_LABEL, TYPE_LABEL } from '../lib/meta';
+import { AGENTS, agentName, isAgent, nr, ORDER, RULE_LABEL, TYPE_LABEL } from '../lib/meta';
 import type {
   AgentId,
   AgentRun,
@@ -47,16 +47,19 @@ const PACE = { lead: 1000, early: 700, rules: 1500, plan: 2400, agentGap: 180, s
 
 // ---------------------------------------------------------------- formatting
 
+/** A number written the Romanian way: 47,9 and 48.000. */
+const ro = (v: number) => v.toLocaleString('ro-RO');
+
 export const fmtDate = (iso?: string | null) => {
-  if (!iso) return 'Not stated';
+  if (!iso) return 'Nespecificat';
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const fmtDateTime = (iso?: string | null) => {
   if (!iso) return '';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
 const placeOf = (address: string) => {
@@ -65,10 +68,10 @@ const placeOf = (address: string) => {
 };
 
 const lagOf = (event: string, notified: string | null) => {
-  if (!notified) return 'Notification date not stated';
+  if (!notified) return 'Data avizării nu este specificată';
   const days = Math.round((Date.parse(notified.slice(0, 10)) - Date.parse(event.slice(0, 10))) / 86_400_000);
   if (Number.isNaN(days)) return '';
-  return days <= 0 ? 'Filed on the day of the event' : `Filed ${days} day${days === 1 ? '' : 's'} after the event`;
+  return days <= 0 ? 'Avizată în ziua evenimentului' : `Avizată la ${nr(days, 'zi', 'zile')} după eveniment`;
 };
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
@@ -85,39 +88,39 @@ export function headline(e: ApiEvidence, type: ClaimType, photoCount: number, br
     case 'meteo': {
       const gust = num(f.wind_gusts_event_day) ?? num(f.wind_gusts_10m_max);
       const rain = num(f.precipitation_24h_max) ?? num(f.precipitation_event_day);
-      if (type === 'storm' && gust !== undefined) return `${gust} km/h gusts`;
-      if (rain !== undefined) return brief ? `${rain} mm in 24 h` : `${rain} mm of rain in 24 h`;
-      if (gust !== undefined) return `${gust} km/h gusts`;
+      if (type === 'storm' && gust !== undefined) return `Rafale de ${ro(gust)} km/h`;
+      if (rain !== undefined) return brief ? `${ro(rain)} mm în 24 h` : `${ro(rain)} mm de ploaie în 24 h`;
+      if (gust !== undefined) return `Rafale de ${ro(gust)} km/h`;
       break;
     }
     case 'satellite': {
       const d = num(f.distance_to_flood_edge_m);
-      if (f.inside_flood_extent === true) return brief ? 'Inside the flood' : 'Inside the mapped flood';
-      if (f.inside_flood_extent === false) return d !== undefined ? `${Math.round(d)} m outside the ${brief ? '' : 'mapped '}flood` : 'Outside the mapped flood';
+      if (f.inside_flood_extent === true) return brief ? 'În zona inundată' : 'În zona inundată cartografiată';
+      if (f.inside_flood_extent === false) return d !== undefined ? `La ${ro(Math.round(d))} m de zona inundată` : 'În afara zonei inundate';
       break;
     }
     case 'risk_zones': {
       const diff = num(f.elevation_diff_m);
       const d = num(f.distance_to_water_m);
-      if (diff !== undefined) return `${brief ? '' : 'House '}${Math.abs(diff)} m ${diff >= 0 ? 'above' : 'below'} the flood${brief ? '' : ' edge'}`;
-      if (d !== undefined) return `${Math.round(d)} m to ${typeof f.water_name === 'string' ? f.water_name : 'the nearest water'}`;
+      if (diff !== undefined) return brief ? `${ro(Math.abs(diff))} m ${diff >= 0 ? 'peste' : 'sub'} nivelul apei` : `Casa este cu ${ro(Math.abs(diff))} m mai ${diff >= 0 ? 'sus' : 'jos'} decât marginea inundației`;
+      if (d !== undefined) return `${ro(Math.round(d))} m până la ${typeof f.water_name === 'string' ? f.water_name : 'cea mai apropiată apă'}`;
       break;
     }
     case 'news': {
       const n = num(f.reports_confirmed);
-      if (n !== undefined) return `${n} press report${n === 1 ? '' : 's'}`;
+      if (n !== undefined) return nr(n, 'articol de presă', 'articole de presă');
       break;
     }
     case 'street_view':
-      if (typeof f.pre_event_image_date === 'string') return `Street image from ${f.pre_event_image_date}`;
-      if (!e.findings.length) return 'No street imagery';
+      if (typeof f.pre_event_image_date === 'string') return `${brief ? 'Imagine din' : 'Imagine stradală din'} ${f.pre_event_image_date}`;
+      if (!e.findings.length) return 'Fără imagini stradale';
       break;
     case 'photo_forensics':
-      if (f.exact_copy_before_event === true) return 'Photo published before the event';
-      if (photoCount === 0) return 'No photos on file';
-      return `${photoCount} photo${photoCount === 1 ? '' : 's'} checked`;
+      if (f.exact_copy_before_event === true) return 'Fotografie publicată înaintea evenimentului';
+      if (photoCount === 0) return brief ? 'Fără fotografii' : 'Nicio fotografie la dosar';
+      return nr(photoCount, 'fotografie verificată', 'fotografii verificate');
   }
-  return e.verdict === 'supports' ? 'Supports the claim' : e.verdict === 'contradicts' ? 'Contradicts the claim' : 'Inconclusive';
+  return e.verdict === 'supports' ? 'Susține dauna' : e.verdict === 'contradicts' ? 'Contrazice dauna' : 'Neconcludent';
 }
 
 // ---------------------------------------------------------------- trace parsing
@@ -326,7 +329,7 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
             at: st,
             dur: Math.max(answer.t - st, 1),
             tool: sp.step.sources[0] ?? sp.step.summary,
-            summary: failed ? answer.p.step.summary : 'Answered',
+            summary: failed ? answer.p.step.summary : 'Răspuns primit',
             status: failed ? 'fail' : 'ok',
           });
           i++;
@@ -351,7 +354,7 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
         dur: concluded ? Math.max(end - at, 1) : OPEN,
         question,
         verdict: ev?.verdict ?? ((last?.p.step.outputs.verdict as AgentRun['verdict'] | undefined) ?? 'inconclusive'),
-        finding: ev?.reasoning_steps[0] ?? ev?.gaps[0] ?? last?.p.step.summary ?? 'No finding recorded.',
+        finding: ev?.reasoning_steps[0] ?? ev?.gaps[0] ?? last?.p.step.summary ?? 'Niciun rezultat înregistrat.',
         short: ev ? headline(ev, claim.damage_type, photoNames.length, true) : '',
         calls,
         gaps: ev?.gaps ?? [],
@@ -406,8 +409,8 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
         hypotheses: hyps.map((h) => ({ id: h.id, text: h.text, mark: o.marks?.[h.id] ?? 'inconclusive' })),
         tensions: o.tensions ?? [],
         redispatch: back.length ? back : undefined,
-        stop: o.action === 'stop' ? o.stop_reason || 'The Judge stopped the investigation.' : undefined,
-        summary: back.length ? `Sent ${back.length} agent${back.length === 1 ? '' : 's'} back with narrower questions.` : [o.tensions?.[0], `Stopped. ${o.stop_reason ?? ''}`.trim()].filter(Boolean).join(' '),
+        stop: o.action === 'stop' ? o.stop_reason || 'Arbitrul a încheiat investigația.' : undefined,
+        summary: back.length ? `A cerut verificări suplimentare de la ${nr(back.length, 'agent', 'agenți')}.` : [o.tensions?.[0], `A încheiat investigația. ${o.stop_reason ?? ''}`.trim()].filter(Boolean).join(' '),
       };
     });
 
@@ -427,13 +430,13 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
 
   // ---- step details
   const facts: [string, string][] = [
-    ['Claim number', claim.id],
-    ['Policyholder', policy?.holder_name ?? 'Not on file'],
-    ['Loss address', claim.address],
-    ['Declared event', `${typeLabel}, ${fmtDate(claim.event_date)}`],
-    ['Notified', fmtDate(claim.notified_at)],
-    ['Amount claimed', claim.amount_claimed != null ? `${claim.amount_claimed.toLocaleString('en-US')} RON` : 'Not stated'],
-    ['Photos attached', String(photoNames.length)],
+    ['Număr dosar', claim.id],
+    ['Asigurat', policy?.holder_name ?? 'Necunoscut'],
+    ['Adresa daunei', claim.address],
+    ['Eveniment declarat', `${typeLabel}, ${fmtDate(claim.event_date)}`],
+    ['Avizat', fmtDate(claim.notified_at)],
+    ['Suma solicitată', claim.amount_claimed != null ? `${ro(claim.amount_claimed)} RON` : 'Nespecificată'],
+    ['Fotografii atașate', String(photoNames.length)],
   ];
   // The five early steps show what the backend checked. Claims stored before those checks existed have none:
   // they keep the facts above for the claim and the rule flags for the policy.
@@ -483,22 +486,22 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
       if (!f.metric.startsWith(`${base}:`)) continue;
       const check = f.metric.slice(base.length + 1);
       const v = f.value;
-      if (check === 'unreadable') (notes.push('File could not be read'), worse('flag'));
-      else if (check === 'exif_missing') (notes.push('No capture date or location in the file'), worse('flag'));
-      else if (check === 'exif_date') notes.push(`Taken ${fmtDate(String(v))}`);
-      else if (check === 'exif_days_before_event') (notes.push(v === 0 ? 'Taken on the day of the event' : `Taken ${v} days before the event`), Number(v) > 0 && worse('fail'));
-      else if (check === 'exif_days_after_event') notes.push(`Taken ${v} days after the event`);
-      else if (check === 'exif_distance_to_address_km') notes.push(`Taken ${v} km from the address`);
-      else if (check === 'copy_in_other_claim') v === true && (notes.push('Same photo found in an earlier claim'), worse('fail'));
-      else if (check === 'shows_declared_damage') v === false ? (notes.push('Does not show the declared damage'), worse('flag')) : v === true && notes.push('Shows the declared damage');
-      else if (check === 'looks_generated') v === true && (notes.push('Looks computer-generated'), worse('flag'));
+      if (check === 'unreadable') (notes.push('Fișierul nu a putut fi citit'), worse('flag'));
+      else if (check === 'exif_missing') (notes.push('Fișierul nu are data sau locul fotografierii'), worse('flag'));
+      else if (check === 'exif_date') notes.push(`Fotografiată la ${fmtDate(String(v))}`);
+      else if (check === 'exif_days_before_event') (notes.push(v === 0 ? 'Fotografiată în ziua evenimentului' : `Fotografiată cu ${nr(Number(v), 'zi', 'zile')} înaintea evenimentului`), Number(v) > 0 && worse('fail'));
+      else if (check === 'exif_days_after_event') notes.push(`Fotografiată la ${nr(Number(v), 'zi', 'zile')} după eveniment`);
+      else if (check === 'exif_distance_to_address_km') notes.push(`Fotografiată la ${ro(Number(v))} km de adresă`);
+      else if (check === 'copy_in_other_claim') v === true && (notes.push('Aceeași fotografie apare într-un dosar anterior'), worse('fail'));
+      else if (check === 'shows_declared_damage') v === false ? (notes.push('Nu arată dauna declarată'), worse('flag')) : v === true && notes.push('Arată dauna declarată');
+      else if (check === 'looks_generated') v === true && (notes.push('Pare generată pe calculator'), worse('flag'));
       else if (check === 'description') notes.push(String(v));
-      else if (check === 'web_matches') Number(v) > 0 && (notes.push(`${v} matching page${v === 1 ? '' : 's'} on the web`), worse('flag'));
-      else if (check === 'first_seen') (notes.push(`First published ${fmtDate(String(v))}`), String(v) < claim.event_date && worse('fail'));
+      else if (check === 'web_matches') Number(v) > 0 && (notes.push(`${nr(Number(v), 'pagină web', 'pagini web')} cu aceeași imagine`), worse('flag'));
+      else if (check === 'first_seen') (notes.push(`Publicată prima dată la ${fmtDate(String(v))}`), String(v) < claim.event_date && worse('fail'));
       else notes.push(`${check.replace(/_/g, ' ')}: ${String(v)}`);
     }
     if (!notes.length) status = 'info';
-    return { name: base, url: photoUrl(name), status, notes: notes.length ? notes : ['No checks recorded for this photo'], at: forensic ? knownAt('photo_forensics', forensic.round) : OPEN };
+    return { name: base, url: photoUrl(name), status, notes: notes.length ? notes : ['Nicio verificare înregistrată pentru această fotografie'], at: forensic ? knownAt('photo_forensics', forensic.round) : OPEN };
   });
 
   // ---- map: only when the backend has a mapped flood for this claim
@@ -539,7 +542,7 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
   return {
     id: claim.id,
     status: claim.status,
-    claimant: policy?.holder_name ?? 'Policyholder not on file',
+    claimant: policy?.holder_name ?? 'Asigurat necunoscut',
     type: claim.damage_type,
     typeLabel,
     place: placeOf(claim.address),
@@ -548,7 +551,7 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
     filed: fmtDate(claim.notified_at),
     lag: lagOf(claim.event_date, claim.notified_at),
     policy: policy ? `${policy.product} · ${policy.id}` : claim.policy_id,
-    claimed: claim.amount_claimed != null ? `${claim.amount_claimed.toLocaleString('en-US')} RON` : 'Amount not stated',
+    claimed: claim.amount_claimed != null ? `${ro(claim.amount_claimed)} RON` : 'Sumă nespecificată',
     description: claim.description ?? '',
     duration,
     edge,
@@ -589,7 +592,7 @@ export function buildQueueRow(row: ApiClaimRow, d?: ApiClaimDetail): QueueCase {
     .map((e) => `${agentName(e.agent)}: ${headline(e, row.damage_type, photoCount)}`);
   return {
     id: row.id,
-    claimant: d?.policy?.holder_name ?? 'Policyholder not on file',
+    claimant: d?.policy?.holder_name ?? 'Asigurat necunoscut',
     type: row.damage_type,
     typeLabel: TYPE_LABEL[row.damage_type] ?? row.damage_type,
     place: placeOf(row.address),

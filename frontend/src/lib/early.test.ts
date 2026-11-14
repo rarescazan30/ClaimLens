@@ -12,15 +12,15 @@ describe('early checks helpers', () => {
   });
 
   it('words the run mode', () => {
-    expect(runModeText('live')).toBe('Live run');
-    expect(runModeText('record')).toBe('Live run');
-    expect(runModeText('replay')).toBe('Replayed from saved answers');
+    expect(runModeText('live')).toBe('Rulare live');
+    expect(runModeText('record')).toBe('Rulare live');
+    expect(runModeText('replay')).toBe('Răspunsuri salvate');
     expect(runModeText(null)).toBeNull();
   });
 
   it('names a client score line by its reason and an agent line by the agent', () => {
-    expect(contributionTitle({ agent: 'client', reason: 'phone number is invalid' })).toBe('Client data: phone number is invalid');
-    expect(contributionTitle({ agent: 'meteo', reason: null })).toBe('Weather');
+    expect(contributionTitle({ agent: 'client', reason: 'phone number is invalid' })).toBe('Date client: phone number is invalid');
+    expect(contributionTitle({ agent: 'meteo', reason: null })).toBe('Meteo');
   });
 
   it('takes the failed policy rules from the check items, else from the flags', () => {
@@ -32,7 +32,7 @@ describe('early checks helpers', () => {
     expect(failedPolicyRules({ details: {}, flags: [flag(), flag({ step: 'client', reason: 'x' })] })).toEqual([{ label: 'policy_active', reason: 'Policy not active' }]);
   });
 
-  it('writes a flag as "[step] reason"', () => {
-    expect(flagLine(flag({ step: 'client', reason: 'CNP checksum fails' }))).toBe('[client] CNP checksum fails');
+  it('writes a flag as "[Pas] reason"', () => {
+    expect(flagLine(flag({ step: 'client', reason: 'CNP checksum fails' }))).toBe('[Date client] CNP checksum fails');
   });
 });

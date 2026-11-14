@@ -22,5 +22,5 @@ export function baseOf(s: ApiScore): number {
   return Math.round(sigmoid(logit(clamp(s.score)) - sum) * 100);
 }
 
-/** 34.4 -> "34.4", 80 -> "80". */
-export const fmtScore = (score: number) => score.toFixed(1).replace(/\.0$/, '');
+/** 34.4 -> "34,4", 80 -> "80". */
+export const fmtScore = (score: number) => score.toFixed(1).replace(/\.0$/, '').replace('.', ',');

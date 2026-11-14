@@ -41,11 +41,11 @@ const SEGMENTS: [Exclude<StageId, 'agents'>, Exclude<StageId, 'agents'>][] = [
 ];
 
 const STATUS_TEXT: Record<StageStatus, string> = {
-  pending: 'Waiting',
-  running: 'In progress',
-  done: 'Done',
-  flag: 'Done, flagged',
-  requeued: 'Waiting for the next round',
+  pending: 'În așteptare',
+  running: 'În curs',
+  done: 'Finalizat',
+  flag: 'Finalizat, cu probleme',
+  requeued: 'Se reia în runda următoare',
 };
 
 interface Props {
@@ -76,7 +76,7 @@ export function Pipeline({ status, lanes, loop, round, active, selected, tone, s
     <div className="rail">
       <div className="rail-stage">
         <Aurora x={focusX / W} y={CY / H} spread={spread} tone={tone} gain={started ? 1 : 0.35} />
-        <svg viewBox={`0 0 ${W} ${H}`} className="rail-svg" role="group" aria-label="Investigation pipeline">
+        <svg viewBox={`0 0 ${W} ${H}`} className="rail-svg" role="group" aria-label="Pașii investigației">
           <defs>
             <marker id="loop-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M1 1 L8 5 L1 9" fill="none" stroke="context-stroke" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -86,9 +86,6 @@ export function Pipeline({ status, lanes, loop, round, active, selected, tone, s
           <g className={`loop is-${loop}`}>
             <path d={LOOP} className="loop-base" markerEnd="url(#loop-arrow)" />
             <path d={LOOP} className="loop-pulse" pathLength={1} />
-            <text x={788} y={22} textAnchor="middle" className="loop-label">
-              {loop === 'unused' ? 'Judge can send agents back' : `Round ${Math.max(round, 2)} · re-dispatch`}
-            </text>
           </g>
 
           {SEGMENTS.map(([a, b]) => {
@@ -132,10 +129,10 @@ export function Pipeline({ status, lanes, loop, round, active, selected, tone, s
                     ? lane.short
                     : lane.state === 'running'
                       ? lane.round && lane.round > 1
-                        ? `Round ${lane.round}…`
-                        : 'Working…'
+                        ? `Runda ${lane.round}…`
+                        : 'Lucrează…'
                       : lane.state === 'skipped'
-                        ? 'Not needed'
+                        ? 'Nu este necesar'
                         : ''}
                 </text>
                 {lane.state === 'done' && <circle cx={LX1} cy={y} r={4.5} className="lane-dot" />}
@@ -143,7 +140,7 @@ export function Pipeline({ status, lanes, loop, round, active, selected, tone, s
             );
           })}
           <text x={(LX0 + LX1) / 2} y={H - 6} textAnchor="middle" className={`lanes-caption${selected === 'agents' ? ' is-selected' : ''}`}>
-            Specialist agents
+            Agenți specializați
           </text>
 
           {STAGES.filter((s) => s.id !== 'agents').map((s) => {

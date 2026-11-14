@@ -6,14 +6,14 @@ export const isNewClaim = (status: ClaimStatus) => status === 'received' || stat
 
 /** The chip next to the case header: how the run was served. Nothing when the backend did not say. */
 export function runModeText(mode: CaseFile['runMode']): string | null {
-  if (mode === 'live' || mode === 'record') return 'Live run';
-  if (mode === 'replay') return 'Replayed from saved answers';
+  if (mode === 'live' || mode === 'record') return 'Rulare live';
+  if (mode === 'replay') return 'Răspunsuri salvate';
   return null;
 }
 
 /** Name of a score line: a `client` line carries its own reason from the backend, any other is an agent. */
 export function contributionTitle(k: Pick<ApiContribution, 'agent' | 'reason'>): string {
-  return k.agent === 'client' ? `Client data: ${k.reason ?? 'client data checks'}` : agentName(k.agent);
+  return k.agent === 'client' ? `Date client: ${k.reason ?? 'verificările datelor clientului'}` : agentName(k.agent);
 }
 
 export interface FailedRule {
@@ -28,7 +28,7 @@ export function failedPolicyRules(c: Pick<CaseFile, 'details' | 'flags'>): Faile
   return c.flags.filter((f) => f.step === 'policy').map((f) => ({ label: f.field ?? f.code, reason: f.reason }));
 }
 
-/** One line of a flag for the Judge list: "[step] reason". */
-export const flagLine = (f: ApiFlag) => `[${f.step}] ${f.reason}`;
-
 export const stepName = (step: string) => STAGES.find((s) => s.id === step)?.short ?? step;
+
+/** One line of a flag for the Arbitru list: "[Pas] motiv". */
+export const flagLine = (f: ApiFlag) => `[${stepName(f.step)}] ${f.reason}`;
