@@ -345,3 +345,20 @@ async def test_no_coordinates_makes_location_agents_inconclusive(sink):
             assert e.strength == 0 and e.data_quality == 0 and e.hypothesis
     dispatch = next(s for s in sink.steps if s.step_id == "r1.dispatch")
     assert {a["agent"] for a in dispatch.outputs["agents"]} >= located
+
+
+async def test_question_run_with_stored_flags_keeps_them_every_round(sink):
+    early = [Flag(step="client", code="cnp_mismatch", field="cnp", severity="warn", reason="CNP diferit."),
+             Flag(step="policy", code="address_match", severity="fail", reason="Adresa e la 900 m.")]
+    rules = [RuleFlag(rule="address_match", passed=False, reason="Adresa e la 900 m.")]
+    pick = JudgeOut(marks={}, tensions=[], action="redispatch", redispatch=[{"agent": "news", "question": "De ce?"}])
+    rec = Recorder(pick, NEWS_AGAIN, STOP)
+    out = await run_investigation(claim(), POLICY, CFG, sink, agents=_flipping_agents(), planner=rec.planner,
+                                  judge=rec.judge, extra_question="De ce?", prior=_prior_r3(), hypotheses=HYP,
+                                  resume={"early_flags": [f.model_dump() for f in early],
+                                          "rule_flags": [r.model_dump() for r in rules]})
+    assert sink.steps[0].step_id == "r3.question" and "continue" not in [s.step_id for s in sink.steps]
+    assert rec.judge_flags == [early, early, early]   # the question call, then every round
+    assert [g.reason for g in out.gates if g.kind == "coverage"] == ["Adresa e la 900 m."]   # stored, not re-run
+    assert all([c.reason for c in s.contributions if c.agent == "client"] == ["CNP diferit."] for _, s in sink.scores)
+    assert rec.plan_flags == []

@@ -310,11 +310,15 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
     async def question_node(state: State) -> State:
         """Adjuster asked a free question: the Judge picks which agent answers it."""
         evidence, hyps = list(prior or []), list(hypotheses or default_hypotheses(claim))
-        flags = check_policy(claim, policy)
-        score = compute_score(evidence, cfg, flags, context_term(claim, policy))
+        if resume is not None:   # a claim read from documents: its stored flags, not a re-run without the map points
+            flags, early = intake.as_rule_flags(resume.get("rule_flags")), intake.as_flags(resume.get("early_flags"))
+            stored = {"early_flags": early}
+        else:                    # legacy claim: exactly as before
+            flags, stored = check_policy(claim, policy), {}
+        score = compute_score(evidence, cfg, flags, context_term(claim, policy), data_flags=stored.get("early_flags"))
         round_ = max((e.round for e in evidence), default=0)
         try:
-            out = await judge(hyps, evidence, score, round_, question=extra_question)
+            out = await judge(hyps, evidence, score, round_, question=extra_question, **stored)
             picks = _clean_redispatch(out.redispatch, allowed)[:1]
         except Exception:
             picks = []
@@ -323,7 +327,7 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
               f"Întrebarea evaluatorului: {extra_question} → {AGENT_LABEL.get(picks[0]['agent'], picks[0]['agent'])}",
               {"question": extra_question, "agent": picks[0]["agent"]})
         return {"hypotheses": hyps, "flags": flags, "evidence": evidence, "round": round_, "first_round": round_ + 1,
-                "score": score, "prev_score": None, "pending": picks}
+                "score": score, "prev_score": None, "pending": picks, **stored}
 
     async def finish_node(state: State) -> State:
         s = state["score"]
