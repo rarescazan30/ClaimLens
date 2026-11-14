@@ -144,3 +144,51 @@ async def test_extra_question_runs_one_round_on_the_agent_the_judge_picks(sink):
                             judge=judge_script(pick, STOP), extra_question="Q?", prior=prior, hypotheses=HYP)
     assert calls == [(2, "news", "Q?")]
     assert "r2.final" == sink.steps[-1].step_id   # a question run gets its own closing step id
+
+
+def _prior_r3():
+    return [Evidence(agent=a, round=r, hypothesis="h", verdict="supports", strength=0.5, data_quality=0.5)
+            for r in (1, 2, 3) for a in ALL_AGENTS]
+
+
+def _flipping_agents():
+    """Every answer pulls the score the other way, so the <5 points rule never ends the run."""
+    def make(name):
+        async def run(task: AgentTask, ctx):
+            v = "contradicts" if task.round % 2 == 0 else "supports"
+            return Evidence(agent=name, round=task.round, hypothesis="h", verdict=v, strength=1, data_quality=1)
+        return run
+    return {a: make(a) for a in ALL_AGENTS}
+
+
+NEWS_AGAIN = JudgeOut(marks={}, tensions=["Clientul declară altceva"], action="redispatch",
+                      redispatch=[{"agent": "news", "question": "Mai verifică?"}])
+
+
+async def test_question_after_three_rounds_lets_the_judge_send_an_agent_back(sink):
+    pick = JudgeOut(marks={}, tensions=[], action="redispatch", redispatch=[{"agent": "news", "question": "De ce?"}])
+    await run_investigation(claim(), POLICY, CFG, sink, agents=_flipping_agents(), planner=planner,
+                            judge=judge_script(pick, NEWS_AGAIN, STOP), extra_question="De ce?",
+                            prior=_prior_r3(), hypotheses=HYP)
+    judges = [s for s in sink.steps if s.step_id.endswith(".judge")]
+    assert judges[0].step_id == "r4.judge"
+    assert judges[0].outputs["action"] == "redispatch"   # round 4 may send an agent back
+    assert "Limita" not in judges[0].summary
+
+
+async def test_question_run_still_stops_after_three_rounds_of_its_own(sink):
+    pick = JudgeOut(marks={}, tensions=[], action="redispatch", redispatch=[{"agent": "news", "question": "De ce?"}])
+    await run_investigation(claim(), POLICY, CFG, sink, agents=_flipping_agents(), planner=planner,
+                            judge=judge_script(pick, NEWS_AGAIN, NEWS_AGAIN, NEWS_AGAIN), extra_question="De ce?",
+                            prior=_prior_r3(), hypotheses=HYP)
+    judges = [s for s in sink.steps if s.step_id.endswith(".judge")]
+    assert [j.step_id for j in judges] == ["r4.judge", "r5.judge", "r6.judge"]
+    assert [j.outputs["action"] for j in judges] == ["redispatch", "redispatch", "stop"]
+    assert "Limita" in judges[2].summary
+
+
+def test_should_stop_counts_rounds_from_first_round():
+    conflict = JudgeOut(marks={"H1": "conflicting"}, tensions=["t"], action="redispatch",
+                        redispatch=[{"agent": "news", "question": "q"}])
+    assert should_stop(4, None, 60, conflict, HYP, 10, first_round=4) == (False, "")
+    assert should_stop(6, 40, 60, conflict, HYP, 10, first_round=4)[0]

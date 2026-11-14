@@ -73,6 +73,11 @@ describe('buildCase: flood claim C-1042 (three rounds)', () => {
     expect(c.judge[0].hypotheses.find((h) => h.id === 'H2')!.mark).toBe('conflicting');
   });
 
+  it('a stopped Judge shows what it concluded, not only why it stopped', () => {
+    expect(c.judge[2].summary).toContain('Clientul declară');
+    expect(c.judge[2].summary).toContain('Limita de 3 runde');
+  });
+
   it('has real map data: house outside the mapped flood, 13 m higher', () => {
     expect(c.map).toBeDefined();
     expect(c.map!.inside).toBe(false);

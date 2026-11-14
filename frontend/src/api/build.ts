@@ -388,7 +388,7 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
         tensions: o.tensions ?? [],
         redispatch: back.length ? back : undefined,
         stop: o.action === 'stop' ? o.stop_reason || 'The Judge stopped the investigation.' : undefined,
-        summary: back.length ? `Sent ${back.length} agent${back.length === 1 ? '' : 's'} back with narrower questions.` : `Stopped. ${o.stop_reason ?? ''}`.trim(),
+        summary: back.length ? `Sent ${back.length} agent${back.length === 1 ? '' : 's'} back with narrower questions.` : [o.tensions?.[0], `Stopped. ${o.stop_reason ?? ''}`.trim()].filter(Boolean).join(' '),
       };
     });
 

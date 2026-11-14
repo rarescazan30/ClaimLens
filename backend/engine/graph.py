@@ -57,6 +57,7 @@ class State(TypedDict, total=False):
     flags: list[RuleFlag]
     evidence: list[Evidence]
     round: int
+    first_round: int           # first round of THIS run (a question run continues the numbering)
     pending: list[dict]        # [{"agent", "question"}] for the next dispatch
     prev_score: float | None
     score: ScoreResult
@@ -64,8 +65,8 @@ class State(TypedDict, total=False):
 
 
 def should_stop(round: int, prev_score: float | None, score: float, judge: JudgeOut,
-                hypotheses: list[Hypothesis], elapsed_s: float) -> tuple[bool, str]:
-    if round >= MAX_ROUNDS:
+                hypotheses: list[Hypothesis], elapsed_s: float, first_round: int = 1) -> tuple[bool, str]:
+    if round - first_round + 1 >= MAX_ROUNDS:   # rounds of this run only
         return True, f"Limita de {MAX_ROUNDS} runde a fost atinsă."
     if elapsed_s > MAX_SECONDS:
         return True, "Bugetul de timp al investigației a fost depășit."
@@ -147,7 +148,7 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
         trace("plan", "rules", "orchestrator", "decision",
               f"Plan: {len(hyps)} ipoteze, {len(allowed)} agenți{note}",
               {"hypotheses": [h.model_dump() for h in hyps]}, t0=t0)
-        return {"hypotheses": hyps, "round": 0, "evidence": [], "prev_score": None,
+        return {"hypotheses": hyps, "round": 0, "first_round": 1, "evidence": [], "prev_score": None,
                 "pending": [{"agent": a, "question": None} for a in allowed]}
 
     async def run_agent(name: str, question: str | None, round_: int, state: State) -> Evidence:
@@ -195,7 +196,7 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
             out = JudgeOut(tensions=[f"judge unavailable ({type(e).__name__})"], action="stop")
         out.redispatch = _clean_redispatch(out.redispatch, allowed)
         stop, reason = should_stop(round_, state.get("prev_score"), state["score"].score, out,
-                                   state["hypotheses"], time.monotonic() - started)
+                                   state["hypotheses"], time.monotonic() - started, state.get("first_round", 1))
         if stop:
             summary = " ".join(out.tensions + [reason, "Opresc investigația."])
         else:
@@ -220,8 +221,8 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
         trace(f"r{round_}.question", None, "adjuster", "decision",
               f"Întrebarea evaluatorului: {extra_question} → {AGENT_LABEL.get(picks[0]['agent'], picks[0]['agent'])}",
               {"question": extra_question, "agent": picks[0]["agent"]})
-        return {"hypotheses": hyps, "flags": flags, "evidence": evidence, "round": round_, "score": score,
-                "prev_score": None, "pending": picks}
+        return {"hypotheses": hyps, "flags": flags, "evidence": evidence, "round": round_, "first_round": round_ + 1,
+                "score": score, "prev_score": None, "pending": picks}
 
     async def finish_node(state: State) -> State:
         s = state["score"]
