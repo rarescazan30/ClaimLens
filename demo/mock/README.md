@@ -1,6 +1,7 @@
 # Mock API responses for the frontend
 
-Placeholder numbers, real shapes. Build the UI against these until the backend is live.
+Placeholder numbers, real shapes. They were used to build the UI before the backend was live.
+The app in `frontend/` now talks to the real backend and does not read these files (see `docs/frontend-integration.md`).
 
 | File | Same shape as |
 | --- | --- |

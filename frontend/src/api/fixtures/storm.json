@@ -1,0 +1,1448 @@
+{
+ "detail": {
+  "claim": {
+   "id": "C-1038",
+   "policy_id": "P-5120",
+   "damage_type": "storm",
+   "event_date": "2023-11-26",
+   "notified_at": "2023-11-28",
+   "address": "Str. Exemplu 4, Galați, jud. Galați",
+   "lat": 45.4353,
+   "lon": 28.008,
+   "description": "Acoperiș din tablă smuls parțial de vânt, infiltrații în pod.",
+   "amount_claimed": 14500.0,
+   "photos": [],
+   "status": "awaiting_decision",
+   "decision": null,
+   "outcome": null,
+   "decision_reason": null,
+   "decided_at": null,
+   "created_at": "2026-11-14T00:48:34Z"
+  },
+  "policy": {
+   "id": "P-5120",
+   "holder_name": "Persoană Sintetică Doi",
+   "address": "Str. Exemplu 4, Galați, jud. Galați",
+   "lat": 45.4353,
+   "lon": 28.008,
+   "valid_from": "2023-03-01",
+   "valid_to": "2024-02-29",
+   "waiting_days": 0,
+   "covered_risks": [
+    "storm",
+    "flood",
+    "fire"
+   ],
+   "sum_insured": 250000.0,
+   "product": "Facultativă locuință"
+  },
+  "rule_flags": [
+   {
+    "rule": "policy_active",
+    "passed": true,
+    "reason": "Poliță activă la data evenimentului"
+   },
+   {
+    "rule": "waiting_period",
+    "passed": true,
+    "reason": "Perioada de așteptare a trecut"
+   },
+   {
+    "rule": "risk_covered",
+    "passed": true,
+    "reason": "Riscul declarat este acoperit"
+   },
+   {
+    "rule": "address_match",
+    "passed": true,
+    "reason": "Adresa coincide cu polița"
+   },
+   {
+    "rule": "notified_in_time",
+    "passed": true,
+    "reason": "Notificat la 2 zile de la eveniment"
+   }
+  ],
+  "hypotheses": [
+   {
+    "id": "H1",
+    "text": "Reanaliza meteo pe grilă pentru adresa din Galați indică, pe 26.11.2023, rafale de vânt ≥ 70 km/h (pragul pentru daună de furtună).",
+    "critical": true,
+    "agents": [
+     "meteo"
+    ]
+   },
+   {
+    "id": "H2",
+    "text": "Presa independentă relatează vânt puternic cu daune la acoperișuri în Galați în intervalul 26–27.11.2023.",
+    "critical": false,
+    "agents": [
+     "news"
+    ]
+   },
+   {
+    "id": "H3",
+    "text": "Imaginea stradală anterioară evenimentului arată acoperișul din tablă de la adresă fără deteriorări vizibile, deci fără daună preexistentă.",
+    "critical": false,
+    "agents": [
+     "street_view"
+    ]
+   },
+   {
+    "id": "H4",
+    "text": "Fotografiile transmise de client au EXIF compatibil cu 26.11.2023 și nu apar în alte dosare sau pe web înainte de această dată.",
+    "critical": true,
+    "agents": [
+     "photo_forensics"
+    ]
+   },
+   {
+    "id": "H5",
+    "text": "Descrierea clientului (tablă smulsă parțial, infiltrații în pod) este consistentă cu expunerea reală: rafale și precipitații 24/72 h în reanaliza meteo, pe acoperiș din tablă vizibil în imaginea stradală.",
+    "critical": true,
+    "agents": [
+     "meteo",
+     "street_view"
+    ]
+   }
+  ],
+  "not_relevant_agents": [
+   "satellite",
+   "risk_zones"
+  ],
+  "evidence": [
+   {
+    "id": 13,
+    "rejected_by_adjuster": false,
+    "agent": "meteo",
+    "round": 1,
+    "hypothesis": "Reanaliza meteo pe grilă pentru adresa din Galați indică, pe 26.11.2023, rafale de vânt ≥ 70 km/h (pragul pentru daună de furtună).",
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "precipitation_event_day",
+      "value": 25.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max",
+      "value": 25.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max_date",
+      "value": "2023-11-26",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_72h_max",
+      "value": 41.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_event_day",
+      "value": 90.4,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max",
+      "value": 90.4,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max_date",
+      "value": "2023-11-26",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "snowfall_24h_max",
+      "value": 16.59,
+      "unit": "cm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Rafale maxime pe 26.11.2023 (ziua evenimentului): 90.4 km/h, peste pragul de 70 km/h pentru furtună; maximul zilei este chiar în ziua declarată.",
+     "Precipitații: 25.2 mm în 24 h și 41.2 mm în 72 h, cu 16.59 cm zăpadă în 24 h, compatibile cu infiltrații după un episod de vânt.",
+     "Ipoteza 2 e susținută parțial: expunerea meteo (rafale și precipitații) e consistentă cu descrierea, dar tabla vizibilă în imaginea stradală nu apare în constatări."
+    ],
+    "gaps": [
+     "Rezoluție spațială ~9 km: nu surprinde fenomene foarte locale",
+     "Imaginea stradală cu tabla de pe acoperiș nu este în constatări, deci consistența vizuală a ipotezei 2 nu e verificată.",
+     "Rezoluția de ~9 km nu surprinde rafalele locale; valoarea de 90.4 km/h este una pe grilă, nu măsurată la adresă."
+    ],
+    "suggested_followup": "Compararea cu datele unei stații meteo din Galați pentru 26.11.2023 și analiza imaginii stradale a acoperișului."
+   },
+   {
+    "id": 14,
+    "rejected_by_adjuster": false,
+    "agent": "street_view",
+    "round": 1,
+    "hypothesis": "Imaginea stradală anterioară evenimentului arată acoperișul din tablă de la adresă fără deteriorări vizibile, deci fără daună preexistentă.",
+    "verdict": "inconclusive",
+    "strength": 0.1,
+    "data_quality": 0.2,
+    "findings": [
+     {
+      "metric": "pre_event_image_date",
+      "value": "2012-07",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "pre_event_image_source",
+      "value": "Google Street View",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "pre_event_image_url",
+      "value": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "distance_m",
+      "value": 64.6,
+      "unit": "m",
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Imaginea pre-eveniment este din 2012-07, cu aproximativ 11 ani înainte de data declarată (2023-11-26), deci e veche.",
+     "Imaginea este la 64,6 m de adresă, peste pragul de 50 m, ceea ce scade fiabilitatea.",
+     "Constatările nu descriu starea acoperișului din imagine și nu includ date meteo (rafale, precipitații) pentru 2023-11-26, deci nu se poate compara sau verifica ipoteza."
+    ],
+    "gaps": [
+     "Nu există descrierea acoperișului din tablă în imaginea din 2012, deci nu se poate exclude sau confirma daună preexistentă.",
+     "Nu există date meteo pentru 2023-11-26 la adresă (rafale, precipitații), deci expunerea declarată nu e verificată."
+    ],
+    "suggested_followup": "Obținerea unei imagini stradale mai recente și apropiate de adresă, plus reanaliza meteo a rafalelor și precipitațiilor pentru 2023-11-26 la coordonatele adresei."
+   },
+   {
+    "id": 15,
+    "rejected_by_adjuster": false,
+    "agent": "photo_forensics",
+    "round": 1,
+    "hypothesis": "Fotografiile transmise de client au EXIF compatibil cu 26.11.2023 și nu apar în alte dosare sau pe web înainte de această dată.",
+    "verdict": "inconclusive",
+    "strength": 0.0,
+    "data_quality": 0.0,
+    "findings": [],
+    "reasoning_steps": [],
+    "gaps": [
+     "Nu există fotografii în dosar"
+    ],
+    "suggested_followup": null
+   },
+   {
+    "id": 16,
+    "rejected_by_adjuster": false,
+    "agent": "news",
+    "round": 1,
+    "hypothesis": "Presa independentă relatează vânt puternic cu daune la acoperișuri în Galați în intervalul 26–27.11.2023.",
+    "verdict": "supports",
+    "strength": 0.35,
+    "data_quality": 0.35,
+    "findings": [
+     {
+      "metric": "news_report",
+      "value": "Zeci de copaci doborâți de viscolul puternic peste mașini în orașul Galați",
+      "unit": null,
+      "source": "Ziare.com",
+      "url": "https://ziare.com/cautare/ialomita-pag24",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Zeci de copaci doborâți de viscolul puternic peste mașini în orașul Galați",
+      "unit": null,
+      "source": "Ziare.com",
+      "url": "https://ziare.com/cautare/kogalniceanu-pag18",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Cât mai durează episodul de vreme severă în sud-estul României",
+      "unit": null,
+      "source": "Ziare.com",
+      "url": "https://ziare.com/prognoza-meteo/prognoza-meteo-romania-26-noiembrie-cod-rosu-1838171",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Viscolul și ninsorile au provocat haos în mai multe județe din estul țării",
+      "unit": null,
+      "source": "Libertatea",
+      "url": "https://www.libertatea.ro/stiri/cod-rosu-viscol-braila-ialomita-buzau-calarasi-constanta-si-tulcea-ce-drumuri-sunt-inchise-4729954",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Cod portocaliu de viscol. Zonele în care a venit iarna în România, în acest weekend",
+      "unit": null,
+      "source": "Știrile ProTV",
+      "url": "https://stirileprotv.ro/stiri/vremea/cod-portocaliu-de-viscol-zonele-in-care-a-venit-iarna-in-romania-in-acest-weekend.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "reports_confirmed",
+      "value": 5,
+      "unit": null,
+      "source": "Căutare web",
+      "url": "https://www.gdeltproject.org/",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Două relatări Ziare.com, cu aceeași formulare, raportează zeci de copaci doborâți peste mașini în orașul Galați, deci fenomen cu efecte grele în localitatea declarată.",
+     "Alertele Libertatea și ProTV vizează estul țării și weekendul din 26–27.11, fără să numească explicit Galațiul în titluri; cod portocaliu de viscol indică episod de vreme severă în zonă.",
+     "Constatările confirmă vânt sau viscol în Galați, nu dauna la acoperișul din Str. Exemplu 4; sursele sunt de rezervă, cu data_quality ≤ 0.5."
+    ],
+    "gaps": [
+     "GDELT nu a răspuns (limită de cereri sau serviciu indisponibil)",
+     "Relatările provin din căutare web de rezervă, nu din indexul GDELT",
+     "Nicio relatare nu menționează daune la acoperișuri în Galați; „viscol” sugerează ninsoare, nu neapărat vânt cu smulgere de tablă.",
+     "Adresele Ziare.com sunt pagini de căutare, nu articole datate; data exactă a copacilor doborâți nu e confirmată."
+    ],
+    "suggested_followup": "Căutarea articolelor întregi Ziare.com despre copacii doborâți în Galați și verificarea datei lor, plus rapoarte ISU Galați sau ANM pentru 26–27.11.2023."
+   },
+   {
+    "id": 19,
+    "rejected_by_adjuster": false,
+    "agent": "meteo",
+    "round": 2,
+    "hypothesis": "Reanaliza meteo pe grilă pentru adresa din Galați indică, pe 26.11.2023, rafale de vânt ≥ 70 km/h (pragul pentru daună de furtună).",
+    "verdict": "supports",
+    "strength": 0.65,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "precipitation_event_day",
+      "value": 25.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max",
+      "value": 25.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max_date",
+      "value": "2023-11-26",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_72h_max",
+      "value": 41.2,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_event_day",
+      "value": 90.4,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max",
+      "value": 90.4,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max_date",
+      "value": "2023-11-26",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "snowfall_24h_max",
+      "value": 16.59,
+      "unit": "cm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_1h_max",
+      "value": 3.9,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "rain_hours_over_1mm",
+      "value": 16,
+      "unit": "h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_1h_max",
+      "value": 90.4,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Rafalele maxime din ziua evenimentului (26.11.2023) sunt de 90,4 km/h, peste pragul de 70 km/h.",
+     "Precipitațiile sunt de 25,2 mm în 24 h și 41,2 mm în 72 h, cu 16 ore cu ploaie peste 1 mm.",
+     "Au apărut și ploaie, și zăpadă (16,59 cm în 24 h), dar fără serie orară nu se poate confirma că au coincis cu rafalele."
+    ],
+    "gaps": [
+     "Rezoluție spațială ~9 km: nu surprinde fenomene foarte locale",
+     "Lipsește seria orară: nu se știe când au fost rafalele ≥70 km/h și dacă au coincis cu precipitațiile.",
+     "Imaginea stradală a acoperișului din tablă nu apare în constatări, deci consistența cu daunele descrise nu este verificată direct."
+    ],
+    "suggested_followup": "Seria orară pentru 26–27.11.2023 la coordonatele adresei (rafale, ploaie, ninsoare) și verificarea imaginii stradale a acoperișului."
+   },
+   {
+    "id": 20,
+    "rejected_by_adjuster": false,
+    "agent": "street_view",
+    "round": 2,
+    "hypothesis": "Imaginea stradală anterioară evenimentului arată acoperișul din tablă de la adresă fără deteriorări vizibile, deci fără daună preexistentă.",
+    "verdict": "inconclusive",
+    "strength": 0.1,
+    "data_quality": 0.15,
+    "findings": [
+     {
+      "metric": "pre_event_image_date",
+      "value": "2012-07",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "pre_event_image_source",
+      "value": "Google Street View",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "pre_event_image_url",
+      "value": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "unit": null,
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "distance_m",
+      "value": 64.6,
+      "unit": "m",
+      "source": "Google Street View",
+      "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Singura imagine pre-eveniment este Street View din 2012-07, cu 11 ani înainte de 26.11.2023 și peste 3 ani înainte de eveniment.",
+     "Imaginea este la 64.6 m de adresă, peste pragul de 50 m, iar constatările nu descriu starea acoperișului din tablă.",
+     "Nu există constatări meteo (rafale, precipitații 24/72 h), deci ipoteza 2 nu poate fi evaluată."
+    ],
+    "gaps": [
+     "Nu există fotografii ale clientului pentru comparație",
+     "Nu există imagine stradală între 2012 și 26.11.2023, mai aproape de adresă, care să arate acoperișul.",
+     "Lipsesc datele meteo de reanaliză pentru 24/72 h înainte de 26.11.2023."
+    ],
+    "suggested_followup": "Căutați imagini mai recente (2018–2023) la mai puțin de 50 m de adresă și date meteo de reanaliză pentru Galați, 24/72 h înainte de 26.11.2023."
+   }
+  ],
+  "score": {
+   "score": 79.5,
+   "band": "likely",
+   "recommendation": "standard_review",
+   "contributions": [
+    {
+     "agent": "meteo",
+     "round": 2,
+     "delta_logit": 1.17
+    },
+    {
+     "agent": "news",
+     "round": 1,
+     "delta_logit": 0.1837
+    },
+    {
+     "agent": "street_view",
+     "round": 2,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "photo_forensics",
+     "round": 1,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "context",
+     "round": 0,
+     "delta_logit": 0.0
+    }
+   ],
+   "gates": []
+  },
+  "score_history": [
+   {
+    "round": 1,
+    "score": 80.9,
+    "band": "likely"
+   },
+   {
+    "round": 2,
+    "score": 79.5,
+    "band": "likely"
+   }
+  ]
+ },
+ "trace": [
+  {
+   "case_id": "C-1038",
+   "step_id": "rules",
+   "parent": null,
+   "actor": "rules",
+   "type": "decision",
+   "summary": "Verificare poliță: 5 din 5 reguli trecute",
+   "inputs": {},
+   "outputs": {
+    "flags": [
+     {
+      "rule": "policy_active",
+      "passed": true,
+      "reason": "Poliță activă la data evenimentului"
+     },
+     {
+      "rule": "waiting_period",
+      "passed": true,
+      "reason": "Perioada de așteptare a trecut"
+     },
+     {
+      "rule": "risk_covered",
+      "passed": true,
+      "reason": "Riscul declarat este acoperit"
+     },
+     {
+      "rule": "address_match",
+      "passed": true,
+      "reason": "Adresa coincide cu polița"
+     },
+     {
+      "rule": "notified_in_time",
+      "passed": true,
+      "reason": "Notificat la 2 zile de la eveniment"
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "plan",
+   "parent": "rules",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Plan: 5 ipoteze, 4 agenți",
+   "inputs": {},
+   "outputs": {
+    "hypotheses": [
+     {
+      "id": "H1",
+      "text": "Reanaliza meteo pe grilă pentru adresa din Galați indică, pe 26.11.2023, rafale de vânt ≥ 70 km/h (pragul pentru daună de furtună).",
+      "critical": true,
+      "agents": [
+       "meteo"
+      ]
+     },
+     {
+      "id": "H2",
+      "text": "Presa independentă relatează vânt puternic cu daune la acoperișuri în Galați în intervalul 26–27.11.2023.",
+      "critical": false,
+      "agents": [
+       "news"
+      ]
+     },
+     {
+      "id": "H3",
+      "text": "Imaginea stradală anterioară evenimentului arată acoperișul din tablă de la adresă fără deteriorări vizibile, deci fără daună preexistentă.",
+      "critical": false,
+      "agents": [
+       "street_view"
+      ]
+     },
+     {
+      "id": "H4",
+      "text": "Fotografiile transmise de client au EXIF compatibil cu 26.11.2023 și nu apar în alte dosare sau pe web înainte de această dată.",
+      "critical": true,
+      "agents": [
+       "photo_forensics"
+      ]
+     },
+     {
+      "id": "H5",
+      "text": "Descrierea clientului (tablă smulsă parțial, infiltrații în pod) este consistentă cu expunerea reală: rafale și precipitații 24/72 h în reanaliza meteo, pe acoperiș din tablă vizibil în imaginea stradală.",
+      "critical": true,
+      "agents": [
+       "meteo",
+       "street_view"
+      ]
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.dispatch",
+   "parent": "plan",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Runda 1: Meteo, Știri locale, Street view, Foto-forensic în paralel",
+   "inputs": {},
+   "outputs": {
+    "agents": [
+     {
+      "agent": "meteo",
+      "question": null
+     },
+     {
+      "agent": "news",
+      "question": null
+     },
+     {
+      "agent": "street_view",
+      "question": null
+     },
+     {
+      "agent": "photo_forensics",
+      "question": null
+     }
+    ],
+    "not_relevant": [
+     "satellite",
+     "risk_zones"
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.meteo.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.meteo.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.377853, 'longitude': 28.02817, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.meteo.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Rafale maxime pe 26.11.2023 (ziua evenimentului): 90.4 km/h, peste pragul de 70 km/h pentru furtună; maximul zilei este chiar în ziua declarată.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Mapillary",
+   "inputs": {
+    "url": "https://graph.mapillary.com/images"
+   },
+   "outputs": {},
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Mapillary",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "data": []
+    }
+   },
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Google Street View",
+   "inputs": {
+    "url": "https://maps.googleapis.com/maps/api/streetview/metadata"
+   },
+   "outputs": {},
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Google Street View",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "copyright": "© 2026 Google",
+     "date": "2012-07",
+     "location": {
+      "lat": 45.43537194029737,
+      "lng": 28.00717793164328
+     },
+     "pano_id": "r2yhyqMMkQk6eVqDjP6S1A",
+     "status": "OK"
+    }
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.5",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Imagine stradală din 2012-07 (Google Street View), la 65 m de adresă",
+   "inputs": {},
+   "outputs": {
+    "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328"
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.street_view.6",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Imaginea pre-eveniment este din 2012-07, cu aproximativ 11 ani înainte de data declarată (2023-11-26), deci e veche.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "inconclusive",
+    "strength": 0.1,
+    "data_quality": 0.2
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.news.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "tool_call",
+   "summary": "Interogare GDELT",
+   "inputs": {
+    "url": "https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "outputs": {},
+   "sources": [
+    "GDELT"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.news.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "GDELT nu a răspuns",
+   "inputs": {},
+   "outputs": {
+    "error": "no saved response for GET https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "sources": [
+    "GDELT"
+   ],
+   "status": "failed",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.news.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "5 relatări independente despre eveniment în Galati",
+   "inputs": {},
+   "outputs": {
+    "urls": [
+     "https://ziare.com/cautare/ialomita-pag24",
+     "https://ziare.com/cautare/kogalniceanu-pag18",
+     "https://ziare.com/prognoza-meteo/prognoza-meteo-romania-26-noiembrie-cod-rosu-1838171",
+     "https://www.libertatea.ro/stiri/cod-rosu-viscol-braila-ialomita-buzau-calarasi-constanta-si-tulcea-ce-drumuri-sunt-inchise-4729954",
+     "https://stirileprotv.ro/stiri/vremea/cod-portocaliu-de-viscol-zonele-in-care-a-venit-iarna-in-romania-in-acest-weekend.html"
+    ]
+   },
+   "sources": [
+    "Căutare web"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.news.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "Două relatări Ziare.com, cu aceeași formulare, raportează zeci de copaci doborâți peste mașini în orașul Galați, deci fenomen cu efecte grele în localitatea declarată.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.35,
+    "data_quality": 0.35
+   },
+   "sources": [
+    "Căutare web",
+    "Libertatea",
+    "Ziare.com",
+    "Știrile ProTV"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.score",
+   "parent": "r1.dispatch",
+   "actor": "score",
+   "type": "observation",
+   "summary": "Scor după runda 1: 80.9 (probabil)",
+   "inputs": {},
+   "outputs": {
+    "score": 80.9,
+    "band": "likely",
+    "recommendation": "standard_review",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 1,
+      "delta_logit": 1.26
+     },
+     {
+      "agent": "news",
+      "round": 1,
+      "delta_logit": 0.1837
+     },
+     {
+      "agent": "street_view",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r1.judge",
+   "parent": "r1.dispatch",
+   "actor": "judge",
+   "type": "decision",
+   "summary": "Reanaliza meteo arată rafale de 90,4 km/h pe 26.11.2023, peste pragul de 70 km/h, dar valoarea este pe grilă de ~9 km, nu măsurată la adresă. Presa vorbește despre viscol și copaci doborâți în Galați, dar nicio relatare nu menționează acoperișuri smulse, iar datele articolelor nu sunt confirmate. Reanaliza arată și 16,59 cm de zăpadă și 25,2 mm de precipitații, deci infiltrațiile pot veni din vânt, din zăpadă sau din combinația lor, iar datele actuale nu le disting. Singura imagine stradală este din 2012, făcută de la 64,6 m, și nu arată clar acoperișul din tablă, deci starea acoperișului înainte de eveniment rămâne necunoscută. Retrimit 2 agent(i) — Meteo: Pe seria orară pentru 26–27.11.2023 la coordonatele adresei: în ce ore au fost rafalele ≥ 70 km/h și ce precipitații (ploaie sau zăpadă) au apărut în aceleași ore?; Street view: Există o imagine stradală mai recentă decât 2012 și anterioară datei de 26.11.2023, mai aproape de adresă, în care se vede materialul și starea acoperișului?",
+   "inputs": {},
+   "outputs": {
+    "marks": {
+     "H1": "confirmed",
+     "H2": "inconclusive",
+     "H3": "inconclusive",
+     "H4": "inconclusive",
+     "H5": "inconclusive"
+    },
+    "tensions": [
+     "Reanaliza meteo arată rafale de 90,4 km/h pe 26.11.2023, peste pragul de 70 km/h, dar valoarea este pe grilă de ~9 km, nu măsurată la adresă.",
+     "Presa vorbește despre viscol și copaci doborâți în Galați, dar nicio relatare nu menționează acoperișuri smulse, iar datele articolelor nu sunt confirmate.",
+     "Reanaliza arată și 16,59 cm de zăpadă și 25,2 mm de precipitații, deci infiltrațiile pot veni din vânt, din zăpadă sau din combinația lor, iar datele actuale nu le disting.",
+     "Singura imagine stradală este din 2012, făcută de la 64,6 m, și nu arată clar acoperișul din tablă, deci starea acoperișului înainte de eveniment rămâne necunoscută."
+    ],
+    "action": "redispatch",
+    "redispatch": [
+     {
+      "agent": "meteo",
+      "question": "Pe seria orară pentru 26–27.11.2023 la coordonatele adresei: în ce ore au fost rafalele ≥ 70 km/h și ce precipitații (ploaie sau zăpadă) au apărut în aceleași ore?"
+     },
+     {
+      "agent": "street_view",
+      "question": "Există o imagine stradală mai recentă decât 2012 și anterioară datei de 26.11.2023, mai aproape de adresă, în care se vede materialul și starea acoperișului?"
+     }
+    ],
+    "stop_reason": ""
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.dispatch",
+   "parent": "r1.judge",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Runda 2: Meteo, Street view în paralel",
+   "inputs": {},
+   "outputs": {
+    "agents": [
+     {
+      "agent": "meteo",
+      "question": "Pe seria orară pentru 26–27.11.2023 la coordonatele adresei: în ce ore au fost rafalele ≥ 70 km/h și ce precipitații (ploaie sau zăpadă) au apărut în aceleași ore?"
+     },
+     {
+      "agent": "street_view",
+      "question": "Există o imagine stradală mai recentă decât 2012 și anterioară datei de 26.11.2023, mai aproape de adresă, în care se vede materialul și starea acoperișului?"
+     }
+    ],
+    "not_relevant": [
+     "satellite",
+     "risk_zones"
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.meteo.1",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.meteo.2",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.377853, 'longitude': 28.02817, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.meteo.3",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.meteo.4",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.377853, 'longitude': 28.02817, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.meteo.5",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Rafalele maxime din ziua evenimentului (26.11.2023) sunt de 90,4 km/h, peste pragul de 70 km/h.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.65,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.1",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Mapillary",
+   "inputs": {
+    "url": "https://graph.mapillary.com/images"
+   },
+   "outputs": {},
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.2",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Mapillary",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "data": []
+    }
+   },
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.3",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Google Street View",
+   "inputs": {
+    "url": "https://maps.googleapis.com/maps/api/streetview/metadata"
+   },
+   "outputs": {},
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.4",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Google Street View",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "copyright": "© 2026 Google",
+     "date": "2012-07",
+     "location": {
+      "lat": 45.43537194029737,
+      "lng": 28.00717793164328
+     },
+     "pano_id": "r2yhyqMMkQk6eVqDjP6S1A",
+     "status": "OK"
+    }
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.5",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Imagine stradală din 2012-07 (Google Street View), la 65 m de adresă",
+   "inputs": {},
+   "outputs": {
+    "url": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=45.43537194029737,28.00717793164328"
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.street_view.6",
+   "parent": "r2.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Singura imagine pre-eveniment este Street View din 2012-07, cu 11 ani înainte de 26.11.2023 și peste 3 ani înainte de eveniment.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "inconclusive",
+    "strength": 0.1,
+    "data_quality": 0.15
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.score",
+   "parent": "r2.dispatch",
+   "actor": "score",
+   "type": "observation",
+   "summary": "Scor după runda 2: 79.5 (probabil)",
+   "inputs": {},
+   "outputs": {
+    "score": 79.5,
+    "band": "likely",
+    "recommendation": "standard_review",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 2,
+      "delta_logit": 1.17
+     },
+     {
+      "agent": "news",
+      "round": 1,
+      "delta_logit": 0.1837
+     },
+     {
+      "agent": "street_view",
+      "round": 2,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "r2.judge",
+   "parent": "r2.dispatch",
+   "actor": "judge",
+   "type": "decision",
+   "summary": "Reanaliza meteo arată rafale de 90,4 km/h pe 26.11.2023, peste pragul de 70 km/h, dar valoarea este pe grilă de ~9 km, nu măsurată la adresă. Presa vorbește despre viscol și copaci doborâți în Galați, dar nicio relatare nu menționează acoperișuri smulse, iar datele articolelor nu sunt confirmate. Singura imagine stradală este din 2012, prea veche pentru a arăta starea acoperișului din tablă înainte de eveniment. Dosarul nu conține fotografii ale clientului, deci nu se poate verifica nici EXIF-ul, nici dacă imaginile apar în alte dosare sau pe web; este un gol de date, nu un indiciu de fraudă. Scorul s-a mișcat cu mai puțin de 5 puncte față de runda anterioară. Opresc investigația.",
+   "inputs": {},
+   "outputs": {
+    "marks": {
+     "H1": "confirmed",
+     "H2": "inconclusive",
+     "H3": "inconclusive",
+     "H4": "inconclusive",
+     "H5": "inconclusive"
+    },
+    "tensions": [
+     "Reanaliza meteo arată rafale de 90,4 km/h pe 26.11.2023, peste pragul de 70 km/h, dar valoarea este pe grilă de ~9 km, nu măsurată la adresă.",
+     "Presa vorbește despre viscol și copaci doborâți în Galați, dar nicio relatare nu menționează acoperișuri smulse, iar datele articolelor nu sunt confirmate.",
+     "Singura imagine stradală este din 2012, prea veche pentru a arăta starea acoperișului din tablă înainte de eveniment.",
+     "Dosarul nu conține fotografii ale clientului, deci nu se poate verifica nici EXIF-ul, nici dacă imaginile apar în alte dosare sau pe web; este un gol de date, nu un indiciu de fraudă."
+    ],
+    "action": "stop",
+    "redispatch": [
+     {
+      "agent": "meteo",
+      "question": "Care este seria orară pentru 26–27.11.2023 la coordonatele adresei: în ce ore au fost rafalele ≥70 km/h și au coincis cu ploaia sau ninsoarea?"
+     },
+     {
+      "agent": "news",
+      "question": "Există articole datate 26–27.11.2023 (ISU Galați, presă locală) care menționează acoperișuri sau învelitori de tablă smulse de vânt în Galați?"
+     }
+    ],
+    "stop_reason": "Scorul s-a mișcat cu mai puțin de 5 puncte față de runda anterioară."
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1038",
+   "step_id": "final",
+   "parent": "r2.judge",
+   "actor": "engine",
+   "type": "escalation",
+   "summary": "Scor de plauzibilitate 79.5 (probabil). Recomandare: evaluare standard. Decizia aparține evaluatorului.",
+   "inputs": {},
+   "outputs": {
+    "score": 79.5,
+    "band": "likely",
+    "recommendation": "standard_review",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 2,
+      "delta_logit": 1.17
+     },
+     {
+      "agent": "news",
+      "round": 1,
+      "delta_logit": 0.1837
+     },
+     {
+      "agent": "street_view",
+      "round": 2,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  }
+ ]
+}

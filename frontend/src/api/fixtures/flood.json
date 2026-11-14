@@ -1,0 +1,2361 @@
+{
+ "detail": {
+  "claim": {
+   "id": "C-1042",
+   "policy_id": "P-7731",
+   "damage_type": "flood",
+   "event_date": "2024-09-14",
+   "notified_at": "2024-09-19",
+   "address": "Str. Exemplu 12, Pechea, jud. Galați",
+   "lat": 45.6059,
+   "lon": 27.78329,
+   "description": "Apă în casă, aproximativ 60 cm, pardoseală și mobilier distruse.",
+   "amount_claimed": 48000.0,
+   "photos": [],
+   "status": "awaiting_decision",
+   "decision": null,
+   "outcome": null,
+   "decision_reason": null,
+   "decided_at": null,
+   "created_at": "2026-11-14T00:48:34Z"
+  },
+  "policy": {
+   "id": "P-7731",
+   "holder_name": "Persoană Sintetică Unu",
+   "address": "Str. Exemplu 12, Pechea, jud. Galați",
+   "lat": 45.6059,
+   "lon": 27.78329,
+   "valid_from": "2024-02-01",
+   "valid_to": "2025-01-31",
+   "waiting_days": 0,
+   "covered_risks": [
+    "flood",
+    "earthquake",
+    "landslide"
+   ],
+   "sum_insured": 100000.0,
+   "product": "PAD"
+  },
+  "rule_flags": [
+   {
+    "rule": "policy_active",
+    "passed": true,
+    "reason": "Poliță activă la data evenimentului"
+   },
+   {
+    "rule": "waiting_period",
+    "passed": true,
+    "reason": "Perioada de așteptare a trecut"
+   },
+   {
+    "rule": "risk_covered",
+    "passed": true,
+    "reason": "Riscul declarat este acoperit"
+   },
+   {
+    "rule": "address_match",
+    "passed": true,
+    "reason": "Adresa coincide cu polița"
+   },
+   {
+    "rule": "notified_in_time",
+    "passed": true,
+    "reason": "Notificat la 5 zile de la eveniment"
+   }
+  ],
+  "hypotheses": [
+   {
+    "id": "H1",
+    "text": "Reanaliza meteo pe grilă pentru Pechea arată precipitații ≥ 30 mm în 24 h (pragul pentru inundație) în 13–14 septembrie 2024, sau cumul 72 h comparabil.",
+    "critical": true,
+    "agents": [
+     "meteo"
+    ]
+   },
+   {
+    "id": "H2",
+    "text": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+    "critical": true,
+    "agents": [
+     "satellite",
+     "risk_zones"
+    ]
+   },
+   {
+    "id": "H3",
+    "text": "Fotografiile eventual depuse (dosarul are 0) sunt originale, cu EXIF ulterior datei 2024-09-14, făcute la adresă și fără copii publicate anterior pe web sau în alte dosare.",
+    "critical": false,
+    "agents": [
+     "photo_forensics"
+    ]
+   },
+   {
+    "id": "H4",
+    "text": "Imaginea stradală dinaintea evenimentului nu arată daune preexistente ale casei, iar la cerere comparația cu fotografiile clientului nu indică aceleași deteriorări deja prezente.",
+    "critical": false,
+    "agents": [
+     "street_view",
+     "photo_forensics"
+    ]
+   },
+   {
+    "id": "H5",
+    "text": "Presa independentă relatează inundații sau ploi torențiale în Pechea ori în împrejurimi, în intervalul 13–15 septembrie 2024.",
+    "critical": false,
+    "agents": [
+     "news"
+    ]
+   }
+  ],
+  "not_relevant_agents": [],
+  "evidence": [
+   {
+    "id": 7,
+    "rejected_by_adjuster": false,
+    "agent": "meteo",
+    "round": 1,
+    "hypothesis": "Reanaliza meteo pe grilă pentru Pechea arată precipitații ≥ 30 mm în 24 h (pragul pentru inundație) în 13–14 septembrie 2024, sau cumul 72 h comparabil.",
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "precipitation_event_day",
+      "value": 47.9,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "precipitation_24h_max",
+      "value": 47.9,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "precipitation_24h_max_date",
+      "value": "2024-09-14",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "precipitation_72h_max",
+      "value": 73.4,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "wind_gusts_event_day",
+      "value": 45.0,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max",
+      "value": 45.0,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max_date",
+      "value": "2024-09-14",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:37Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Precipitațiile în ziua evenimentului (2024-09-14) sunt 47,9 mm, peste pragul de 30 mm/24 h.",
+     "Maximul de 24 h din perioada ziua evenimentului ±1 zi este 47,9 mm, atins pe 2024-09-14, deci pragul este atins.",
+     "Cumulul pe 72 h este 73,4 mm, ceea ce susține un eveniment pluvial intens în zonă."
+    ],
+    "gaps": [
+     "Rezoluție spațială ~9 km: nu surprinde fenomene foarte locale",
+     "Reanaliza pe grilă de ~9 km nu surprinde precipitațiile foarte locale de la adresa exactă și nu confirmă nivelul apei de 60 cm.",
+     "Nu există date despre nivelul Dunării sau scurgerile locale, care ar putea fi sursa inundației."
+    ],
+    "suggested_followup": "Verificarea nivelului Dunării la Pechea și a avertizărilor hidrologice ale ANM pentru 13–14 septembrie 2024, plus datele unei stații meteo din apropiere."
+   },
+   {
+    "id": 8,
+    "rejected_by_adjuster": false,
+    "agent": "satellite",
+    "round": 1,
+    "hypothesis": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+    "verdict": "inconclusive",
+    "strength": 0.4,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "activation",
+      "value": "EMSR758",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "mapped_area",
+      "value": "Pechea",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "inside_flood_extent",
+      "value": false,
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "distance_to_flood_edge_m",
+      "value": 149.6,
+      "unit": "m",
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "nearest_edge_point",
+      "value": {
+       "lat": 45.604918,
+       "lon": 27.784603
+      },
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "map_date",
+      "value": "2024-09-17T16:13:00",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "flood_extent_geojson_url",
+      "value": "https://rapidmapping-viewer.s3.eu-west-1.amazonaws.com/EMSR758/AOI03/DEL_MONIT01/EMSR758_AOI03_DEL_MONIT01_maximumFloodExtentA_v1.json",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Adresa se află în afara extinderii inundației EMSR758 (inside_flood_extent = false), la 149,6 m de marginea zonei, deci peste incertitudinea radar de ±20–30 m.",
+     "150 m nu este „lângă margine” în sensul reperelor, dar nici departe (> 500 m); distanța este intermediară și nu permite o concluzie clară.",
+     "Harta datează din 17.09.2024, cu 3 zile după eveniment (14.09.2024), deci apa putea fi deja retrasă; extinderea poate fi subestimată."
+    ],
+    "gaps": [
+     "Incertitudine a delimitării radar: ±20–30 m la marginea zonei",
+     "Nu s-au verificat altitudinea și distanța până la apă din OpenStreetMap, componente ale ipotezei.",
+     "Nu se cunoaște precizia geocodării adresei, iar distanța de 149,6 m depinde de punctul folosit."
+    ],
+    "suggested_followup": "Compară cota terenului la casă cu cota apei din punctul de margine cel mai apropiat (lat 45.604918, lon 27.784603), folosind un DEM, și verifică geocodarea adresei."
+   },
+   {
+    "id": 9,
+    "rejected_by_adjuster": false,
+    "agent": "risk_zones",
+    "round": 1,
+    "hypothesis": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+    "verdict": "supports",
+    "strength": 0.3,
+    "data_quality": 0.5,
+    "findings": [
+     {
+      "metric": "distance_to_water_m",
+      "value": 414.2,
+      "unit": "m",
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "water_name",
+      "value": "Suhurlui",
+      "unit": null,
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "nearest_water_point",
+      "value": {
+       "lat": 45.604823,
+       "lon": 27.788375
+      },
+      "unit": null,
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Distanța până la Suhurlui este de 414,2 m (OpenStreetMap, Overpass), deci casa se află în apropierea unui curs de apă.",
+     "Nu există date de altitudine, deci diferența de nivel față de apă nu poate fi estimată.",
+     "Nu există încadrare în poligonul de inundație Copernicus pentru evenimentul din 14.09.2024; indiciul rămâne slab."
+    ],
+    "gaps": [
+     "Lipsesc altitudinea casei și diferența de nivel față de apa revărsată.",
+     "Lipsește verificarea încadrării în poligonul de inundație Copernicus pentru data evenimentului."
+    ],
+    "suggested_followup": "Verificați poligonul de inundație Copernicus EMS pentru 14.09.2024 și altitudinea terenului la adresă față de cota apei."
+   },
+   {
+    "id": 10,
+    "rejected_by_adjuster": false,
+    "agent": "photo_forensics",
+    "round": 1,
+    "hypothesis": "Fotografiile eventual depuse (dosarul are 0) sunt originale, cu EXIF ulterior datei 2024-09-14, făcute la adresă și fără copii publicate anterior pe web sau în alte dosare.",
+    "verdict": "inconclusive",
+    "strength": 0.0,
+    "data_quality": 0.0,
+    "findings": [],
+    "reasoning_steps": [],
+    "gaps": [
+     "Nu există fotografii în dosar"
+    ],
+    "suggested_followup": null
+   },
+   {
+    "id": 11,
+    "rejected_by_adjuster": false,
+    "agent": "street_view",
+    "round": 1,
+    "hypothesis": "Imaginea stradală dinaintea evenimentului nu arată daune preexistente ale casei, iar la cerere comparația cu fotografiile clientului nu indică aceleași deteriorări deja prezente.",
+    "verdict": "inconclusive",
+    "strength": 0.0,
+    "data_quality": 0.0,
+    "findings": [],
+    "reasoning_steps": [],
+    "gaps": [
+     "Nicio imagine stradală dinaintea evenimentului la această adresă"
+    ],
+    "suggested_followup": null
+   },
+   {
+    "id": 12,
+    "rejected_by_adjuster": false,
+    "agent": "news",
+    "round": 1,
+    "hypothesis": "Presa independentă relatează inundații sau ploi torențiale în Pechea ori în împrejurimi, în intervalul 13–15 septembrie 2024.",
+    "verdict": "supports",
+    "strength": 0.6,
+    "data_quality": 0.45,
+    "findings": [
+     {
+      "metric": "news_report",
+      "value": "GALAȚI: Cele 100 de familii afectate de inundațiile din Pechea, nevoite să locuiască în module sau la rude",
+      "unit": null,
+      "source": "Radio România",
+      "url": "https://www.radioromania.ro/stiri-locale/galati-cele-100-de-familii-afectate-de-inundatiile-din-pechea-nevoite-sa-locuiasca-in-modulesaularude-id40317.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Inundații în Galați. Comuna Pechea e acoperită de ape / VIDEO",
+      "unit": null,
+      "source": "Libertatea",
+      "url": "https://www.libertatea.ro/stiri/inundatii-in-galati-comuna-pechea-e-acoperita-de-ape-5015306",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Imagini dramatice din Galați și Vaslui. „Aloo, e cineva?”. Oameni scoși pe brațe din gospodăriile sub ape",
+      "unit": null,
+      "source": "Adevărul",
+      "url": "https://adevarul.ro/stiri-interne/societate/imagini-dramatice-din-galati-si-vaslui-aloo-e-2388077.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Bilanțul provizoriu al dezastrului din jud. Galați: Patru oameni morți, peste 300, evacuați, 5.000 de case dărâmate, drumuri și poduri rupte",
+      "unit": null,
+      "source": "Radio Europa Liberă România",
+      "url": "https://romania.rferl.org/a/localitati-din-8-judete-afectate-de-ploi-cod-rosu-de-inundatii-in-jud-galati-doi-oameni-au-murit-zeci-de-persoane-au-fost-evacuate/33119734.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "VIDEO Imaginile dezastrului: Comuna Pechea se află sub ape, sute de persoane au fost evacuate",
+      "unit": null,
+      "source": "G4Media",
+      "url": "https://www.g4media.ro/video-imaginile-dezastrului-comuna-pechea-se-afla-sub-ape-sute-de-persoane-au-fost-evacuate.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "reports_confirmed",
+      "value": 5,
+      "unit": null,
+      "source": "Căutare web",
+      "url": "https://www.gdeltproject.org/",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Cinci relatări de la surse diferite (Radio România, Libertatea, Adevărul, Europa Liberă, G4Media) numesc Pechea în contextul inundațiilor.",
+     "Relatările indică 100 de familii afectate, peste 300 de evacuați și 5.000 de case dărâmate, deci un eveniment de amploare în localitate.",
+     "Constatările nu includ date de publicare, așa că încadrarea în intervalul 13–15 septembrie 2024 nu este demonstrată direct."
+    ],
+    "gaps": [
+     "GDELT nu a răspuns (limită de cereri sau serviciu indisponibil)",
+     "Relatările provin din căutare web de rezervă, nu din indexul GDELT",
+     "Fragmentele nu arată datele publicării, deci fereastra 13–15 septembrie nu este confirmată explicit.",
+     "Presa confirmă fenomenul în Pechea, nu dauna la Str. Exemplu 12 sau nivelul apei de aproximativ 60 cm."
+    ],
+    "suggested_followup": "Verificați datele publicării celor cinci relatări și un raport oficial (ISU sau ANM) pentru Pechea în 13–15 septembrie 2024, plus eventual o fotografie sau o hartă a zonei străzii."
+   },
+   {
+    "id": 17,
+    "rejected_by_adjuster": false,
+    "agent": "risk_zones",
+    "round": 2,
+    "hypothesis": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+    "verdict": "contradicts",
+    "strength": 0.85,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "distance_to_water_m",
+      "value": 414.2,
+      "unit": "m",
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "water_name",
+      "value": "Suhurlui",
+      "unit": null,
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "nearest_water_point",
+      "value": {
+       "lat": 45.604823,
+       "lon": 27.788375
+      },
+      "unit": null,
+      "source": "OpenStreetMap (Overpass)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "elevation_house_m",
+      "value": 46.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+      "url": "https://open-meteo.com/en/docs/elevation-api",
+      "spatial_res_km": 0.09,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "elevation_flood_edge_m",
+      "value": 33.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+      "url": "https://open-meteo.com/en/docs/elevation-api",
+      "spatial_res_km": 0.09,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "elevation_diff_m",
+      "value": 13.0,
+      "unit": "m",
+      "source": "Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+      "url": "https://open-meteo.com/en/docs/elevation-api",
+      "spatial_res_km": 0.09,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Altitudinea casei este 46,0 m, iar a marginii zonei inundate 33,0 m (Copernicus GLO-90), deci diferența este 13,0 m.",
+     "Apa din revărsare la 33 m nu poate urca în casă la 46 m; declarația de 60 cm de apă în interior ar fi necesitat o sursă separată.",
+     "Distanța de 414 m până la Suhurlui este un indiciu slab și nu compensează diferența de 13 m de altitudine."
+    ],
+    "gaps": [
+     "Grila de altitudine are ~90 m: diferențele mici de nivel nu sunt de încredere",
+     "Grila de 90 m nu este topografie de precizie, dar 13 m depășește cu mult pragul de 2 m.",
+     "Nu există extinderea inundației din 14.09.2024 confirmată pentru zona adresei, nici alt mecanism de apă (ploaie, conductă)."
+    ],
+    "suggested_followup": "Verificarea extinderii inundației din 14.09.2024 pentru zona adresei și a cauzei apei în casă (ploaie, conductă, canalizare), plus o măsurătoare topografică a cotei pardoselii."
+   },
+   {
+    "id": 18,
+    "rejected_by_adjuster": false,
+    "agent": "meteo",
+    "round": 2,
+    "hypothesis": "Reanaliza meteo pe grilă pentru Pechea arată precipitații ≥ 30 mm în 24 h (pragul pentru inundație) în 13–14 septembrie 2024, sau cumul 72 h comparabil.",
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6,
+    "findings": [
+     {
+      "metric": "precipitation_event_day",
+      "value": 47.9,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max",
+      "value": 47.9,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_24h_max_date",
+      "value": "2024-09-14",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_72h_max",
+      "value": 73.4,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_event_day",
+      "value": 45.0,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max",
+      "value": 45.0,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_10m_max_date",
+      "value": "2024-09-14",
+      "unit": null,
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "precipitation_1h_max",
+      "value": 13.6,
+      "unit": "mm",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "rain_hours_over_1mm",
+      "value": 14,
+      "unit": "h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "wind_gusts_1h_max",
+      "value": 45.0,
+      "unit": "km/h",
+      "source": "Open-Meteo (reanaliză, ~9 km)",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "spatial_res_km": 9.0,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Precipitațiile maxime în 24 h sunt 47,9 mm, în data de 2024-09-14, peste pragul de 30 mm.",
+     "Cumulul maxim pe 72 h este 73,4 mm, iar intensitatea maximă pe 1 h este 13,6 mm, cu 14 ore cu peste 1 mm.",
+     "Sursa este reanaliză pe grilă de ~9 km, nu stație meteo, ceea ce scade calitatea datelor, dar cifrele sunt clar peste prag."
+    ],
+    "gaps": [
+     "Rezoluție spațială ~9 km: nu surprinde fenomene foarte locale",
+     "Constatările nu indică ora exactă a intensității maxime, deci întrebarea Judge-ului rămâne parțial fără răspuns.",
+     "Seria orară completă pentru 13–14 septembrie nu este inclusă, deci fereastra de 24 h nu poate fi verificată precis."
+    ],
+    "suggested_followup": "Extrage seria orară de precipitații pentru 13–14 septembrie 2024 și identifică ora de intensitate maximă și fereastra exactă de 24 h cu ≥30 mm."
+   },
+   {
+    "id": 21,
+    "rejected_by_adjuster": false,
+    "agent": "satellite",
+    "round": 3,
+    "hypothesis": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+    "verdict": "inconclusive",
+    "strength": 0.3,
+    "data_quality": 0.7,
+    "findings": [
+     {
+      "metric": "activation",
+      "value": "EMSR758",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "mapped_area",
+      "value": "Pechea",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "inside_flood_extent",
+      "value": false,
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "distance_to_flood_edge_m",
+      "value": 149.6,
+      "unit": "m",
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "nearest_edge_point",
+      "value": {
+       "lat": 45.604918,
+       "lon": 27.784603
+      },
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "map_date",
+      "value": "2024-09-17T16:13:00",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "flood_extent_geojson_url",
+      "value": "https://rapidmapping-viewer.s3.eu-west-1.amazonaws.com/EMSR758/AOI03/DEL_MONIT01/EMSR758_AOI03_DEL_MONIT01_maximumFloodExtentA_v1.json",
+      "unit": null,
+      "source": "Copernicus CEMS Rapid Mapping EMSR758",
+      "url": "https://mapping.emergency.copernicus.eu/activations/EMSR758/",
+      "spatial_res_km": 0.03,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Harta EMSR758 (AOI03, maximumFloodExtent, 2024-09-17, rezoluție ~30 m) plasează adresa în afara zonei inundate (inside_flood_extent: false).",
+     "Distanța până la marginea inundației este 149,6 m, peste incertitudinea radar de ±20–30 m, dar sub pragul de 500 m care ar contrazice dauna.",
+     "Adresa se află deci lângă margine, la o distanță care nu infirmă singură dauna; verificarea celorlalte criterii (OSM, altitudine) lipsește."
+    ],
+    "gaps": [
+     "Incertitudine a delimitării radar: ±20–30 m la marginea zonei",
+     "Nu sunt furnizate coordonatele geocodate ale adresei și nici precizia geocodării, deci nu putem confirma distanța de 149,6 m.",
+     "Nu s-a verificat dacă adresa apare în alte produse sau poligoane EMSR758 pentru Pechea în afara AOI03."
+    ],
+    "suggested_followup": "Geocodați adresa cu precizie raportată (coordonate și tip de potrivire), verificați alte poligoane EMSR758 pentru Pechea și comparați altitudinea terenului cu nivelul apei declarat (60 cm)."
+   },
+   {
+    "id": 22,
+    "rejected_by_adjuster": false,
+    "agent": "news",
+    "round": 3,
+    "hypothesis": "Presa independentă relatează inundații sau ploi torențiale în Pechea ori în împrejurimi, în intervalul 13–15 septembrie 2024.",
+    "verdict": "inconclusive",
+    "strength": 0.3,
+    "data_quality": 0.4,
+    "findings": [
+     {
+      "metric": "news_report",
+      "value": "GALAȚI: Cele 100 de familii afectate de inundațiile din Pechea, nevoite să locuiască în module sau la rude",
+      "unit": null,
+      "source": "Radio România",
+      "url": "https://www.radioromania.ro/stiri-locale/galati-cele-100-de-familii-afectate-de-inundatiile-din-pechea-nevoite-sa-locuiasca-in-modulesaularude-id40317.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Inundații în Galați. Comuna Pechea e acoperită de ape / VIDEO",
+      "unit": null,
+      "source": "Libertatea",
+      "url": "https://www.libertatea.ro/stiri/inundatii-in-galati-comuna-pechea-e-acoperita-de-ape-5015306",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Imagini dramatice din Galați și Vaslui. „Aloo, e cineva?”. Oameni scoși pe brațe din gospodăriile sub ape",
+      "unit": null,
+      "source": "Adevărul",
+      "url": "https://adevarul.ro/stiri-interne/societate/imagini-dramatice-din-galati-si-vaslui-aloo-e-2388077.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "Bilanțul provizoriu al dezastrului din jud. Galați: Patru oameni morți, peste 300, evacuați, 5.000 de case dărâmate, drumuri și poduri rupte",
+      "unit": null,
+      "source": "Radio Europa Liberă România",
+      "url": "https://romania.rferl.org/a/localitati-din-8-judete-afectate-de-ploi-cod-rosu-de-inundatii-in-jud-galati-doi-oameni-au-murit-zeci-de-persoane-au-fost-evacuate/33119734.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "news_report",
+      "value": "VIDEO Imaginile dezastrului: Comuna Pechea se află sub ape, sute de persoane au fost evacuate",
+      "unit": null,
+      "source": "G4Media",
+      "url": "https://www.g4media.ro/video-imaginile-dezastrului-comuna-pechea-se-afla-sub-ape-sute-de-persoane-au-fost-evacuate.html",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     },
+     {
+      "metric": "reports_confirmed",
+      "value": 5,
+      "unit": null,
+      "source": "Căutare web",
+      "url": "https://www.gdeltproject.org/",
+      "spatial_res_km": null,
+      "retrieved_at": "2026-11-14T00:48:38Z"
+     }
+    ],
+    "reasoning_steps": [
+     "Cinci relatări independente (Radio România, Libertatea, Adevărul, Radio Europa Liberă, G4Media) numesc Pechea și inundații, deci locația și fenomenul sunt confirmate.",
+     "Niciuna dintre cele cinci constatări nu include o dată de publicare, deci intervalul 13–15 septembrie 2024 nu poate fi verificat.",
+     "Niciuna nu indică străzi sau zone din apropierea Str. Exemplu 12; spatial_res_km este null, iar relatările vorbesc de comună în ansamblu."
+    ],
+    "gaps": [
+     "GDELT nu a răspuns (limită de cereri sau serviciu indisponibil)",
+     "Relatările provin din căutare web de rezervă, nu din indexul GDELT",
+     "Lipsesc datele de publicare ale celor cinci relatări, esențiale pentru verificarea intervalului 13–15 septembrie.",
+     "Nu există detalii la nivel de stradă sau zonă, deci dauna la adresa clientului nu poate fi localizată din presă."
+    ],
+    "suggested_followup": "Extrage datele de publicare din cele cinci URL-uri și reia căutarea GDELT cu filtru de date 2024-09-13 până la 2024-09-15, pentru a verifica intervalul și a căuta menționarea străzilor din Pechea."
+   }
+  ],
+  "score": {
+   "score": 34.4,
+   "band": "unlikely",
+   "recommendation": "antifraud_referral",
+   "contributions": [
+    {
+     "agent": "meteo",
+     "round": 2,
+     "delta_logit": 0.63
+    },
+    {
+     "agent": "satellite",
+     "round": 3,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "risk_zones",
+     "round": 2,
+     "delta_logit": -1.275
+    },
+    {
+     "agent": "photo_forensics",
+     "round": 1,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "street_view",
+     "round": 1,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "news",
+     "round": 3,
+     "delta_logit": 0.0
+    },
+    {
+     "agent": "context",
+     "round": 0,
+     "delta_logit": 0.0
+    }
+   ],
+   "gates": []
+  },
+  "score_history": [
+   {
+    "round": 1,
+    "score": 78.2,
+    "band": "likely"
+   },
+   {
+    "round": 2,
+    "score": 40.7,
+    "band": "uncertain"
+   },
+   {
+    "round": 3,
+    "score": 34.4,
+    "band": "unlikely"
+   }
+  ]
+ },
+ "trace": [
+  {
+   "case_id": "C-1042",
+   "step_id": "rules",
+   "parent": null,
+   "actor": "rules",
+   "type": "decision",
+   "summary": "Verificare poliță: 5 din 5 reguli trecute",
+   "inputs": {},
+   "outputs": {
+    "flags": [
+     {
+      "rule": "policy_active",
+      "passed": true,
+      "reason": "Poliță activă la data evenimentului"
+     },
+     {
+      "rule": "waiting_period",
+      "passed": true,
+      "reason": "Perioada de așteptare a trecut"
+     },
+     {
+      "rule": "risk_covered",
+      "passed": true,
+      "reason": "Riscul declarat este acoperit"
+     },
+     {
+      "rule": "address_match",
+      "passed": true,
+      "reason": "Adresa coincide cu polița"
+     },
+     {
+      "rule": "notified_in_time",
+      "passed": true,
+      "reason": "Notificat la 5 zile de la eveniment"
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "plan",
+   "parent": "rules",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Plan: 5 ipoteze, 6 agenți",
+   "inputs": {},
+   "outputs": {
+    "hypotheses": [
+     {
+      "id": "H1",
+      "text": "Reanaliza meteo pe grilă pentru Pechea arată precipitații ≥ 30 mm în 24 h (pragul pentru inundație) în 13–14 septembrie 2024, sau cumul 72 h comparabil.",
+      "critical": true,
+      "agents": [
+       "meteo"
+      ]
+     },
+     {
+      "id": "H2",
+      "text": "Declarația de 60 cm de apă în casă este consistentă cu expunerea reală: casa e în poligonul Copernicus sau lângă margine, aproape de apă în OpenStreetMap, la altitudine apropiată.",
+      "critical": true,
+      "agents": [
+       "satellite",
+       "risk_zones"
+      ]
+     },
+     {
+      "id": "H3",
+      "text": "Fotografiile eventual depuse (dosarul are 0) sunt originale, cu EXIF ulterior datei 2024-09-14, făcute la adresă și fără copii publicate anterior pe web sau în alte dosare.",
+      "critical": false,
+      "agents": [
+       "photo_forensics"
+      ]
+     },
+     {
+      "id": "H4",
+      "text": "Imaginea stradală dinaintea evenimentului nu arată daune preexistente ale casei, iar la cerere comparația cu fotografiile clientului nu indică aceleași deteriorări deja prezente.",
+      "critical": false,
+      "agents": [
+       "street_view",
+       "photo_forensics"
+      ]
+     },
+     {
+      "id": "H5",
+      "text": "Presa independentă relatează inundații sau ploi torențiale în Pechea ori în împrejurimi, în intervalul 13–15 septembrie 2024.",
+      "critical": false,
+      "agents": [
+       "news"
+      ]
+     }
+    ]
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.dispatch",
+   "parent": "plan",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Runda 1: Meteo, Satelit, Zone de risc, Foto-forensic, Street view, Știri locale în paralel",
+   "inputs": {},
+   "outputs": {
+    "agents": [
+     {
+      "agent": "meteo",
+      "question": null
+     },
+     {
+      "agent": "satellite",
+      "question": null
+     },
+     {
+      "agent": "risk_zones",
+      "question": null
+     },
+     {
+      "agent": "photo_forensics",
+      "question": null
+     },
+     {
+      "agent": "street_view",
+      "question": null
+     },
+     {
+      "agent": "news",
+      "question": null
+     }
+    ],
+    "not_relevant": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.meteo.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.meteo.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.58875, 'longitude': 27.735847, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.meteo.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Precipitațiile în ziua evenimentului (2024-09-14) sunt 47,9 mm, peste pragul de 30 mm/24 h.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – căutare activări",
+   "inputs": {
+    "url": "https://mapping.emergency.copernicus.eu/activations/api/activations/"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – căutare activări"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – căutare activări",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'count': 1, 'next': None, 'previous': None, 'results': [{'c"
+   },
+   "sources": [
+    "Copernicus CEMS – căutare activări"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Activare găsită: EMSR758 – Flood in Galati and Vaslui counties, Romania",
+   "inputs": {},
+   "outputs": {
+    "code": "EMSR758"
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – produse",
+   "inputs": {
+    "url": "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – produse"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.5",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – produse",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'count': 1, 'next': None, 'previous': None, 'results': [{'c"
+   },
+   "sources": [
+    "Copernicus CEMS – produse"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.6",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – poligoane",
+   "inputs": {
+    "url": "https://rapidmapping-viewer.s3.eu-west-1.amazonaws.com/EMSR758/AOI03/DEL_MONIT01/EMSR758_AOI03_DEL_MONIT01_maximumFloodExtentA_v1.json"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – poligoane"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.7",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – poligoane",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'type': 'FeatureCollection', 'name': 'EMSR758_AOI03_DEL_MON"
+   },
+   "sources": [
+    "Copernicus CEMS – poligoane"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:37Z",
+   "ended_at": "2026-11-14T00:48:37Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.8",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Casa este în afara zonei inundate, la 150 m de marginea zonei cartografiate (EMSR758)",
+   "inputs": {},
+   "outputs": {
+    "inside": false,
+    "distance_m": 149.6,
+    "edge": {
+     "lat": 45.604918,
+     "lon": 27.784603
+    }
+   },
+   "sources": [
+    "Copernicus CEMS Rapid Mapping EMSR758"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.satellite.9",
+   "parent": "r1.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Adresa se află în afara extinderii inundației EMSR758 (inside_flood_extent = false), la 149,6 m de marginea zonei, deci peste incertitudinea radar de ±20–30 m.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "inconclusive",
+    "strength": 0.4,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Copernicus CEMS Rapid Mapping EMSR758"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.risk_zones.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "tool_call",
+   "summary": "Interogare OpenStreetMap (Overpass)",
+   "inputs": {
+    "url": "https://overpass-api.de/api/interpreter"
+   },
+   "outputs": {},
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.risk_zones.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Răspuns de la OpenStreetMap (Overpass)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'version': 0.6, 'generator': 'Overpass API 0.7.62.11 87bfad"
+   },
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.risk_zones.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Cea mai apropiată apă: Suhurlui, la 414 m",
+   "inputs": {},
+   "outputs": {
+    "distance_m": 414.2,
+    "name": "Suhurlui",
+    "kind": "river",
+    "point": {
+     "lat": 45.604823,
+     "lon": 27.788375
+    }
+   },
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.risk_zones.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Distanța până la Suhurlui este de 414,2 m (OpenStreetMap, Overpass), deci casa se află în apropierea unui curs de apă.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.3,
+    "data_quality": 0.5
+   },
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.street_view.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Mapillary",
+   "inputs": {
+    "url": "https://graph.mapillary.com/images"
+   },
+   "outputs": {},
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.street_view.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Mapillary",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "data": []
+    }
+   },
+   "sources": [
+    "Mapillary"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.street_view.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "tool_call",
+   "summary": "Interogare Google Street View",
+   "inputs": {
+    "url": "https://maps.googleapis.com/maps/api/streetview/metadata"
+   },
+   "outputs": {},
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.street_view.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:street_view",
+   "type": "observation",
+   "summary": "Răspuns de la Google Street View",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "status": "ZERO_RESULTS"
+    }
+   },
+   "sources": [
+    "Google Street View"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.news.1",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "tool_call",
+   "summary": "Interogare GDELT",
+   "inputs": {
+    "url": "https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "outputs": {},
+   "sources": [
+    "GDELT"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.news.2",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "GDELT nu a răspuns",
+   "inputs": {},
+   "outputs": {
+    "error": "no saved response for GET https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "sources": [
+    "GDELT"
+   ],
+   "status": "failed",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.news.3",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "5 relatări independente despre eveniment în Pechea",
+   "inputs": {},
+   "outputs": {
+    "urls": [
+     "https://www.radioromania.ro/stiri-locale/galati-cele-100-de-familii-afectate-de-inundatiile-din-pechea-nevoite-sa-locuiasca-in-modulesaularude-id40317.html",
+     "https://www.libertatea.ro/stiri/inundatii-in-galati-comuna-pechea-e-acoperita-de-ape-5015306",
+     "https://adevarul.ro/stiri-interne/societate/imagini-dramatice-din-galati-si-vaslui-aloo-e-2388077.html",
+     "https://romania.rferl.org/a/localitati-din-8-judete-afectate-de-ploi-cod-rosu-de-inundatii-in-jud-galati-doi-oameni-au-murit-zeci-de-persoane-au-fost-evacuate/33119734.html",
+     "https://www.g4media.ro/video-imaginile-dezastrului-comuna-pechea-se-afla-sub-ape-sute-de-persoane-au-fost-evacuate.html"
+    ]
+   },
+   "sources": [
+    "Căutare web"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.news.4",
+   "parent": "r1.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "Cinci relatări de la surse diferite (Radio România, Libertatea, Adevărul, Europa Liberă, G4Media) numesc Pechea în contextul inundațiilor.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.6,
+    "data_quality": 0.45
+   },
+   "sources": [
+    "Adevărul",
+    "Căutare web",
+    "G4Media",
+    "Libertatea",
+    "Radio Europa Liberă România",
+    "Radio România"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.score",
+   "parent": "r1.dispatch",
+   "actor": "score",
+   "type": "observation",
+   "summary": "Scor după runda 1: 78.2 (probabil)",
+   "inputs": {},
+   "outputs": {
+    "score": 78.2,
+    "band": "likely",
+    "recommendation": "standard_review",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 1,
+      "delta_logit": 0.63
+     },
+     {
+      "agent": "satellite",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "risk_zones",
+      "round": 1,
+      "delta_logit": 0.375
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "street_view",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "news",
+      "round": 1,
+      "delta_logit": 0.27
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r1.judge",
+   "parent": "r1.dispatch",
+   "actor": "judge",
+   "type": "decision",
+   "summary": "Casa este în afara zonei inundate Copernicus, la circa 150 m de margine, dar clientul declară 60 cm de apă în casă. Apa cea mai apropiată din OpenStreetMap (Suhurlui) este la circa 414 m, ceea ce nu arată clar cum ar fi ajuns apa în casă. Reanaliza meteo de ~9 km arată 47,9 mm în 24 h și 73,4 mm în 72 h, deci ploaie puternică, dar nu spune nimic despre nivelul apei la adresa exactă. Presa confirmă inundații mari în Pechea, dar nu confirmă dauna la această adresă, iar datele publicării nu se văd în fragmente. Retrimit 2 agent(i) — Zone de risc: Care este diferența de altitudine (DEM) între terenul de la adresa casei și punctul de margine al zonei inundate Copernicus (lat 45.604918, lon 27.784603), adică ar fi putut apa să ajungă la 60 cm în casă?; Meteo: Ce arată seria orară de precipitații pentru Pechea în 13–14 septembrie 2024: când a fost intensitatea maximă și au căzut ≥ 30 mm în mai puțin de 24 h?",
+   "inputs": {},
+   "outputs": {
+    "marks": {
+     "H1": "confirmed",
+     "H2": "conflicting",
+     "H3": "inconclusive",
+     "H4": "inconclusive",
+     "H5": "confirmed"
+    },
+    "tensions": [
+     "Casa este în afara zonei inundate Copernicus, la circa 150 m de margine, dar clientul declară 60 cm de apă în casă.",
+     "Apa cea mai apropiată din OpenStreetMap (Suhurlui) este la circa 414 m, ceea ce nu arată clar cum ar fi ajuns apa în casă.",
+     "Reanaliza meteo de ~9 km arată 47,9 mm în 24 h și 73,4 mm în 72 h, deci ploaie puternică, dar nu spune nimic despre nivelul apei la adresa exactă.",
+     "Presa confirmă inundații mari în Pechea, dar nu confirmă dauna la această adresă, iar datele publicării nu se văd în fragmente."
+    ],
+    "action": "redispatch",
+    "redispatch": [
+     {
+      "agent": "risk_zones",
+      "question": "Care este diferența de altitudine (DEM) între terenul de la adresa casei și punctul de margine al zonei inundate Copernicus (lat 45.604918, lon 27.784603), adică ar fi putut apa să ajungă la 60 cm în casă?"
+     },
+     {
+      "agent": "meteo",
+      "question": "Ce arată seria orară de precipitații pentru Pechea în 13–14 septembrie 2024: când a fost intensitatea maximă și au căzut ≥ 30 mm în mai puțin de 24 h?"
+     }
+    ],
+    "stop_reason": ""
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.dispatch",
+   "parent": "r1.judge",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Runda 2: Zone de risc, Meteo în paralel",
+   "inputs": {},
+   "outputs": {
+    "agents": [
+     {
+      "agent": "risk_zones",
+      "question": "Care este diferența de altitudine (DEM) între terenul de la adresa casei și punctul de margine al zonei inundate Copernicus (lat 45.604918, lon 27.784603), adică ar fi putut apa să ajungă la 60 cm în casă?"
+     },
+     {
+      "agent": "meteo",
+      "question": "Ce arată seria orară de precipitații pentru Pechea în 13–14 septembrie 2024: când a fost intensitatea maximă și au căzut ≥ 30 mm în mai puțin de 24 h?"
+     }
+    ],
+    "not_relevant": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.1",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "tool_call",
+   "summary": "Interogare OpenStreetMap (Overpass)",
+   "inputs": {
+    "url": "https://overpass-api.de/api/interpreter"
+   },
+   "outputs": {},
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.2",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Răspuns de la OpenStreetMap (Overpass)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'version': 0.6, 'generator': 'Overpass API 0.7.62.11 87bfad"
+   },
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.3",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Cea mai apropiată apă: Suhurlui, la 414 m",
+   "inputs": {},
+   "outputs": {
+    "distance_m": 414.2,
+    "name": "Suhurlui",
+    "kind": "river",
+    "point": {
+     "lat": 45.604823,
+     "lon": 27.788375
+    }
+   },
+   "sources": [
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.4",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+   "inputs": {
+    "url": "https://api.open-meteo.com/v1/elevation"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus DEM GLO-90 (Open-Meteo Elevation)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.5",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+   "inputs": {},
+   "outputs": {
+    "preview": {
+     "elevation": [
+      46.0,
+      33.0
+     ]
+    }
+   },
+   "sources": [
+    "Copernicus DEM GLO-90 (Open-Meteo Elevation)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.6",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Diferența de nivel casă vs. marginea zonei inundate: +13.0 m",
+   "inputs": {},
+   "outputs": {
+    "house_m": 46.0,
+    "reference_m": 33.0
+   },
+   "sources": [
+    "Copernicus DEM GLO-90 (Open-Meteo Elevation)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.risk_zones.7",
+   "parent": "r2.dispatch",
+   "actor": "agent:risk_zones",
+   "type": "observation",
+   "summary": "Altitudinea casei este 46,0 m, iar a marginii zonei inundate 33,0 m (Copernicus GLO-90), deci diferența este 13,0 m.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "contradicts",
+    "strength": 0.85,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Copernicus DEM GLO-90 (Open-Meteo Elevation)",
+    "OpenStreetMap (Overpass)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.meteo.1",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.meteo.2",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.58875, 'longitude': 27.735847, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.meteo.3",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "tool_call",
+   "summary": "Interogare Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   "outputs": {},
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.meteo.4",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Răspuns de la Open-Meteo (reanaliză, ~9 km)",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'latitude': 45.58875, 'longitude': 27.735847, 'generationti"
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.meteo.5",
+   "parent": "r2.dispatch",
+   "actor": "agent:meteo",
+   "type": "observation",
+   "summary": "Precipitațiile maxime în 24 h sunt 47,9 mm, în data de 2024-09-14, peste pragul de 30 mm.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "supports",
+    "strength": 0.7,
+    "data_quality": 0.6
+   },
+   "sources": [
+    "Open-Meteo (reanaliză, ~9 km)"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.score",
+   "parent": "r2.dispatch",
+   "actor": "score",
+   "type": "observation",
+   "summary": "Scor după runda 2: 40.7 (incert)",
+   "inputs": {},
+   "outputs": {
+    "score": 40.7,
+    "band": "uncertain",
+    "recommendation": "standard_review",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 2,
+      "delta_logit": 0.63
+     },
+     {
+      "agent": "satellite",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "risk_zones",
+      "round": 2,
+      "delta_logit": -1.275
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "street_view",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "news",
+      "round": 1,
+      "delta_logit": 0.27
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r2.judge",
+   "parent": "r2.dispatch",
+   "actor": "judge",
+   "type": "decision",
+   "summary": "Clientul declară 60 cm de apă în casă, dar harta Copernicus pune casa în afara zonei inundate, la circa 150 m de margine. Casa e la 414 m de cea mai apropiată apă din OpenStreetMap (Suhurlui) și, după grila DEM de 90 m, cu circa 13 m mai sus decât marginea zonei inundate. Ploaia (47,9 mm în 24 h) și presa confirmă inundații în Pechea, dar asta nu arată că apa a ajuns la această adresă. Delimitarea radar are o marjă de ±20–30 m, grila de altitudine este grosieră și precizia geocodării adresei nu se cunoaște, deci diferența de 150 m și cea de 13 m nu sunt definitive. Retrimit 2 agent(i) — Știri locale: Care sunt datele publicării celor cinci relatări despre inundațiile din Pechea și se încadrează în 13–15 septembrie 2024? Menționează dacă vreuna indică străzi sau zone afectate din apropierea adresei clientului.; Satelit: Se află adresa (sau punctul ei geocodat) în vreun alt produs sau poligon EMSR758 pentru Pechea, în afara AOI03 maximumFloodExtent, și care este precizia geocodării adresei?",
+   "inputs": {},
+   "outputs": {
+    "marks": {
+     "H1": "confirmed",
+     "H2": "conflicting",
+     "H3": "inconclusive",
+     "H4": "inconclusive",
+     "H5": "inconclusive"
+    },
+    "tensions": [
+     "Clientul declară 60 cm de apă în casă, dar harta Copernicus pune casa în afara zonei inundate, la circa 150 m de margine.",
+     "Casa e la 414 m de cea mai apropiată apă din OpenStreetMap (Suhurlui) și, după grila DEM de 90 m, cu circa 13 m mai sus decât marginea zonei inundate.",
+     "Ploaia (47,9 mm în 24 h) și presa confirmă inundații în Pechea, dar asta nu arată că apa a ajuns la această adresă.",
+     "Delimitarea radar are o marjă de ±20–30 m, grila de altitudine este grosieră și precizia geocodării adresei nu se cunoaște, deci diferența de 150 m și cea de 13 m nu sunt definitive."
+    ],
+    "action": "redispatch",
+    "redispatch": [
+     {
+      "agent": "news",
+      "question": "Care sunt datele publicării celor cinci relatări despre inundațiile din Pechea și se încadrează în 13–15 septembrie 2024? Menționează dacă vreuna indică străzi sau zone afectate din apropierea adresei clientului."
+     },
+     {
+      "agent": "satellite",
+      "question": "Se află adresa (sau punctul ei geocodat) în vreun alt produs sau poligon EMSR758 pentru Pechea, în afara AOI03 maximumFloodExtent, și care este precizia geocodării adresei?"
+     }
+    ],
+    "stop_reason": ""
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.dispatch",
+   "parent": "r2.judge",
+   "actor": "orchestrator",
+   "type": "decision",
+   "summary": "Runda 3: Știri locale, Satelit în paralel",
+   "inputs": {},
+   "outputs": {
+    "agents": [
+     {
+      "agent": "news",
+      "question": "Care sunt datele publicării celor cinci relatări despre inundațiile din Pechea și se încadrează în 13–15 septembrie 2024? Menționează dacă vreuna indică străzi sau zone afectate din apropierea adresei clientului."
+     },
+     {
+      "agent": "satellite",
+      "question": "Se află adresa (sau punctul ei geocodat) în vreun alt produs sau poligon EMSR758 pentru Pechea, în afara AOI03 maximumFloodExtent, și care este precizia geocodării adresei?"
+     }
+    ],
+    "not_relevant": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.1",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – căutare activări",
+   "inputs": {
+    "url": "https://mapping.emergency.copernicus.eu/activations/api/activations/"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – căutare activări"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.2",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – căutare activări",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'count': 1, 'next': None, 'previous': None, 'results': [{'c"
+   },
+   "sources": [
+    "Copernicus CEMS – căutare activări"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.3",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Activare găsită: EMSR758 – Flood in Galati and Vaslui counties, Romania",
+   "inputs": {},
+   "outputs": {
+    "code": "EMSR758"
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.4",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – produse",
+   "inputs": {
+    "url": "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – produse"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.5",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – produse",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'count': 1, 'next': None, 'previous': None, 'results': [{'c"
+   },
+   "sources": [
+    "Copernicus CEMS – produse"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.6",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "tool_call",
+   "summary": "Interogare Copernicus CEMS – poligoane",
+   "inputs": {
+    "url": "https://rapidmapping-viewer.s3.eu-west-1.amazonaws.com/EMSR758/AOI03/DEL_MONIT01/EMSR758_AOI03_DEL_MONIT01_maximumFloodExtentA_v1.json"
+   },
+   "outputs": {},
+   "sources": [
+    "Copernicus CEMS – poligoane"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.7",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Răspuns de la Copernicus CEMS – poligoane",
+   "inputs": {},
+   "outputs": {
+    "preview": "{'type': 'FeatureCollection', 'name': 'EMSR758_AOI03_DEL_MON"
+   },
+   "sources": [
+    "Copernicus CEMS – poligoane"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.8",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Casa este în afara zonei inundate, la 150 m de marginea zonei cartografiate (EMSR758)",
+   "inputs": {},
+   "outputs": {
+    "inside": false,
+    "distance_m": 149.6,
+    "edge": {
+     "lat": 45.604918,
+     "lon": 27.784603
+    }
+   },
+   "sources": [
+    "Copernicus CEMS Rapid Mapping EMSR758"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.satellite.9",
+   "parent": "r3.dispatch",
+   "actor": "agent:satellite",
+   "type": "observation",
+   "summary": "Harta EMSR758 (AOI03, maximumFloodExtent, 2024-09-17, rezoluție ~30 m) plasează adresa în afara zonei inundate (inside_flood_extent: false).",
+   "inputs": {},
+   "outputs": {
+    "verdict": "inconclusive",
+    "strength": 0.3,
+    "data_quality": 0.7
+   },
+   "sources": [
+    "Copernicus CEMS Rapid Mapping EMSR758"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.news.1",
+   "parent": "r3.dispatch",
+   "actor": "agent:news",
+   "type": "tool_call",
+   "summary": "Interogare GDELT",
+   "inputs": {
+    "url": "https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "outputs": {},
+   "sources": [
+    "GDELT"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.news.2",
+   "parent": "r3.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "GDELT nu a răspuns",
+   "inputs": {},
+   "outputs": {
+    "error": "no saved response for GET https://api.gdeltproject.org/api/v2/doc/doc"
+   },
+   "sources": [
+    "GDELT"
+   ],
+   "status": "failed",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.news.3",
+   "parent": "r3.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "5 relatări independente despre eveniment în Pechea",
+   "inputs": {},
+   "outputs": {
+    "urls": [
+     "https://www.radioromania.ro/stiri-locale/galati-cele-100-de-familii-afectate-de-inundatiile-din-pechea-nevoite-sa-locuiasca-in-modulesaularude-id40317.html",
+     "https://www.libertatea.ro/stiri/inundatii-in-galati-comuna-pechea-e-acoperita-de-ape-5015306",
+     "https://adevarul.ro/stiri-interne/societate/imagini-dramatice-din-galati-si-vaslui-aloo-e-2388077.html",
+     "https://romania.rferl.org/a/localitati-din-8-judete-afectate-de-ploi-cod-rosu-de-inundatii-in-jud-galati-doi-oameni-au-murit-zeci-de-persoane-au-fost-evacuate/33119734.html",
+     "https://www.g4media.ro/video-imaginile-dezastrului-comuna-pechea-se-afla-sub-ape-sute-de-persoane-au-fost-evacuate.html"
+    ]
+   },
+   "sources": [
+    "Căutare web"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.news.4",
+   "parent": "r3.dispatch",
+   "actor": "agent:news",
+   "type": "observation",
+   "summary": "Cinci relatări independente (Radio România, Libertatea, Adevărul, Radio Europa Liberă, G4Media) numesc Pechea și inundații, deci locația și fenomenul sunt confirmate.",
+   "inputs": {},
+   "outputs": {
+    "verdict": "inconclusive",
+    "strength": 0.3,
+    "data_quality": 0.4
+   },
+   "sources": [
+    "Adevărul",
+    "Căutare web",
+    "G4Media",
+    "Libertatea",
+    "Radio Europa Liberă România",
+    "Radio România"
+   ],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.score",
+   "parent": "r3.dispatch",
+   "actor": "score",
+   "type": "observation",
+   "summary": "Scor după runda 3: 34.4 (improbabil)",
+   "inputs": {},
+   "outputs": {
+    "score": 34.4,
+    "band": "unlikely",
+    "recommendation": "antifraud_referral",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 2,
+      "delta_logit": 0.63
+     },
+     {
+      "agent": "satellite",
+      "round": 3,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "risk_zones",
+      "round": 2,
+      "delta_logit": -1.275
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "street_view",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "news",
+      "round": 3,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "r3.judge",
+   "parent": "r3.dispatch",
+   "actor": "judge",
+   "type": "decision",
+   "summary": "Clientul declară aproximativ 60 cm de apă în casă, dar casa este în afara poligonului Copernicus, la circa 150 m de margine. Casa e cu circa 13 m mai sus decât marginea zonei inundate (grilă de 90 m, deci cifra e orientativă), ceea ce face apa venită din râu greu de explicat. Ploaia din reanaliză (47,9 mm în 24 h, 73,4 mm în 72 h) și presa despre Pechea arată că evenimentul a avut loc, dar nu spun nimic despre adresa clientului. Apa ar putea veni din scurgeri locale, canalizare sau conductă, nu din revărsarea râului, dar nu există nicio dovadă pentru vreuna dintre aceste cauze. Limita de 3 runde a fost atinsă. Opresc investigația.",
+   "inputs": {},
+   "outputs": {
+    "marks": {
+     "H1": "confirmed",
+     "H2": "conflicting",
+     "H3": "inconclusive",
+     "H4": "inconclusive",
+     "H5": "inconclusive"
+    },
+    "tensions": [
+     "Clientul declară aproximativ 60 cm de apă în casă, dar casa este în afara poligonului Copernicus, la circa 150 m de margine.",
+     "Casa e cu circa 13 m mai sus decât marginea zonei inundate (grilă de 90 m, deci cifra e orientativă), ceea ce face apa venită din râu greu de explicat.",
+     "Ploaia din reanaliză (47,9 mm în 24 h, 73,4 mm în 72 h) și presa despre Pechea arată că evenimentul a avut loc, dar nu spun nimic despre adresa clientului.",
+     "Apa ar putea veni din scurgeri locale, canalizare sau conductă, nu din revărsarea râului, dar nu există nicio dovadă pentru vreuna dintre aceste cauze."
+    ],
+    "action": "stop",
+    "redispatch": [
+     {
+      "agent": "satellite",
+      "question": "Care sunt coordonatele geocodate ale adresei din dosar, cu tipul de potrivire și precizia, și cât de departe este acel punct de marginea poligonului EMSR758 (inclusiv în alte produse sau AOI pentru Pechea)?"
+     },
+     {
+      "agent": "news",
+      "question": "Care sunt datele de publicare ale celor cinci relatări despre inundațiile din Pechea și menționează vreuna zona sau strada adresei din dosar, în intervalul 13–15 septembrie 2024?"
+     }
+    ],
+    "stop_reason": "Limita de 3 runde a fost atinsă."
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  },
+  {
+   "case_id": "C-1042",
+   "step_id": "final",
+   "parent": "r3.judge",
+   "actor": "engine",
+   "type": "escalation",
+   "summary": "Scor de plauzibilitate 34.4 (improbabil). Recomandare: trimitere la antifraudă. Decizia aparține evaluatorului.",
+   "inputs": {},
+   "outputs": {
+    "score": 34.4,
+    "band": "unlikely",
+    "recommendation": "antifraud_referral",
+    "contributions": [
+     {
+      "agent": "meteo",
+      "round": 2,
+      "delta_logit": 0.63
+     },
+     {
+      "agent": "satellite",
+      "round": 3,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "risk_zones",
+      "round": 2,
+      "delta_logit": -1.275
+     },
+     {
+      "agent": "photo_forensics",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "street_view",
+      "round": 1,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "news",
+      "round": 3,
+      "delta_logit": 0.0
+     },
+     {
+      "agent": "context",
+      "round": 0,
+      "delta_logit": 0.0
+     }
+    ],
+    "gates": []
+   },
+   "sources": [],
+   "status": "done",
+   "started_at": "2026-11-14T00:48:38Z",
+   "ended_at": "2026-11-14T00:48:38Z"
+  }
+ ]
+}
