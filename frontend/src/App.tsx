@@ -5,6 +5,7 @@ import { listQueue } from './api/hooks';
 import type { QueueCase } from './lib/types';
 import { Aurora } from './components/Aurora';
 import { CaseView } from './components/CaseView';
+import { Demo } from './components/Demo';
 import { Queue } from './components/Queue';
 import { useHashRoute, useTheme } from './lib/hooks';
 import { isNewClaim } from './lib/early';
@@ -22,6 +23,14 @@ export function App() {
   }, [caseId]);
   const current = rows.find((r) => r.id === caseId) ?? (caseId ? { id: caseId, claimant: '' } : undefined);
   const waiting = rows.filter((r) => isNewClaim(r.status)).length;
+
+  if (path === '/demo')
+    return (
+      <>
+        <Aurora ground />
+        <Demo auto={params.get('auto') === '1'} />
+      </>
+    );
 
   return (
     <>

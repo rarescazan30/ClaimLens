@@ -6626,3 +6626,497 @@ h2,
 .archived-note {
   margin: 4px 0 0;
 }
+
+/* =====================================================================
+   Pitch demo (#/demo). Full-screen chapters in the app's own look: a numbered tag, a large grotesque
+   headline with its second half in lavender, figures that count up, pieces that arrive one at a time.
+   Chapter 3 hosts the real case page with a caption bar pinned to the bottom.
+   ===================================================================== */
+.demo {
+  min-height: 100vh;
+  position: relative;
+}
+.demo-stage {
+  animation: demo-in 0.7s var(--ease) both;
+}
+@keyframes demo-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+}
+.demo-slide {
+  min-height: 100vh;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 12vh 64px 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.demo-center {
+  align-items: center;
+  text-align: center;
+}
+.demo-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 72px;
+  align-items: center;
+}
+.demo-tag {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 22px;
+  color: var(--ink-3);
+  font-size: 15px;
+}
+.demo-tag span {
+  color: var(--accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.demo-tag span::after {
+  content: '';
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  margin-left: 14px;
+  vertical-align: middle;
+  background: var(--line-2);
+}
+.demo-big {
+  margin: 0;
+  font-size: clamp(96px, 13vw, 220px);
+  line-height: 0.95;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.demo-big.is-accent {
+  margin-top: 36px;
+  color: var(--good);
+}
+.demo-lead {
+  max-width: 34ch;
+  margin: 22px 0 0;
+  font-size: clamp(20px, 1.7vw, 28px);
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.demo-lead.is-center {
+  max-width: 40ch;
+}
+.demo-source {
+  margin: 18px 0 0;
+  max-width: 70ch;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.demo-facts,
+.demo-trust {
+  display: grid;
+  gap: 16px;
+}
+.demo-trust {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 44px;
+}
+.demo-fact {
+  display: grid;
+  gap: 8px;
+  padding: 24px 26px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-2);
+  animation: demo-in 0.6s var(--ease) both;
+  animation-delay: var(--d, 0s);
+}
+.demo-fact svg {
+  color: var(--accent);
+}
+.demo-fact b {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.demo-fact span {
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.demo-fact i {
+  font-style: normal;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.demo-logo {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 26px;
+  background: var(--accent-fill);
+  color: #fff;
+  box-shadow: 0 20px 60px -20px var(--accent-glow, rgba(110, 90, 220, 0.6));
+  animation: demo-pop 0.8s var(--ease) both;
+}
+@keyframes demo-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+.demo-title {
+  margin: 28px 0 0;
+  font-size: clamp(72px, 9vw, 150px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+.demo-title.is-end {
+  font-size: clamp(54px, 6.4vw, 104px);
+  max-width: 16ch;
+}
+.demo-h2 {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(44px, 5vw, 84px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+}
+.demo-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 56px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-steps li {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-2);
+  animation: demo-in 0.6s var(--ease) both;
+  animation-delay: var(--d, 0s);
+}
+.demo-steps li svg {
+  color: var(--accent);
+}
+.demo-steps b {
+  font-size: 19px;
+  font-weight: 600;
+}
+.demo-steps span:last-child {
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.demo-step-n {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  color: var(--accent);
+  font-weight: 600;
+}
+.demo-bars {
+  display: grid;
+  gap: 22px;
+  margin: 52px 0 0;
+  max-width: 1100px;
+}
+.demo-bar {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 160px;
+  gap: 22px;
+  align-items: center;
+  font-size: 18px;
+}
+.demo-bar-label {
+  color: var(--ink-2);
+}
+.demo-bar b {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.demo-bar-track {
+  height: 18px;
+  border-radius: 99px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.demo-bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--w);
+  border-radius: inherit;
+  animation: demo-grow 1.4s var(--ease) both 0.3s;
+}
+.demo-bar-fill.is-manual {
+  background: var(--bad-fill);
+}
+.demo-bar-fill.is-ai {
+  background: var(--good-fill);
+}
+@keyframes demo-grow {
+  from {
+    width: 0;
+  }
+}
+.demo-pill {
+  margin: 34px 0 0;
+  padding: 10px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+
+/* chapter 3: the real case page, with room at the bottom for the caption bar */
+.demo-live-app {
+  padding-bottom: 150px;
+}
+.demo-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 40;
+  transform: translateX(-50%);
+  width: min(1400px, calc(100% - 40px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 26px;
+  align-items: center;
+  padding: 18px 26px;
+  border: 1px solid var(--line-2);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--sh-3);
+}
+.demo-caption .demo-tag {
+  margin: 0;
+}
+.demo-caption-step {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.demo-caption-text {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.35;
+  animation: demo-in 0.45s var(--ease) both;
+}
+.demo-clock {
+  display: grid;
+  justify-items: end;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.demo-clock b {
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.demo-caption-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* chapter dots and arrows, bottom right; hidden in chapter 3 behind the caption bar */
+.demo-nav {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+.demo-nav:hover {
+  opacity: 1;
+}
+.ch-live .demo-nav {
+  top: 18px;
+  bottom: auto;
+}
+.demo-nav ol {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-nav li button {
+  display: block;
+  padding: 6px 2px;
+}
+.demo-nav li span {
+  display: block;
+  width: 18px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--line-2);
+  transition: background 0.2s, width 0.2s;
+}
+.demo-nav li .is-past span {
+  background: var(--ink-3);
+}
+.demo-nav li .is-on span {
+  width: 34px;
+  background: var(--accent);
+}
+@media (max-width: 1100px) {
+  .demo-split,
+  .demo-trust,
+  .demo-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .demo-slide {
+    padding: 80px 24px 120px;
+  }
+  .demo-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .demo-caption {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-stage,
+  .demo-fact,
+  .demo-steps li,
+  .demo-caption-text,
+  .demo-bar-fill,
+  .demo-logo {
+    animation: none;
+  }
+}
+
+/* demo, fullscreen: slides use the whole screen, left-aligned with wide margins; nothing sits on top of anything */
+.demo-slide {
+  max-width: none;
+  margin: 0;
+  padding: 11vh 7vw 140px;
+}
+.demo-center {
+  align-items: flex-start;
+  text-align: left;
+}
+.demo-lead.is-center {
+  max-width: 34ch;
+}
+.demo-split {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 6vw;
+}
+.demo-big {
+  font-size: clamp(110px, 14vw, 280px);
+}
+.demo-h2 {
+  max-width: 24ch;
+  font-size: clamp(48px, 5.2vw, 104px);
+}
+.demo-title {
+  font-size: clamp(88px, 10vw, 200px);
+}
+.demo-title.is-end {
+  max-width: 18ch;
+  font-size: clamp(60px, 6.6vw, 128px);
+}
+.demo-lead {
+  font-size: clamp(20px, 1.6vw, 32px);
+}
+.demo-steps {
+  gap: 1.4vw;
+  margin-top: 7vh;
+}
+.demo-steps li {
+  padding: 26px 24px;
+}
+.demo-trust {
+  gap: 1.4vw;
+  margin-top: 7vh;
+}
+.demo-bars {
+  max-width: none;
+  margin-top: 7vh;
+}
+.demo-bar {
+  grid-template-columns: minmax(240px, 22vw) minmax(0, 1fr) minmax(150px, 12vw);
+}
+
+/* chapter 3: the case page uses the full width, under a strip reserved for the chapter dots */
+.ch-live .demo-nav {
+  top: 14px;
+  right: 28px;
+  bottom: auto;
+}
+.demo-live-app {
+  padding-top: 44px;
+}
+.demo-live-app .page {
+  max-width: none;
+  padding-left: 48px;
+  padding-right: 48px;
+}
+.demo-caption {
+  width: calc(100% - 96px);
+}
+@media (max-width: 1100px) {
+  .demo-slide {
+    padding: 80px 24px 140px;
+  }
+  .demo-live-app .page {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .demo-caption {
+    width: calc(100% - 32px);
+  }
+}
+.ch-impact .demo-slide {
+  padding-top: 8vh;
+  padding-bottom: 110px;
+}
+.ch-impact .demo-big.is-accent {
+  margin-top: 4vh;
+  font-size: clamp(96px, 11vw, 210px);
+}
+/* the entrance leaves no transform or filter behind: either would pin the caption bar to the page instead of the screen */
+.demo-stage {
+  animation-fill-mode: backwards;
+}
+.ch-live .demo-stage {
+  animation: none;
+}
+/* slides are one screen each: the page itself never scrolls (chapter 3, the live app, is the exception) */
+html.demo-fixed,
+html.demo-fixed body {
+  height: 100%;
+  overflow: hidden;
+}
+html.demo-fixed .demo-slide {
+  height: 100vh;
+  min-height: 0;
+}

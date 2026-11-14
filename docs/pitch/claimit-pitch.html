@@ -1,0 +1,231 @@
+<title>ClaimIT pitch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a one-page brief on top (thesis, problem, how it works, time saved), then the market map below it. */
+  :root {
+    --bg: #f6f5fb;
+    --surface: #ffffff;
+    --ink: #17152a;
+    --ink-2: #4c4866;
+    --ink-3: #75718e;
+    --line: rgba(40, 32, 100, 0.12);
+    --accent: #5a47c8;
+    --accent-soft: rgba(90, 71, 200, 0.09);
+    --good: #187a52;
+    --bad: #b2324f;
+    --display: 'Geist', 'Segoe UI', system-ui, sans-serif;
+    --body: 'Geist', 'Segoe UI', system-ui, sans-serif;
+    --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16171b; --surface: #24252b; --ink: #f3f3f7; --ink-2: #c3c3d0; --ink-3: #9a9aab;
+      --line: rgba(220, 220, 240, 0.14); --accent: #b0a6ec; --accent-soft: rgba(176, 166, 236, 0.12);
+      --good: #72d6a4; --bad: #f590ad; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16171b; --surface: #24252b; --ink: #f3f3f7; --ink-2: #c3c3d0; --ink-3: #9a9aab;
+    --line: rgba(220, 220, 240, 0.14); --accent: #b0a6ec; --accent-soft: rgba(176, 166, 236, 0.12);
+    --good: #72d6a4; --bad: #f590ad; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 56px; }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  .eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+  .muted { color: var(--ink-3); }
+
+  header.hero { display: grid; gap: 18px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 18px; }
+  .mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; color: #fff; }
+  .mark svg { width: 18px; height: 18px; }
+  h1 { font-size: clamp(34px, 5vw, 58px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; max-width: 20ch; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--ink-2); max-width: 62ch; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  section { display: grid; gap: 18px; }
+  h2 { font-size: 26px; letter-spacing: -0.02em; font-weight: 600; }
+  h3 { font-size: 17px; font-weight: 600; }
+
+  .stat { display: grid; gap: 4px; padding: 18px 0; border-top: 1px solid var(--line); }
+  .stat b { font-family: var(--display); font-size: 34px; letter-spacing: -0.03em; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--ink-2); }
+  .stat small { color: var(--ink-3); font-size: 12.5px; }
+
+  ol.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  ol.flow li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+  ol.flow li > span { font-family: var(--mono); color: var(--accent); font-size: 14px; padding-top: 2px; }
+  ol.flow b { display: block; }
+  ol.flow p { color: var(--ink-2); font-size: 15px; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: grid; gap: 8px; min-width: 0; }
+  .card p { color: var(--ink-2); font-size: 15px; }
+
+  .time { display: grid; gap: 14px; }
+  .bar { display: grid; grid-template-columns: 220px minmax(0, 1fr) 120px; gap: 16px; align-items: center; }
+  .track { height: 14px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; }
+  .fill { height: 100%; border-radius: inherit; }
+  .fill.manual { width: 100%; background: var(--bad); }
+  .fill.ai { width: 9%; background: var(--good); }
+  .bar b { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
+  .big-saving { font-family: var(--display); font-size: clamp(44px, 6vw, 72px); letter-spacing: -0.04em; font-weight: 600; color: var(--good); line-height: 1; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  tr.us td { background: var(--accent-soft); }
+  .yes { color: var(--good); font-weight: 600; }
+  .no { color: var(--ink-3); }
+
+  ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--ink-2); }
+  .sources { font-size: 13px; color: var(--ink-3); display: grid; gap: 4px; }
+  .sources a { color: var(--accent); }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  @media (max-width: 820px) {
+    .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+    .bar { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .bar b { text-align: left; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span>
+      ClaimIT
+    </div>
+    <p class="eyebrow">Asistent agentic pentru inspectorii de daune la locuințe · UiPath Hackathon 2026</p>
+    <h1>Inspectorul nu mai caută dovezi. <em>Primește un dosar cu surse și decide.</em></h1>
+    <p class="lede">După o inundație sau o furtună, fiecare dosar de daună cere aceeași muncă de documentare: s-a întâmplat evenimentul la adresa declarată, casa era în zona afectată, fotografiile sunt reale? ClaimIT face această documentare automat, din surse publice verificabile, și îi lasă inspectorului doar decizia.</p>
+  </header>
+
+  <div class="grid2">
+    <section>
+      <p class="eyebrow">Problema</p>
+      <h2>Mai multe daune, aceiași inspectori</h2>
+      <div>
+        <div class="stat"><b>34.000</b><span>locuințe despăgubite în România într-un an, cu 14% mai multe decât anul anterior. Fenomenele meteo extreme sunt motorul creșterii.</span><small>UNSAR, 2025</small></div>
+        <div class="stat"><b>20–50 de zile</b><span>durează de obicei de la daună la plată după o catastrofă naturală.</span><small>Tractable, cifră proprie a furnizorului</small></div>
+        <div class="stat"><b>6.000–7.000</b><span>locuințe afectate de inundațiile din Galați și Vaslui, septembrie 2024, cu sute de dosare deschise în câteva zile.</span><small>PAID, prin presa economică</small></div>
+      </div>
+      <p class="muted">Timpul inspectorului se duce pe căutat: arhive meteo, hărți de inundație, relief, verificarea fotografiilor, presa locală. Decizia propriu-zisă durează puțin; documentarea durează ore.</p>
+    </section>
+
+    <section>
+      <p class="eyebrow">Cum funcționează</p>
+      <h2>Zece pași, cu omul la final</h2>
+      <ol class="flow">
+        <li><span>1</span><div><b>Dosarul depus</b><p>Formularul de daună și polița, în PDF, citite automat și comparate cu datele din dosar.</p></div></li>
+        <li><span>2</span><div><b>Verificări fără AI</b><p>Datele clientului, condițiile poliței (activă, risc acoperit, avizare în termen), fotografiile. O regulă încălcată oprește investigația.</p></div></li>
+        <li><span>3</span><div><b>Planul</b><p>Un Orchestrator transformă dauna în ipoteze testabile și alege agenții.</p></div></li>
+        <li><span>4</span><div><b>Șase agenți specializați</b><p>Meteo (Open-Meteo), satelit (Copernicus EMS), relief (Copernicus DEM, OpenStreetMap), analiză foto (EXIF, căutare web), imagini stradale (Mapillary, Google), presă locală (GDELT).</p></div></li>
+        <li><span>5</span><div><b>Arbitru independent</b><p>Separat de cel care a făcut planul. Marchează fiecare ipoteză, caută contradicții și trimite agenți înapoi cu întrebări mai precise.</p></div></li>
+        <li><span>6</span><div><b>Inspectorul decide</b><p>Primește scorul de plauzibilitate, recomandarea (plată rapidă, analiză standard, antifraudă) și fiecare sursă. Poate aproba, schimba sau cere verificări suplimentare.</p></div></li>
+      </ol>
+    </section>
+  </div>
+
+  <section>
+    <p class="eyebrow">Timp câștigat</p>
+    <h2>Documentarea unui dosar: de la ore la minute</h2>
+    <div class="grid2">
+      <div class="time">
+        <div class="bar"><span>Inspector, documentare manuală</span><div class="track"><div class="fill manual"></div></div><b>~150 min</b></div>
+        <div class="bar"><span>ClaimIT + verificarea inspectorului</span><div class="track"><div class="fill ai"></div></div><b>2–3 + 10 min</b></div>
+        <p class="muted">Măsurat: investigația dosarului demo C-8001 (inundație, Pechea), rulată în direct cu surse și AI reale, a durat <b>2 min 36 s</b> la prima rulare (64 de pași, două runde de agenți, a doua cerută de Arbitru) și <b>1 min 57 s</b> la a doua. Scorul a variat între 47,8 și 63,6, iar recomandarea a rămas aceeași: analiză standard.</p>
+      </div>
+      <div>
+        <p class="big-saving">≈ 90%</p>
+        <p>mai puțin timp de documentare pe dosar. Pentru 400 de dosare după o inundație, înseamnă aproximativ <b>900 de ore</b> de muncă economisite, adică peste 110 zile de lucru ale unui inspector.</p>
+        <p class="muted" style="margin-top:10px">Estimarea echipei, nu o măsurătoare din piață. Munca manuală pe dosar: arhiva meteo 15 min, harta inundației 25 min, relieful și apa 15 min, verificarea fotografiilor 25 min, imagini stradale 10 min, presa locală 20 min, redactarea 40 min. De validat cu un asigurător partener.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">De ce noi</p>
+    <h2>Ce facem diferit</h2>
+    <div class="grid3">
+      <div class="card"><h3>Dovezi, nu doar un scor</h3><p>Fiecare constatare are cifra, sursa și raționamentul. Inspectorul vede de ce, nu doar cât.</p></div>
+      <div class="card"><h3>Două roluri AI separate</h3><p>Cine face planul nu judecă dovezile. Arbitrul vede doar ipotezele și dovezile, și poate cere o nouă rundă.</p></div>
+      <div class="card"><h3>Omul decide, regulile sunt fixe</h3><p>Condițiile poliței se verifică fără AI. Sistemul doar recomandă, iar un gol de date nu înseamnă fraudă.</p></div>
+    </div>
+  </section>
+
+  <hr>
+
+  <section>
+    <p class="eyebrow">Piața</p>
+    <h2>Ce există deja și unde ne poziționăm</h2>
+    <p class="lede" style="font-size:17px">Piața de AI pentru daune este matură în trei direcții: estimarea costului din fotografii, detectarea fraudei și imaginile aeriene după catastrofe. Niciuna nu răspunde direct la întrebarea pe care o are inspectorul la fiecare dosar de inundație sau furtună: s-a întâmplat cu adevărat, aici și atunci?</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Cine</th><th>Ce face</th><th>Verifică evenimentul la adresă</th><th>Dosar cu surse publice</th><th>Omul decide explicit</th><th>Piață</th></tr>
+        </thead>
+        <tbody>
+          <tr class="us"><td>ClaimIT</td><td>Investigație agentică: reguli fixe, șase agenți pe surse publice, Arbitru independent, recomandare</td><td class="yes">Da: meteo, satelit, relief, presă</td><td class="yes">Da, fiecare cifră cu sursa</td><td class="yes">Da</td><td>România, apoi Europa Centrală și de Est</td></tr>
+          <tr><td>Tractable</td><td>Estimează dauna exterioară din fotografii (vânt, grindină, uragan), integrat cu Verisk Xactimate</td><td class="no">Nu</td><td class="no">Nu</td><td>Parțial</td><td>America de Nord, Japonia</td></tr>
+          <tr><td>Shift Technology</td><td>Detectarea fraudei și, din 2025, Shift Claims, o platformă agentică de daune</td><td class="no">Indirect</td><td class="no">Nu, model propriu</td><td>Parțial</td><td>Global, clienți mari (AXA, Tokio Marine)</td></tr>
+          <tr><td>Five Sigma (Clive)</td><td>Sistem de daune în cloud cu agent AI pentru gestionarea dosarelor</td><td class="no">Nu</td><td class="no">Nu</td><td>Parțial</td><td>SUA</td></tr>
+          <tr><td>Sprout.ai</td><td>Automatizarea daunelor cap-coadă, inclusiv locuințe (Zurich UK)</td><td class="no">Nu</td><td class="no">Nu</td><td>Parțial</td><td>Marea Britanie, Europa</td></tr>
+          <tr><td>FRISS</td><td>Scor de fraudă și risc pe polițe și daune</td><td class="no">Nu</td><td class="no">Nu</td><td>Da</td><td>Europa, global</td></tr>
+          <tr><td>Nearmap, EagleView, Vexcel</td><td>Imagini aeriene după catastrofe, triere și pierderi totale</td><td class="yes">Da, din imagini proprii</td><td class="no">Nu, imagini cu abonament</td><td>Da</td><td>Mai ales SUA și Australia</td></tr>
+          <tr><td>Asigurători locali (ex. Groupama)</td><td>Soluții AI interne pentru procesarea daunelor</td><td class="no">Necunoscut</td><td class="no">Necunoscut</td><td>Da</td><td>România</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3 style="margin-bottom:10px">Unde suntem mai buni</h3>
+        <ul class="plain">
+          <li>Verificăm evenimentul în sine, la adresa declarată, din mai multe surse independente. Ceilalți estimează dauna sau scorează frauda.</li>
+          <li>Folosim surse publice și gratuite (Copernicus, Open-Meteo, OpenStreetMap), deci nu depindem de zboruri sau abonamente la imagini aeriene, rare în România.</li>
+          <li>Raționamentul este vizibil pas cu pas, pe înțelesul inspectorului și al auditorului. Un model închis dă doar un scor.</li>
+          <li>Suntem construiți pentru piața locală: română, formulare PAID și polițe facultative, Copernicus EMS activat pentru inundațiile din regiune.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">Unde nu concurăm, încă</h3>
+        <ul class="plain">
+          <li>Nu estimăm costul reparației; acolo Tractable și furnizorii de imagini sunt complementari, nu concurenți.</li>
+          <li>Suntem un prototip: cifrele de timp sunt o estimare de validat cu un asigurător partener.</li>
+          <li>Datele publice au limite (meteo pe grilă de ~9 km, hărți Copernicus doar pentru evenimente activate). Le arătăm explicit, fără să le ascundem.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sources">
+    <p class="eyebrow" style="color:var(--ink-3)">Surse</p>
+    <p>Cifrele furnizorilor sunt raportate de ei înșiși și nu au fost verificate independent.</p>
+    <a href="https://www.antena3.ro/conferinte/conferintele-romania-inteligenta/34-000-de-locuinte-despagubite-intr-un-singur-an-dar-romanii-inca-evita-asigurarile-785106.html">UNSAR, prin Antena 3: 34.000 de locuințe despăgubite într-un singur an</a>
+    <a href="https://tractable.ai/new-ai-solution-to-help-homeowners-recover-faster-from-natural-disasters/">Tractable: AI Property, 20–50 de zile de la daună la plată</a>
+    <a href="https://financialintelligence.ro/radu-paid-din-6-7-mii-de-locuinte-afectate-de-inundatii-in-galati-si-vaslui-avem-deschise-doar-438-de-dosare/">PAID, prin Financial Intelligence: 6–7 mii de locuințe afectate în Galați și Vaslui</a>
+    <a href="https://www.shift-technology.com/en-gb/resources/press/shift-technology-unveils-agentic-ai-powered-shift-claims">Shift Technology: lansarea Shift Claims</a>
+    <a href="https://fintech.global/?p=220311">Five Sigma: agentul Clive</a>
+    <a href="https://www.insurancetimes.co.uk/news/sproutai-set-to-overhaul-claims-processing-pain-point-with-ai-solution/1450919.article">Sprout.ai: automatizarea daunelor</a>
+    <a href="https://nearmap.com/us/en/industries/insurance-claims-property-intelligence">Nearmap: imagini aeriene pentru daune</a>
+    <a href="https://www.bugetul.ro/groupama-transformare-digitala-daune-solutionate-inteligenta-artificiala/">Groupama: daune soluționate cu inteligență artificială</a>
+  </section>
+</div>

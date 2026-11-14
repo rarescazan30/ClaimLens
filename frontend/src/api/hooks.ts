@@ -68,8 +68,25 @@ export interface CaseActions {
  * While the claim is being investigated the live stream is open and the case is rebuilt as steps arrive.
  * `c` is undefined while loading and null when the claim does not exist.
  */
+/** The last case built for each claim, so a page that mounts again (the demo, the report) shows it at once while it refreshes. */
+const lastCase = new Map<string, CaseFile>();
+
+/** Drop the remembered copy of a claim, so the next page shows the new run instead of the old result. */
+export function forgetCase(id: string) {
+  lastCase.delete(id);
+}
+
+/** Load a claim in the background, so the first page that shows it does not wait. */
+export function prefetchCase(id: string): Promise<void> {
+  return Promise.all([api.getClaim(id), api.getTrace(id)])
+    .then(([detail, trace]) => {
+      lastCase.set(id, buildCase(detail, trace));
+    })
+    .catch(() => undefined);
+}
+
 export function useCase(id: string) {
-  const [c, setC] = useState<CaseFile | null | undefined>(undefined);
+  const [c, setC] = useState<CaseFile | null | undefined>(() => lastCase.get(id));
   const [live, setLive] = useState(false);
   const [error, setError] = useState('');
   const ref = useRef<{ es?: EventSource; timer?: ReturnType<typeof setTimeout>; poll?: ReturnType<typeof setInterval>; on: boolean }>({ on: true });
@@ -77,6 +94,7 @@ export function useCase(id: string) {
   const load = useCallback(async () => {
     const [detail, trace] = await Promise.all([api.getClaim(id), api.getTrace(id)]);
     const built = buildCase(detail, trace);
+    lastCase.set(id, built);
     if (ref.current.on) setC(built);
     return built;
   }, [id]);
@@ -127,7 +145,7 @@ export function useCase(id: string) {
 
   useEffect(() => {
     ref.current.on = true;
-    setC(undefined);
+    setC(lastCase.get(id));
     setLive(false);
     setError('');
     load()
