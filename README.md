@@ -3,7 +3,7 @@
 > The adjuster stops doing research. They get an evidence file with sources, and they decide.
 
 Agentic assistant for home-insurance claim adjusters after natural disasters (floods, storms), built for the
-**UiPath Hackathon**. "ClaimLens" is a working name; the app's screens still say "AsigIT".
+**UiPath Hackathon**. "ClaimLens" is a working name; the app's screens say "ClaimIT".
 
 📄 Full proposal and research (Romanian): [`docs/proposal.md`](docs/proposal.md)
 

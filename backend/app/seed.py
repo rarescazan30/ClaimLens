@@ -2,7 +2,7 @@
 
 A case file is either the old format (`{"policy": {...}, "claim": {...}}`) or points to the claim's two PDFs:
 `{"claim": {"id": "C-8001", "documents": {"claim_form": "flood/claim.pdf", "policy": "flood/policy.pdf"},
-"photos": ["flood/poza.png"]}}` (`documents` may also sit next to `claim`). Documents and photos live together under
+"photos": ["flood/poza.jpg"]}}` (`documents` may also sit next to `claim`). Documents and photos live together under
 `documents_dir(cases_dir)` (`demo/documents/` for the demo); `demo/cases/` holds case files only. The claim number
 comes from the case file (the claim form has none). The PDFs are only read here (no checks, no geocoding), so the
 queue shows the claim before any run; the run itself reads them again from the start.

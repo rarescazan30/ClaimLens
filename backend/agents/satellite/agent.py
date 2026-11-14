@@ -28,9 +28,15 @@ PAGE = "https://mapping.emergency.copernicus.eu/activations/{code}/"
 ROLE = "harta Copernicus a zonei inundate: adresa este în interiorul sau în afara zonei cartografiate."
 CATEGORY = {"flood": "flood", "storm": "storm"}
 LAYER_PREFERENCE = ("maximumFloodExtentA", "observedEventA")
-GUIDANCE = ("Delimitarea din imagini radar are o incertitudine de ±20–30 m la margine. O casă în afara zonei, "
-            "aproape de margine, NU infirmă singură dauna: marchează 'inconclusive' și sugerează verificarea "
-            "diferenței de nivel. O casă în interior susține puternic. Departe (> 500 m) contrazice.")
+EDGE_TOLERANCE_M = 300   # outside the mapped flood but this close to its edge: never counts against the claim
+GUIDANCE = ("Delimitarea din imagini radar are o incertitudine de ±20–30 m la margine, iar Copernicus ratează des "
+            "apa de pe străzi și din zonele înguste (între case, sub copaci, în curți). O casă în afara zonei, la cel "
+            f"mult {EDGE_TOLERANCE_M} m de margine, este în marja de incertitudine: NU infirmă dauna, marchează "
+            "'inconclusive' și sugerează verificarea diferenței de nivel. O casă în interior susține puternic. "
+            "Departe (> 500 m) contrazice.")
+EDGE_GAP = (f"Casa este la cel mult {EDGE_TOLERANCE_M} m de marginea zonei inundate cartografiate: în marja de "
+            "incertitudine (Copernicus ratează des apa de pe străzi și din zonele înguste), deci harta nu contrazice "
+            "dauna.")
 
 
 def _ascii(text: str) -> str:
@@ -143,5 +149,9 @@ async def run(task: AgentTask, ctx: AgentContext) -> Evidence:
                 f("map_date", map_date), f("flood_extent_geojson_url", layer_url)]
     where = "în interiorul" if m["inside"] else f"în afara zonei inundate, la {m['distance_m']:.0f} m de"
     ctx.note("observation", f"Casa este {where} marginea zonei cartografiate ({code})", m, [source])
-    return await conclude(ctx, task, ROLE, findings, GUIDANCE,
-                          ["Incertitudine a delimitării radar: ±20–30 m la marginea zonei"])
+    e = await conclude(ctx, task, ROLE, findings, GUIDANCE,
+                       ["Incertitudine a delimitării radar: ±20–30 m la marginea zonei"])
+    if e.verdict == "contradicts" and not m["inside"] and m["distance_m"] <= EDGE_TOLERANCE_M:
+        e = e.model_copy(update={"verdict": "inconclusive", "gaps": e.gaps + [EDGE_GAP]})
+        ctx.note("observation", EDGE_GAP, {"distance_m": m["distance_m"]}, [source])
+    return e

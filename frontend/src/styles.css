@@ -6598,3 +6598,31 @@ h2,
   text-align: center;
   padding: 18px 16px 18px;
 }
+
+/* flag rows (report, "Semnale transmise Arbitrului"): long reasons wrap inside the card, the chip stays inside */
+.flag-list li {
+  grid-template-columns: minmax(64px, 84px) minmax(0, 1fr) auto;
+  min-width: 0;
+}
+.flag-list .flag-step,
+.flag-list .flag-reason {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.flag-list .chip {
+  flex: none;
+  white-space: nowrap;
+  justify-self: end;
+}
+@media (max-width: 560px) {
+  .flag-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .flag-list .flag-reason {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+.archived-note {
+  margin: 4px 0 0;
+}
