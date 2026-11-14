@@ -61,6 +61,12 @@ claims** (`RECORD=1`, see below); until then a replayed run gets "unavailable" A
 Three modes: **live** (default, no variable): every run really calls the sources and the AI, nothing saved is reused.
 **Replay** (`REPLAY=1`): only saved answers. **Record** (`RECORD=1`): live, and overwrites the saved answers.
 
+If you ran the backend before, delete the old local database once so the new demo claims load cleanly:
+
+```bash
+rm -f data/claimlens.db
+```
+
 ### 3. Frontend (terminal 2)
 
 From the `ClaimLens` folder:

@@ -453,6 +453,15 @@ _VALIDATORS = {
 }
 
 
+_PERSONAL = {"cnp", "iban"}
+
+
+def _hidden(value: str) -> str:
+    """Personal ID and bank account numbers are shown with their last 4 characters only."""
+    v = "".join(value.split())
+    return "•" * max(len(v) - 4, 0) + v[-4:]
+
+
 def check_documents(claim_doc: ReadDocument, policy_doc: ReadDocument) -> StepResult:
     items: list[CheckItem] = []
     flags: list[Flag] = []
@@ -474,7 +483,8 @@ def check_documents(claim_doc: ReadDocument, policy_doc: ReadDocument) -> StepRe
                 items.append(CheckItem(id=item_id, label=label, value=value, status="flag", reason=reason))
                 flags.append(Flag(step="documents", code="field_malformed", field=name, severity="warn", reason=reason))
                 continue
-            items.append(CheckItem(id=item_id, label=label, value=value, status="ok"))
+            shown = _hidden(value) if name in _PERSONAL else value
+            items.append(CheckItem(id=item_id, label=label, value=shown, status="ok"))
     on_claim, on_policy = (claim_doc.fields.get("numar_polita") or "").strip(), (policy_doc.fields.get("numar_polita") or "").strip()
     if on_claim and on_policy and _key(on_claim) != _key(on_policy):
         reason = f"Numărul poliței din cerere („{on_claim}”) diferă de cel din poliță („{on_policy}”)."

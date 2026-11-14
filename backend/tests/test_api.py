@@ -502,7 +502,9 @@ def test_claim_with_full_client_data_gets_no_flags_and_no_client_lines(client):
     wait(client, cid)
     body = client.get(f"/claims/{cid}").json()
     assert body["flags"] == []
-    assert body["documents"]["policy"]["cnp"] == "1800101123450"
+    assert body["documents"]["policy"]["cnp"] == "•••••••••3450"     # never sent in full
+    assert "1800101123450" not in json.dumps(body, ensure_ascii=False)
     assert body["documents"]["policy"]["telefon"] == "0722123456"   # the policyholder's data, on the policy
     assert [c for c in body["score"]["contributions"] if c["agent"] == "client"] == []
-    assert body["policy"]["cnp"] == "1800101123450" and "unknown_key" not in body["policy"]
+    assert body["policy"]["cnp"] == "•••••••••3450" and "unknown_key" not in body["policy"]
+

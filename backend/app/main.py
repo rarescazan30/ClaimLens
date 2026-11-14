@@ -24,6 +24,7 @@ from app.db import Store
 from app.seed import documents_dir, seed
 from engine import http, modes
 from engine.documents import from_claim, read_document, write_document
+from engine.client import _mask
 from engine.graph import run_investigation
 from engine.models import TraceStep
 from engine.rules import context_term
@@ -227,7 +228,7 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
                    for t in s.trace_for(claim_id) if t.step_id.endswith(".score")]
         return {
             "claim": {k: v for k, v in c.items() if k not in RUN_KEYS},
-            "policy": s.get_policy(c["policy_id"]),
+            "policy": _masked(s.get_policy(c["policy_id"])),
             "rule_flags": c["rule_flags"] or [],
             "hypotheses": c["hypotheses"] or [],
             "not_relevant_agents": [a for a in ALL_AGENTS if a not in AGENTS_FOR.get(c["damage_type"], ALL_AGENTS)],
@@ -244,8 +245,14 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
         """Each PDF's read fields ({} for one that is missing or unreadable); {} for a claim without documents."""
         if not claim.get("documents"):
             return {}
-        return {kind: (read_document(path, kind).fields if path else {})
+        return {kind: _masked(read_document(path, kind).fields if path else {})
                 for kind, path in document_files(claim).items()}
+
+    def _masked(d: dict | None) -> dict | None:
+        """The personal ID number is never sent to the browser in full: only its last 4 digits."""
+        if not d or not d.get("cnp"):
+            return d
+        return {**d, "cnp": _mask(str(d["cnp"]))}
 
     @app.get("/claims/{claim_id}/trace")
     def get_trace(claim_id: str):
