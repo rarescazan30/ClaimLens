@@ -10,12 +10,16 @@ class FakeSink:
         self.scores: list[tuple[int, ScoreResult]] = []
         self.hyp: list[Hypothesis] = []
         self.rule_flags: list[RuleFlag] = []
+        self.check_results: list = []
+        self.read_fields: dict = {}
 
     def trace(self, step): self.steps.append(step)
     def evidence(self, e): self.ev.append(e); return len(self.ev)
     def score(self, s, round): self.scores.append((round, s))
     def hypotheses(self, h): self.hyp = h
     def flags(self, f): self.rule_flags = f
+    def checks(self, result): self.check_results.append(result)
+    def claim_read(self, fields): self.read_fields = fields
 
 
 @pytest.fixture

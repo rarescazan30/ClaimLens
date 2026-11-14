@@ -7,7 +7,7 @@ import threading
 from pathlib import Path
 from typing import Any, Callable
 
-from engine.models import Evidence, Hypothesis, RuleFlag, ScoreResult, TraceStep, WeightConfig, now_iso
+from engine.models import Evidence, Hypothesis, RuleFlag, ScoreResult, StepResult, TraceStep, WeightConfig, now_iso
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS policy (
@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS claim (
   id TEXT PRIMARY KEY, policy_id TEXT, damage_type TEXT, event_date TEXT, notified_at TEXT, address TEXT,
   lat REAL, lon REAL, description TEXT, amount_claimed REAL, photos TEXT, status TEXT, rule_flags TEXT,
   hypotheses TEXT, score REAL, band TEXT, recommendation TEXT, score_detail TEXT, decision TEXT,
-  outcome TEXT, decision_reason TEXT, decided_at TEXT, created_at TEXT);
+  outcome TEXT, decision_reason TEXT, decided_at TEXT, created_at TEXT,
+  documents TEXT, checks TEXT, early_flags TEXT, run_mode TEXT);
 CREATE TABLE IF NOT EXISTS evidence (
   id INTEGER PRIMARY KEY AUTOINCREMENT, claim_id TEXT, agent TEXT, round INTEGER, body TEXT,
   rejected_by_adjuster INTEGER DEFAULT 0, created_at TEXT);
@@ -30,7 +31,10 @@ CREATE TABLE IF NOT EXISTS weight_config (
   damage_type TEXT PRIMARY KEY, p0 REAL, weights TEXT, context_weight REAL, updated_at TEXT);
 """
 
-CLAIM_JSON = ("photos", "rule_flags", "hypotheses", "score_detail")
+CLAIM_JSON = ("photos", "rule_flags", "hypotheses", "score_detail", "documents", "checks", "early_flags")
+NEW_CLAIM_COLUMNS = {"documents": "TEXT", "checks": "TEXT", "early_flags": "TEXT", "run_mode": "TEXT"}
+READ_FIELDS = ("address", "lat", "lon", "event_date", "notified_at", "damage_type", "description",
+               "amount_claimed", "policy_id")
 POLICY_JSON = ("covered_risks",)
 FOOTPRINT_JSON = ("polygon", "meteo_maxima", "news", "sources")
 
@@ -76,6 +80,22 @@ class ClaimSink:
         self.store._exec("UPDATE claim SET rule_flags=? WHERE id=?",
                          (json.dumps([x.model_dump() for x in f]), self.claim_id))
 
+    def checks(self, result: StepResult) -> None:
+        claim = self.store.get_claim(self.claim_id) or {}
+        checks = dict(claim.get("checks") or {})
+        checks[result.step] = result.model_dump()
+        early = [f for step, r in checks.items() for f in r["flags"]]
+        self.store._exec("UPDATE claim SET checks=?, early_flags=? WHERE id=?",
+                         (json.dumps(checks), json.dumps(early), self.claim_id))
+        self.store._notify(self.claim_id, "checks", result.model_dump())
+
+    def claim_read(self, fields: dict) -> None:
+        cols = [k for k in READ_FIELDS if k in fields]
+        if not cols:
+            return
+        sets = ", ".join(f"{k}=?" for k in cols)
+        self.store._exec(f"UPDATE claim SET {sets} WHERE id=?", (*[fields[k] for k in cols], self.claim_id))
+
 
 class Store:
     def __init__(self, path: str | Path):
@@ -108,6 +128,16 @@ class Store:
     def create_schema(self) -> None:
         with self.lock:
             self.db.executescript(SCHEMA)
+        self.migrate()
+
+    def migrate(self) -> None:
+        """Add claim columns that older databases lack."""
+        with self.lock:
+            have = {r["name"] for r in self.db.execute("PRAGMA table_info(claim)")}
+            for col, typ in NEW_CLAIM_COLUMNS.items():
+                if col not in have:
+                    self.db.execute(f"ALTER TABLE claim ADD COLUMN {col} {typ}")
+            self.db.commit()
 
     def for_claim(self, claim_id: str) -> ClaimSink:
         return ClaimSink(self, claim_id)
@@ -145,7 +175,7 @@ class Store:
         self._exec("DELETE FROM trace_step WHERE case_id=?", (claim_id,))
         self._exec("UPDATE claim SET status='received', score=NULL, band=NULL, recommendation=NULL, "
                    "score_detail=NULL, rule_flags=NULL, hypotheses=NULL, decision=NULL, outcome=NULL, "
-                   "decision_reason=NULL, decided_at=NULL WHERE id=?", (claim_id,))
+                   "decision_reason=NULL, decided_at=NULL, checks=NULL, early_flags=NULL, run_mode=NULL WHERE id=?", (claim_id,))
 
     def save_decision(self, claim_id: str, decision: str, outcome: str, reason: str | None) -> None:
         self._exec("UPDATE claim SET decision=?, outcome=?, decision_reason=?, decided_at=?, status='decided' "
