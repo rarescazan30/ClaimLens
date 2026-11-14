@@ -1,9 +1,12 @@
-import { Camera, CloudRain, Eye, FileCheck2, Inbox, Mountain, Newspaper, Satellite, Scale, ScanSearch, ShieldCheck, Stamp, Waves, Wind, Workflow, type LucideIcon } from 'lucide-react';
+import { Camera, FileText, UserRound, Images, CloudRain, Eye, FileCheck2, Inbox, Mountain, Newspaper, Satellite, Scale, ScanSearch, ShieldCheck, Stamp, Waves, Wind, Workflow, type LucideIcon } from 'lucide-react';
 import type { AgentId, ClaimType, StageId } from '../lib/types';
 
 export const STAGE_ICON: Record<StageId, LucideIcon> = {
   intake: Inbox,
+  documents: FileText,
+  client: UserRound,
   policy: ShieldCheck,
+  photos: Images,
   plan: Workflow,
   agents: Workflow,
   judge: Scale,

@@ -5,7 +5,10 @@ export const APP_NAME = 'AsigIT';
 /** The checkpoints on the rail. Each one is something the backend really does (see docs/frontend-integration.md). */
 export const STAGES: { id: StageId; short: string; live: string; title: string; help: string }[] = [
   { id: 'intake', short: 'Claim', live: 'Reading the claim', title: 'The claim on file', help: 'What the backend holds for this claim: who, where, when, how much and which policy.' },
+  { id: 'documents', short: 'Documents', live: 'Reading the claim form and the policy', title: 'The two documents', help: 'The claim form and the policy PDF are read back by code, never an AI, and compared with what was filed.' },
+  { id: 'client', short: 'Client data', live: 'Checking the client data', title: 'Client data', help: 'Fixed checks on what the form says about the policyholder: ID number, phone, email, bank account and the address on the map.' },
   { id: 'policy', short: 'Policy check', live: 'Validating claim conditions', title: 'Claim conditions', help: 'Fixed rules, no AI: was the policy active, is the peril covered, was the claim filed in time.' },
+  { id: 'photos', short: 'Photos', live: 'Checking the photos', title: 'Photo check', help: 'Are there photos, can they be read, and do they carry a date and place. Fixed checks, no AI.' },
   { id: 'plan', short: 'Plan', live: 'Building the orchestrator plan', title: 'Orchestrator plan', help: 'The orchestrator turns the claim into things to prove and picks which agents to ask.' },
   { id: 'agents', short: 'Agents', live: "Pulling data from the orchestrator's agents", title: 'Specialist agents', help: 'Each agent answers one question from one kind of source, then reports back.' },
   { id: 'judge', short: 'Judge', live: 'Judge is weighing the evidence', title: 'Judge', help: 'The judge weighs the findings, looks for contradictions and decides whether to send agents back.' },

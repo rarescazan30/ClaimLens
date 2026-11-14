@@ -11,8 +11,11 @@ const H = 310;
 const CY = 175;
 const R = 14;
 const NX: Record<Exclude<StageId, 'agents'>, number> = {
-  intake: 110,
-  policy: 330,
+  intake: 50,
+  documents: 150,
+  client: 250,
+  policy: 350,
+  photos: 450,
   plan: 550,
   judge: 990,
   verdict: 1090,
@@ -28,8 +31,11 @@ const lanePath = (y: number) =>
 const LOOP = `M${NX.judge},${CY - JR - 5} C${NX.judge},-10 586,-10 586,${CY - 13}`;
 
 const SEGMENTS: [Exclude<StageId, 'agents'>, Exclude<StageId, 'agents'>][] = [
-  ['intake', 'policy'],
-  ['policy', 'plan'],
+  ['intake', 'documents'],
+  ['documents', 'client'],
+  ['client', 'policy'],
+  ['policy', 'photos'],
+  ['photos', 'plan'],
   ['judge', 'verdict'],
   ['verdict', 'review'],
 ];

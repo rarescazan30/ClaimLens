@@ -14,7 +14,7 @@ export type Verdict = 'supports' | 'contradicts' | 'inconclusive';
 export type Band = 'very_likely' | 'likely' | 'uncertain' | 'unlikely';
 export type Outcome = 'fast_track' | 'standard_review' | 'antifraud_referral';
 export type ClaimType = 'flood' | 'storm';
-export type ClaimStatus = 'received' | 'investigating' | 'awaiting_decision' | 'decided';
+export type ClaimStatus = 'received' | 'investigating' | 'paused' | 'awaiting_decision' | 'decided';
 export type Mark = 'confirmed' | 'refuted' | 'inconclusive' | 'conflicting';
 
 // ---------------------------------------------------------------- backend responses
@@ -105,6 +105,8 @@ export interface ApiContribution {
   agent: string;
   round: number;
   delta_logit: number;
+  /** Shown as is for a `client` line; null for the others. */
+  reason?: string | null;
 }
 
 export interface ApiGate {
@@ -120,6 +122,36 @@ export interface ApiScore {
   gates: ApiGate[];
 }
 
+export type CheckStep = 'intake' | 'documents' | 'client' | 'policy' | 'photos';
+
+export interface ApiCheckItem {
+  id: string;
+  label: string;
+  value: string | null;
+  status: 'ok' | 'flag' | 'fail' | 'info';
+  reason: string | null;
+}
+
+export interface ApiFlag {
+  step: CheckStep;
+  code: string;
+  field: string | null;
+  severity: 'warn' | 'fail';
+  reason: string;
+}
+
+export interface ApiStepResult {
+  step: CheckStep;
+  items: ApiCheckItem[];
+  flags: ApiFlag[];
+}
+
+/** Fields read from the two PDFs, by form-field name (not fixed: the backend owns them). */
+export interface ApiDocuments {
+  claim_form?: Record<string, string>;
+  policy?: Record<string, string>;
+}
+
 /** GET /claims/{id}. */
 export interface ApiClaimDetail {
   claim: ApiClaim;
@@ -130,6 +162,11 @@ export interface ApiClaimDetail {
   evidence: ApiEvidence[];
   score: ApiScore | null;
   score_history: { round: number; score: number; band: Band }[];
+  /** Empty for a claim not yet run or stored without documents. */
+  checks: Partial<Record<CheckStep, ApiStepResult>>;
+  flags: ApiFlag[];
+  documents: ApiDocuments;
+  run_mode: 'live' | 'replay' | 'record' | null;
 }
 
 /** One item of GET /claims/{id}/trace, and one `trace` event on the live stream. */
@@ -150,7 +187,7 @@ export interface ApiTraceStep {
 
 // ---------------------------------------------------------------- view model
 
-export type StageId = 'intake' | 'policy' | 'plan' | 'agents' | 'judge' | 'verdict' | 'review';
+export type StageId = 'intake' | 'documents' | 'client' | 'policy' | 'photos' | 'plan' | 'agents' | 'judge' | 'verdict' | 'review';
 export type Status = 'ok' | 'flag' | 'fail' | 'info';
 
 /** A stretch of the run timeline during which a stage is active. `at` and `dur` are ms offsets. */
@@ -296,7 +333,14 @@ export interface CaseFile {
   /** True when the run was too fast to watch (served from saved responses) and the replay uses even pacing. */
   paced: boolean;
   windows: StageWindow[];
-  flags: StageId[];
+  /** Stages with something flagged: drawn with a flag on the rail. */
+  flaggedStages: StageId[];
+  /** Every flag of the five early steps. */
+  flags: ApiFlag[];
+  documents: ApiDocuments;
+  runMode: 'live' | 'replay' | 'record' | null;
+  /** Set while the run waits after a failed policy rule. */
+  paused?: { rules: string[] };
   details: Partial<Record<StageId, DetailItem[]>>;
   plan: Plan;
   runs: AgentRun[];

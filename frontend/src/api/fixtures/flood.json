@@ -866,7 +866,11 @@
     "score": 34.4,
     "band": "unlikely"
    }
-  ]
+  ],
+  "checks": {},
+  "flags": [],
+  "documents": {},
+  "run_mode": null
  },
  "trace": [
   {

@@ -51,6 +51,8 @@ export const getClaim = (id: string) => call<ApiClaimDetail>(`/claims/${enc(id)}
 export const getTrace = (id: string) => call<ApiTraceStep[]>(`/claims/${enc(id)}/trace`);
 /** POST /claims/{id}/rerun: erases the previous run and decision, then starts a fresh investigation. */
 export const rerun = (id: string) => call<{ id: string; status: string }>(`/claims/${enc(id)}/rerun`, post());
+/** POST /claims/{id}/continue: a paused claim goes on to the plan and the agents (409 when it is not paused). */
+export const continueRun = (id: string) => call<{ id: string; status: string }>(`/claims/${enc(id)}/continue`, post());
 /** POST /claims/{id}/question: one more round answering the adjuster's question. */
 export const ask = (id: string, question: string) => call<{ id: string; status: string }>(`/claims/${enc(id)}/question`, post({ question }));
 /** POST /claims/{id}/decision: approve the recommendation, or choose another outcome with a reason. */
@@ -60,6 +62,8 @@ export const decide = (id: string, body: { decision: 'approve' } | { decision: '
 export const rejectEvidence = (id: string, evidenceId: number) => call<ApiScore>(`/claims/${enc(id)}/evidence/${evidenceId}/reject`, post());
 /** GET /claims/{id}/flood-extent: GeoJSON of the mapped flood (404 when the claim has none). */
 export const getFloodExtent = (id: string) => call<GeoJSON>(`/claims/${enc(id)}/flood-extent`);
+/** GET /documents/{id}/{name}.pdf: the original PDF, for an "Open PDF" link. */
+export const documentUrl = (id: string, name: 'claim_form' | 'policy') => `${API_URL}/documents/${enc(id)}/${name}.pdf`;
 /** GET /photos/{name} */
 export const photoUrl = (name: string) => `${API_URL}/photos/${name.split('/').map(enc).join('/')}`;
 /** GET /claims/{id}/stream: server-sent events while an investigation runs. */

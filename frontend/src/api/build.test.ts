@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ApiClaimDetail, ApiTraceStep } from '../lib/types';
 import { buildCase, buildQueueRow, OPEN } from './build';
 import flood from './fixtures/flood.json';
+import paused from './fixtures/paused.json';
 import storm from './fixtures/storm.json';
 
 /**
@@ -172,6 +173,92 @@ describe('buildCase: states of a claim', () => {
     detail.claim = { ...detail.claim, status: 'decided', decision: 'modify', outcome: 'standard_review', decision_reason: 'Site visit already done', decided_at: '2026-11-14T01:00:00Z' };
     const c = buildCase(detail, trace);
     expect(c.decision).toMatchObject({ kind: 'modify', outcome: 'standard_review', reason: 'Site visit already done' });
+  });
+});
+
+describe('buildCase: the five early steps and the pause', () => {
+  const pausedFile = load(paused);
+  const p = buildCase(pausedFile.detail, pausedFile.trace);
+
+  /** The paused run continued by the adjuster: the investigation follows right after the pause. */
+  const continuedFile = () => {
+    const { detail, trace } = load(paused);
+    detail.claim.status = 'awaiting_decision';
+    const t = '2026-11-14T09:05:00Z';
+    const step = (step_id: string, actor: string, type: ApiTraceStep['type'], summary: string, outputs: Record<string, unknown>) =>
+      ({ case_id: 'C-1042', parent: null, inputs: {}, sources: [], status: 'done', started_at: t, ended_at: t, step_id, actor, type, summary, outputs }) as ApiTraceStep;
+    const score = { score: 40, band: 'uncertain', recommendation: 'standard_review', contributions: [{ agent: 'client', round: 0, delta_logit: -0.25, reason: 'CNP-ul din cerere nu are un format valid' }], gates: [] };
+    detail.score = score as ApiClaimDetail['score'];
+    detail.score_history = [{ round: 1, score: 40, band: 'uncertain' }];
+    return {
+      detail,
+      trace: [
+        ...trace,
+        step('continue', 'adjuster', 'decision', 'Continuare', { failed_rules: ['policy_active'] }),
+        step('plan', 'orchestrator', 'decision', 'Plan', { hypotheses: [] }),
+        step('r1.dispatch', 'orchestrator', 'decision', 'Runda 1', { agents: [{ agent: 'meteo', question: 'Plouă?' }] }),
+        step('r1.meteo.1', 'agent:meteo', 'observation', 'Răspuns', { verdict: 'supports' }),
+        step('r1.score', 'score', 'observation', 'Scor', score),
+        step('r1.judge', 'judge', 'decision', 'Stop', { marks: {}, tensions: [], action: 'stop', redispatch: [], stop_reason: 'Gata.' }),
+        step('final', 'engine', 'escalation', 'Final', {}),
+      ],
+    };
+  };
+  const cf = continuedFile();
+  const c = buildCase(cf.detail, cf.trace);
+
+  it('lays the five early steps before the plan', () => {
+    expect(c.windows.map((w) => w.stage).slice(0, 6)).toEqual(['intake', 'documents', 'client', 'policy', 'photos', 'plan']);
+    for (let i = 1; i < c.windows.length; i++) expect(c.windows[i].at).toBe(c.windows[i - 1].at + c.windows[i - 1].dur);
+  });
+
+  it('a paused claim stops after the photo check and names the failed rule', () => {
+    expect(p.status).toBe('paused');
+    expect(p.paused).toEqual({ rules: ['policy_active'] });
+    expect(p.windows[p.windows.length - 1].stage).toBe('photos');
+    expect(p.scores).toEqual([]);
+    expect(p.runMode).toBe('live');
+    expect(p.flaggedStages).toEqual(['client', 'policy', 'photos']);
+  });
+
+  it("shows each step's check items from the backend", () => {
+    expect(p.details.client!.map((i) => i.status)).toContain('flag');
+    expect(p.details.client![1]).toMatchObject({ label: 'CNP', value: '123', status: 'flag', note: 'CNP-ul din cerere nu are un format valid' });
+    expect(p.details.policy!.map((i) => i.status)).toEqual(['fail', 'ok', 'ok', 'ok', 'ok']);
+    expect(p.details.intake!.map((i) => i.id)).toEqual(['claim_id', 'amount', 'photos']);
+    for (const stage of ['intake', 'documents', 'client', 'policy', 'photos'] as const) {
+      const w = p.windows.find((x) => x.stage === stage)!;
+      for (const i of p.details[stage]!) expect(i.at).toBeLessThanOrEqual(w.at + w.dur);
+    }
+  });
+
+  it('carries flags, documents and the failed rule', () => {
+    expect(p.flags.map((f) => f.code)).toEqual(['cnp_invalid', 'email_malformed', 'policy_active', 'no_photos']);
+    expect(Object.keys(p.documents.claim_form!).length).toBeGreaterThan(0);
+    expect(p.rulesPassed).toBe(false);
+  });
+
+  it('continuing lays the investigation right after the pause', () => {
+    expect(c.paused).toBeUndefined();
+    const stages = c.windows.map((w) => w.stage);
+    expect(stages.slice(0, 7)).toEqual(['intake', 'documents', 'client', 'policy', 'photos', 'plan', 'agents']);
+    expect(stages[stages.length - 1]).toBe('verdict');
+    const photos = c.windows.find((w) => w.stage === 'photos')!;
+    const plan = c.windows.find((w) => w.stage === 'plan')!;
+    expect(plan.at).toBe(photos.at + photos.dur);
+    expect(c.duration).toBeLessThan(40_000);
+  });
+
+  it('keeps the reason of a client score contribution', () => {
+    expect(c.scores[0].contributions[0]).toMatchObject({ agent: 'client', reason: 'CNP-ul din cerere nu are un format valid' });
+  });
+
+  it('old runs without checks keep the synthesised intake facts and the policy rules', () => {
+    const { detail, trace } = load(flood);
+    const old = buildCase(detail, trace);
+    expect(old.details.intake!.map((i) => i.label)).toContain('Claim number');
+    expect(old.details.documents).toBeUndefined();
+    expect(old.paused).toBeUndefined();
   });
 });
 

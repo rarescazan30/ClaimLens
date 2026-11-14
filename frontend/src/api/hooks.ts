@@ -53,6 +53,8 @@ export function useQueue() {
 export interface CaseActions {
   /** Start (or start over) the investigation: POST /rerun. */
   start: () => Promise<void>;
+  /** Go on after a failed policy rule: POST /continue. */
+  continueRun: () => Promise<void>;
   /** Ask the agents one more question: POST /question. */
   ask: (question: string) => Promise<void>;
   /** Record the adjuster's decision: POST /decision. */
@@ -144,6 +146,11 @@ export function useCase(id: string) {
   const actions: CaseActions = {
     start: async () => {
       await api.rerun(id);
+      await load();
+      watch();
+    },
+    continueRun: async () => {
+      await api.continueRun(id);
       await load();
       watch();
     },

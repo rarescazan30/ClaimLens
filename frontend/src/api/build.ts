@@ -1,4 +1,4 @@
-import { AGENTS, agentName, isAgent, RULE_LABEL, TYPE_LABEL } from '../lib/meta';
+import { AGENTS, agentName, isAgent, ORDER, RULE_LABEL, TYPE_LABEL } from '../lib/meta';
 import type {
   AgentId,
   AgentRun,
@@ -8,6 +8,7 @@ import type {
   ApiScore,
   ApiTraceStep,
   CaseFile,
+  CheckStep,
   ClaimType,
   DetailItem,
   Evidence,
@@ -42,7 +43,7 @@ export const OPEN = 1e12;
 /** Below this real length a finished run is replayed with even pacing. */
 const PACED_BELOW_MS = 15_000;
 
-const PACE = { lead: 1000, rules: 1500, plan: 2400, agentGap: 180, step: 650, emptyRun: 900, score: 500, judge: 3400, final: 1600, other: 300 };
+const PACE = { lead: 1000, early: 700, rules: 1500, plan: 2400, agentGap: 180, step: 650, emptyRun: 900, score: 500, judge: 3400, final: 1600, other: 300 };
 
 // ---------------------------------------------------------------- formatting
 
@@ -121,7 +122,7 @@ export function headline(e: ApiEvidence, type: ClaimType, photoCount: number, br
 
 // ---------------------------------------------------------------- trace parsing
 
-type Kind = 'rules' | 'plan' | 'dispatch' | 'agent' | 'score' | 'judge' | 'question' | 'final' | 'error' | 'other';
+type Kind = 'intake' | 'documents' | 'client' | 'photos' | 'paused' | 'continue' | 'rules' | 'plan' | 'dispatch' | 'agent' | 'score' | 'judge' | 'question' | 'final' | 'error' | 'other';
 interface Parsed {
   step: ApiTraceStep;
   kind: Kind;
@@ -132,7 +133,7 @@ interface Parsed {
 /** Step ids, as documented in demo/mock/README.md. */
 function parse(step: ApiTraceStep): Parsed {
   const id = step.step_id;
-  if (id === 'rules' || id === 'plan' || id === 'final') return { step, kind: id, round: 0 };
+  if (id === 'rules' || id === 'plan' || id === 'final' || id === 'intake' || id === 'documents' || id === 'client' || id === 'photos' || id === 'paused' || id === 'continue') return { step, kind: id, round: 0 };
   if (id.startsWith('error.')) return { step, kind: 'error', round: 0 };
   const m = /^r(\d+)\.(dispatch|score|judge|question|final)$/.exec(id);
   if (m) return { step, kind: m[2] as Kind, round: Number(m[1]) };
@@ -146,7 +147,7 @@ const stamp = (s: ApiTraceStep) => Date.parse(s.ended_at ?? s.started_at);
 /**
  * A time in ms for every step.
  *
- * The trace is cut into runs: the first investigation, then one run per question the adjuster asked later
+ * The trace is cut into runs: the first investigation, then one run per question the adjuster asked later or per continue after a pause
  * (which can be minutes or days apart). Runs are laid end to end, so idle time between them never shows.
  * Within a run: the backend's own timestamps if it took real time, even pacing if it was too fast to watch.
  * `paced[i]` says which of the two step i got.
@@ -156,7 +157,7 @@ function layout(steps: Parsed[], live: boolean, lead: number): { T: number[]; pa
   const paced: boolean[] = [];
   const runs: Parsed[][] = [];
   for (const p of steps) {
-    if (p.kind === 'question' || !runs.length) runs.push([]);
+    if (p.kind === 'question' || p.kind === 'continue' || !runs.length) runs.push([]);
     runs[runs.length - 1].push(p);
   }
   let cursor = lead;
@@ -181,6 +182,15 @@ function layout(steps: Parsed[], live: boolean, lead: number): { T: number[]; pa
     for (const p of run) {
       let t: number;
       switch (p.kind) {
+        case 'intake':
+        case 'paused':
+          t = cursor;
+          break;
+        case 'documents':
+        case 'client':
+        case 'photos':
+          t = cursor += PACE.early;
+          break;
         case 'rules':
           t = cursor += PACE.rules;
           break;
@@ -188,6 +198,7 @@ function layout(steps: Parsed[], live: boolean, lead: number): { T: number[]; pa
           t = cursor += PACE.plan;
           break;
         case 'question':
+        case 'continue':
           t = cursor;
           break;
         case 'dispatch':
@@ -239,20 +250,28 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
   const photoNames = claim.photos ?? [];
 
   // ---- stage windows: each stage runs from the end of the one before it to its own closing step
-  const windows: StageWindow[] = [{ stage: 'intake', at: 0, dur: lead }];
-  let prev = lead;
+  // A trace with the early steps lays them as windows of their own; an older one gets the fixed intake window.
+  const early = steps.some((p) => p.kind === 'intake');
+  const windows: StageWindow[] = early ? [] : [{ stage: 'intake', at: 0, dur: lead }];
+  let prev = early ? 0 : lead;
   const close = (stage: StageId, end: number, round?: number) => {
     windows.push({ stage, round: round || undefined, at: prev, dur: Math.max(end - prev, 1) });
     prev = Math.max(end, prev + 1);
   };
-  let next: { stage: StageId; round?: number } = { stage: 'policy' };
+  let next: { stage: StageId; round?: number } = { stage: early ? 'intake' : 'policy' };
   let lastRound = 0;
   let error: string | undefined;
   steps.forEach((p, i) => {
     lastRound = Math.max(lastRound, p.round);
-    if (p.kind === 'rules') {
-      close('policy', T[i]);
+    if (p.kind === 'intake' || p.kind === 'documents' || p.kind === 'client' || p.kind === 'photos') {
+      close(p.kind, T[i]);
+      next = { stage: p.kind === 'intake' ? 'documents' : p.kind === 'documents' ? 'client' : p.kind === 'client' ? 'policy' : 'plan' };
+    } else if (p.kind === 'paused' || p.kind === 'continue') {
+      // The pause closes nothing: the plan starts where the photo check ended.
       next = { stage: 'plan' };
+    } else if (p.kind === 'rules') {
+      close('policy', T[i]);
+      next = { stage: early ? 'photos' : 'plan' };
     } else if (p.kind === 'plan') {
       close('plan', T[i]);
       next = { stage: 'agents', round: 1 };
@@ -416,20 +435,40 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
     ['Amount claimed', claim.amount_claimed != null ? `${claim.amount_claimed.toLocaleString('en-US')} RON` : 'Not stated'],
     ['Photos attached', String(photoNames.length)],
   ];
-  const policyWindow = windows.find((w) => w.stage === 'policy');
-  const details: Partial<Record<StageId, DetailItem[]>> = {
-    intake: facts.map(([label, value], i) => ({ id: `i${i}`, at: ((i + 1) * lead) / (facts.length + 1), label, value, status: 'info' as Status })),
-    policy: policyWindow
-      ? d.rule_flags.map((f, i) => ({
-          id: f.rule,
-          at: policyWindow.dur >= OPEN ? policyWindow.at : policyWindow.at + ((i + 1) * policyWindow.dur) / (d.rule_flags.length + 1),
-          label: RULE_LABEL[f.rule] ?? f.rule.replace(/_/g, ' '),
-          note: f.reason,
-          status: (f.passed ? 'ok' : 'fail') as Status,
-        }))
-      : [],
+  // The five early steps show what the backend checked. Claims stored before those checks existed have none:
+  // they keep the facts above for the claim and the rule flags for the policy.
+  const spreadOver = (stage: StageId, i: number, n: number) => {
+    const w = windows.find((x) => x.stage === stage)!;
+    return w.dur >= OPEN ? w.at : w.at + ((i + 1) * w.dur) / (n + 1);
   };
+  const fromChecks = (stage: CheckStep): DetailItem[] | undefined => {
+    const r = d.checks?.[stage];
+    if (!r) return undefined;
+    if (!windows.some((x) => x.stage === stage)) return [];
+    return r.items.map((it, i) => ({ id: it.id, at: spreadOver(stage, i, r.items.length), label: it.label, value: it.value ?? undefined, status: it.status, note: it.reason ?? undefined }));
+  };
+  const legacyIntake: DetailItem[] = facts.map(([label, value], i) => ({ id: `i${i}`, at: ((i + 1) * lead) / (facts.length + 1), label, value, status: 'info' as Status }));
+  const legacyPolicy: DetailItem[] = windows.some((w) => w.stage === 'policy')
+    ? d.rule_flags.map((f, i) => ({
+        id: f.rule,
+        at: spreadOver('policy', i, d.rule_flags.length),
+        label: RULE_LABEL[f.rule] ?? f.rule.replace(/_/g, ' '),
+        note: f.reason,
+        status: (f.passed ? 'ok' : 'fail') as Status,
+      }))
+    : [];
+  const details: Partial<Record<StageId, DetailItem[]>> = {};
+  for (const stage of ['intake', 'documents', 'client', 'policy', 'photos'] as const) {
+    const items = fromChecks(stage) ?? (stage === 'intake' ? legacyIntake : stage === 'policy' ? legacyPolicy : undefined);
+    if (items) details[stage] = items;
+  }
   const rulesPassed = d.rule_flags.every((f) => f.passed);
+  const flagged = new Set<StageId>((d.flags ?? []).map((f) => f.step));
+  if (!rulesPassed) flagged.add('policy');
+  const failedRules = d.rule_flags.filter((f) => !f.passed).map((f) => f.rule);
+  const pausedStep = [...steps].reverse().find((p) => p.kind === 'paused');
+  const stepRules = pausedStep?.step.outputs.failed_rules;
+  const paused = claim.status === 'paused' ? { rules: Array.isArray(stepRules) ? stepRules.map(String) : failedRules } : undefined;
 
   // ---- photos: real files, with the forensic agent's per-photo checks
   const forensic = [...d.evidence].reverse().find((e) => e.agent === 'photo_forensics');
@@ -515,7 +554,11 @@ export function buildCase(d: ApiClaimDetail, trace: ApiTraceStep[]): CaseFile {
     edge,
     paced,
     windows,
-    flags: rulesPassed ? [] : ['policy'],
+    flaggedStages: ORDER.filter((id) => flagged.has(id)),
+    flags: d.flags ?? [],
+    documents: d.documents ?? {},
+    runMode: d.run_mode ?? null,
+    paused,
     details,
     plan,
     runs,

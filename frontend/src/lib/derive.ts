@@ -25,7 +25,7 @@ export function stageStatuses(c: CaseFile, t: number, decided: boolean): Record<
     const lastStart = Math.max(...ended.map((w) => w.at));
     const idx = ORDER.indexOf(id);
     const restarted = c.windows.some((w) => ORDER.indexOf(w.stage) < idx && w.at > lastStart && w.at <= t);
-    out[id] = restarted ? 'requeued' : c.flags.includes(id) ? 'flag' : 'done';
+    out[id] = restarted ? 'requeued' : c.flaggedStages.includes(id) ? 'flag' : 'done';
   }
   return out;
 }
