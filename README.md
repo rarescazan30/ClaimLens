@@ -65,9 +65,9 @@ Anchored on real events. Claims and people are synthetic. Details and measured n
 ```
 docs/          proposal, shared contracts, backend design and plan
 backend/       API (app/), investigation engine (engine/), six agents (agents/), tests
-ui/            adjuster app
+frontend/      adjuster app (React + Vite + TypeScript), connected to the backend; see docs/frontend-integration.md
 demo/          demo cases, saved API responses (offline replay), mock data for the UI
-maestro/, data-fabric/   placeholders from the first proposal (not used)
+ui/, maestro/, data-fabric/   placeholders from the first proposal (not used)
 ```
 
 ## Team

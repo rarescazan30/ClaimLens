@@ -1,8 +1,8 @@
 import { Check, CircleAlert, Minus } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
 import type { LaneState, StageStatus } from '../lib/derive';
-import { AGENTS, STAGES } from '../mock/meta';
-import type { AgentId, StageId } from '../mock/types';
+import { AGENTS, STAGES } from '../lib/meta';
+import type { AgentId, StageId } from '../lib/types';
 import { Aurora, type Tone } from './Aurora';
 import { AGENT_ICON, STAGE_ICON } from './icons';
 
@@ -11,11 +11,8 @@ const H = 310;
 const CY = 175;
 const R = 14;
 const NX: Record<Exclude<StageId, 'agents'>, number> = {
-  intake: 50,
-  client: 150,
-  documents: 250,
-  policy: 350,
-  photos: 450,
+  intake: 110,
+  policy: 330,
   plan: 550,
   judge: 990,
   verdict: 1090,
@@ -31,11 +28,8 @@ const lanePath = (y: number) =>
 const LOOP = `M${NX.judge},${CY - JR - 5} C${NX.judge},-10 586,-10 586,${CY - 13}`;
 
 const SEGMENTS: [Exclude<StageId, 'agents'>, Exclude<StageId, 'agents'>][] = [
-  ['intake', 'client'],
-  ['client', 'documents'],
-  ['documents', 'policy'],
-  ['policy', 'photos'],
-  ['photos', 'plan'],
+  ['intake', 'policy'],
+  ['policy', 'plan'],
   ['judge', 'verdict'],
   ['verdict', 'review'],
 ];
@@ -45,13 +39,15 @@ const STATUS_TEXT: Record<StageStatus, string> = {
   running: 'In progress',
   done: 'Done',
   flag: 'Done, flagged',
-  requeued: 'Waiting for round 2',
+  requeued: 'Waiting for the next round',
 };
 
 interface Props {
   status: Record<StageId, StageStatus>;
   lanes: Record<AgentId, LaneState>;
   loop: 'unused' | 'active' | 'used';
+  /** The round the run is in, for the loop label. */
+  round: number;
   active: StageId | null;
   selected: StageId;
   tone: Tone;
@@ -66,7 +62,7 @@ const onKey = (fn: () => void) => (e: KeyboardEvent) => {
   }
 };
 
-export function Pipeline({ status, lanes, loop, active, selected, tone, started, onSelect }: Props) {
+export function Pipeline({ status, lanes, loop, round, active, selected, tone, started, onSelect }: Props) {
   const focusX = !active ? NX.intake : active === 'agents' ? (LX0 + LX1) / 2 : NX[active];
   const spread = active === 'agents' ? 1.1 : 2.6;
 
@@ -85,7 +81,7 @@ export function Pipeline({ status, lanes, loop, active, selected, tone, started,
             <path d={LOOP} className="loop-base" markerEnd="url(#loop-arrow)" />
             <path d={LOOP} className="loop-pulse" pathLength={1} />
             <text x={788} y={22} textAnchor="middle" className="loop-label">
-              {loop === 'unused' ? 'Judge can send agents back' : 'Round 2 · re-dispatch'}
+              {loop === 'unused' ? 'Judge can send agents back' : `Round ${Math.max(round, 2)} · re-dispatch`}
             </text>
           </g>
 
@@ -130,7 +126,7 @@ export function Pipeline({ status, lanes, loop, active, selected, tone, started,
                     ? lane.short
                     : lane.state === 'running'
                       ? lane.round && lane.round > 1
-                        ? 'Round 2…'
+                        ? `Round ${lane.round}…`
                         : 'Working…'
                       : lane.state === 'skipped'
                         ? 'Not needed'

@@ -1,13 +1,14 @@
 import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Map as MapIcon, Play, Radio, Scale, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { activeStage, currentRound, fmtClock, laneStates, loopState, stageStatuses } from '../lib/derive';
-import { getSession, saveSession, useEased, useRun, type Decision } from '../lib/hooks';
-import { bandOf, computeScore, routeFor } from '../lib/score';
-import { getCase } from '../mock/api';
-import { agentName, BANDS, ORDER, ROUTES, STAGES } from '../mock/meta';
-import type { AgentId, CaseFile, DetailItem, StageId } from '../mock/types';
+import { useEffect, useRef, useState } from 'react';
+import { API_URL } from '../api/client';
+import { useCase, type CaseActions } from '../api/hooks';
+import { activeStage, currentRound, fmtClock, laneStates, loopState, scoreAt, stageStatuses } from '../lib/derive';
+import { useRun } from '../lib/hooks';
+import { agentName, BANDS, isAgent, ORDER, OUTCOMES, STAGES } from '../lib/meta';
+import { fmtScore, pointsOf } from '../lib/score';
+import type { AgentId, CaseFile, DetailItem, StageId } from '../lib/types';
 import type { Tone } from './Aurora';
-import { ClaimCard, MapCard, ScoreCard } from './Cards';
+import { ClaimCard, MapCard, ScoreCard, ScoreNumber, type GateState } from './Cards';
 import { DecisionPanel } from './DecisionPanel';
 import { EvidenceDrawer } from './EvidenceDrawer';
 import { Pipeline } from './Pipeline';
@@ -20,13 +21,13 @@ function ScoreRing({ score }: { score: number }) {
   const r = 44;
   const len = 2 * Math.PI * r;
   return (
-    <div className="score-ring" role="img" aria-label={`Score ${score} out of 100`}>
+    <div className="score-ring" role="img" aria-label={`Score ${fmtScore(score)} out of 100`}>
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <circle className="ring-bg" cx="50" cy="50" r={r} />
         <circle className="ring-fg" cx="50" cy="50" r={r} strokeDasharray={`${(score / 100) * len} ${len}`} />
       </svg>
       <span className="ring-num">
-        <strong>{score}</strong>
+        <strong>{fmtScore(score)}</strong>
         <small>out of 100</small>
       </span>
     </div>
@@ -36,6 +37,7 @@ function ScoreRing({ score }: { score: number }) {
 // Resting headlines carry the accent on their second half; live ones stay plain so they read at a glance.
 const HEADLINE_SPLIT: Record<string, [string, string]> = {
   'Ready to investigate': ['Ready to', 'investigate.'],
+  'Ready to replay': ['Ready to', 'replay.'],
   'Waiting for your decision': ['Waiting for', 'your decision.'],
   'Decision logged': ['Decision', 'logged.'],
 };
@@ -52,21 +54,20 @@ interface LedgerLine {
   delta: number;
 }
 
-/** The score as it builds: one big figure, and the findings that moved it, newest first. */
-function LiveScore({ score, band, phase, lines, onOpen }: { score: number; band: string; phase: string; lines: LedgerLine[]; onOpen: () => void }) {
-  const eased = useEased(score, 700);
-  const waiting = phase === 'idle' || phase === 'base';
+/** The score as it builds: the backend's latest number, and what each agent's finding is worth in it. */
+function LiveScore({ score, band, phase, lines, onOpen }: { score?: number; band: string; phase: string; lines: LedgerLine[]; onOpen: () => void }) {
+  const waiting = score === undefined;
   return (
-    <button type="button" className={`card live-score b-${band}${waiting ? ' is-waiting' : ''}`} onClick={onOpen} aria-label={waiting ? 'Plausibility score: waiting for evidence. Open score details' : `Plausibility score ${score}. Open score details`}>
+    <button type="button" className={`card live-score b-${band}${waiting ? ' is-waiting' : ''}`} onClick={onOpen} aria-label={waiting ? 'Plausibility score: waiting for evidence. Open score details' : `Plausibility score ${fmtScore(score)}. Open score details`}>
       <span className="live-score-top">
         <span>Plausibility so far</span>
-        <span className={`chip pill${waiting ? '' : ' is-live'}`}>{phase === 'idle' ? 'Not started' : phase === 'base' ? 'Waiting' : 'Building'}</span>
+        <span className={`chip pill${waiting ? '' : ' is-live'}`}>{phase === 'idle' ? 'Not started' : waiting ? 'Waiting' : 'Building'}</span>
       </span>
-      <span className="live-score-num">{waiting ? '–' : Math.round(eased)}</span>
-      <span className="live-score-sub">{waiting ? 'Starts once the agents report back' : `${BANDS[band as keyof typeof BANDS].label} · out of 100`}</span>
+      <span className="live-score-num">{waiting ? '–' : <ScoreNumber score={score} ms={700} />}</span>
+      <span className="live-score-sub">{waiting ? 'Appears after the first round of agents' : `${BANDS[band as keyof typeof BANDS].label} · out of 100`}</span>
       {lines.length > 0 && (
         <span className="ledger">
-          {lines.slice(-4).map((l) => (
+          {lines.slice(0, 4).map((l) => (
             <span key={l.id} className={`ledger-row ${l.delta > 0 ? 'is-plus' : l.delta < 0 ? 'is-minus' : 'is-zero'}`}>
               <span>{l.title}</span>
               <b>{l.delta === 0 ? '0' : `${l.delta > 0 ? '+' : '−'}${Math.abs(l.delta)}`}</b>
@@ -79,114 +80,135 @@ function LiveScore({ score, band, phase, lines, onOpen }: { score: number; band:
 }
 
 export function CaseView({ id, initialT, initialTab }: { id: string; initialT?: number; initialTab?: string }) {
-  const [c, setC] = useState<CaseFile | null | undefined>(undefined);
-  useEffect(() => {
-    let live = true;
-    setC(undefined);
-    getCase(id).then((x) => live && setC(x ?? null));
-    return () => {
-      live = false;
-    };
-  }, [id]);
+  const { c, live, error, actions } = useCase(id);
 
+  if (error && !c)
+    return (
+      <div className="page">
+        <a className="back" href="#/"><ArrowLeft size={15} /> Claims queue</a>
+        <div className="card"><Empty title="The backend is not answering" body={`${error} The address is set by VITE_API_URL, now ${API_URL}.`} /></div>
+      </div>
+    );
   if (c === undefined) return <div className="page"><div className="card loading-card"><span className="spinner" /> Loading case</div></div>;
   if (c === null)
     return (
       <div className="page">
         <a className="back" href="#/"><ArrowLeft size={15} /> Claims queue</a>
-        <div className="card"><Empty title={`No full trace for ${id}`} body="The mock data carries complete runs for C-1042 and C-1047." /></div>
+        <div className="card"><Empty title={`No claim ${id}`} body="The backend has no claim with this number." /></div>
       </div>
     );
-  return <CaseInner key={c.id} c={c} initialT={initialT} initialTab={initialTab} />;
+  return <CaseInner key={c.id} c={c} live={live} actions={actions} initialT={initialT} initialTab={initialTab} />;
 }
 
 type Panel = 'step' | 'score' | 'map' | 'claim' | 'photos' | 'verdict';
 
-function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number; initialTab?: string }) {
-  const saved = useMemo(() => getSession(c.id), [c.id]);
-  const run = useRun(c.duration, initialT ?? saved.time);
-  const [decision, setDecision] = useState<Decision | undefined>(saved.decision);
-  const [dismissed, setDismissed] = useState<string[]>(saved.dismissed);
-  const [requests, setRequests] = useState<string[]>(saved.requests);
-  const [edits, setEdits] = useState<Record<string, string>>(saved.edits);
+function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; live: boolean; actions: CaseActions; initialT?: number; initialTab?: string }) {
+  const finished = c.status === 'awaiting_decision' || c.status === 'decided';
+  // A finished claim opens on its result; the replay bar goes back through the run.
+  const run = useRun(c.duration, initialT ?? (finished ? c.duration : 0), live, c.edge);
   const [panel, setPanel] = useState<Panel | null>(initialTab === 'report' ? 'verdict' : null);
   const [pinned, setPinned] = useState<StageId | null>(null);
   const [agentFocus, setAgentFocus] = useState<AgentId | null>(null);
   const [drawer, setDrawer] = useState<AgentId | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
 
-  const [completed, setCompleted] = useState(!!saved.completed || (initialT ?? saved.time) >= c.duration);
+  /** Runs one backend action; a failure is shown on the page instead of being lost. */
+  const act = (fn: () => Promise<void>) => {
+    setActionError('');
+    setBusy(true);
+    fn()
+      .catch((e: Error) => setActionError(e.message))
+      .finally(() => setBusy(false));
+  };
+
+  // When a live run ends: a run served from saved responses was over in a blink, so play it back
+  // (from the adjuster's question, if this run answered one). A run that took real time was already watched.
+  const wasLive = useRef(live);
   useEffect(() => {
-    if (run.time >= c.duration) setCompleted(true);
-  }, [run.time, c.duration]);
-  useEffect(() => {
-    saveSession(c.id, { time: run.time, completed, decision, dismissed, requests, edits });
-  }, [c.id, run.time, completed, decision, dismissed, requests, edits]);
+    if (wasLive.current && !live) {
+      const from = c.questions.length ? c.questions[c.questions.length - 1].at : 0;
+      if (c.paced) {
+        run.seek(from);
+        run.play();
+      } else run.finish();
+      setPinned(null);
+    }
+    wasLive.current = live;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live]);
 
   // Space toggles the replay unless the user is typing.
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (e.code !== 'Space' || el.closest('input, textarea, button, [role="button"], a')) return;
+      if (live || e.code !== 'Space' || el.closest('input, textarea, button, [role="button"], a')) return;
       e.preventDefault();
       run.toggle();
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
-  }, [run.toggle]);
+  }, [run.toggle, live]);
 
-  const started = run.time > 0 || run.playing;
+  const never = c.status === 'received' && !live; // never investigated
+  const started = !never && (live || run.time > 0 || run.playing);
   const t = started ? run.time : -1;
-  const done = t >= c.duration;
+  const done = !live && finished && t >= c.duration;
 
-  const status = stageStatuses(c, t, !!decision);
+  const status = stageStatuses(c, t, !!c.decision);
   const lanes = laneStates(c, t);
   const active = activeStage(status);
   const round = currentRound(c, t);
   const loop = loopState(c, t);
   const shown: StageId = pinned ?? active ?? (done ? 'review' : 'intake');
 
+  // The score is whatever the backend last computed at this point of the run. Nothing is recomputed here.
+  const now = scoreAt(c, t);
+  const band = now?.band ?? 'uncertain';
   const evidence = c.evidence.filter((e) => e.at <= t);
-  const live = evidence.filter((e) => !dismissed.includes(e.id));
-  const score = computeScore(c.p0, live);
-  const band = bandOf(score);
-  const gateTripped = !!c.gate && t >= c.gate.at && !dismissed.includes(c.gate.evidence);
-  const route = routeFor(score, gateTripped);
+  const gateTripped = !!now?.gates.some((g) => g.kind === 'clear_fake');
+  const coverageBlocked = !!now?.gates.some((g) => g.kind === 'coverage');
+  const phase = !started ? 'idle' : !now ? 'base' : done ? 'final' : 'provisional';
 
-  const policyEnd = c.windows.find((w) => w.stage === 'policy')!;
-  const coverage = t >= policyEnd.at + policyEnd.dur ? 'passed' : 'pending';
-  const photosEnd = c.windows.find((w) => w.stage === 'photos')!;
-  const authenticity = gateTripped ? 'flagged' : done || (!c.gate && t >= photosEnd.at + photosEnd.dur) ? 'passed' : 'pending';
-  const phase = !started ? 'idle' : done ? 'final' : evidence.length ? 'provisional' : 'base';
+  const policyWindow = c.windows.find((w) => w.stage === 'policy');
+  const coverage: GateState = !policyWindow || t < policyWindow.at + policyWindow.dur ? 'pending' : c.rulesPassed && !coverageBlocked ? 'passed' : 'flagged';
+  const forensics = c.evidence.find((e) => e.agent === 'photo_forensics' && e.at <= t);
+  const authenticity: GateState = gateTripped ? 'flagged' : !c.photos.length ? 'none' : forensics ? 'passed' : 'pending';
 
-  const tone: Tone = !done && t < c.windows[c.windows.length - 1].at ? 'accent' : band === 'unlikely' ? 'bad' : band === 'uncertain' ? 'warn' : 'good';
+  const lastWindow = c.windows[c.windows.length - 1];
+  const tone: Tone = !done && t < lastWindow.at ? 'accent' : band === 'unlikely' ? 'bad' : band === 'uncertain' ? 'warn' : 'good';
 
-  const verdictWindow = c.windows.find((w) => w.stage === 'verdict')!;
+  const verdictWindow = [...c.windows].reverse().find((w) => w.stage === 'verdict');
   const sourceCount = new Set(evidence.map((e) => e.source)).size;
-  const verdictItems: DetailItem[] = [
-    { id: 'v1', kind: 'check', label: 'Plausibility score', value: `${score} · ${BANDS[band].label}`, status: band === 'unlikely' ? 'fail' : band === 'uncertain' ? 'flag' : 'ok' },
-    { id: 'v2', kind: 'check', label: 'Coverage gate', value: 'Passed', status: 'ok' },
-    { id: 'v3', kind: 'check', label: 'Authenticity gate', value: gateTripped ? 'Flagged' : 'Passed', status: gateTripped ? 'fail' : 'ok' },
-    { id: 'v4', kind: 'check', label: 'Recommended route', value: ROUTES[route].label, status: 'info' },
-    { id: 'v5', kind: 'check', label: 'Case file assembled', value: `${evidence.length} findings · ${sourceCount} sources`, status: 'ok' },
-  ].map((x, i) => ({ ...x, at: verdictWindow.at + 250 + i * 300 }) as DetailItem);
+  const verdictItems: DetailItem[] = verdictWindow && now
+    ? [
+        { label: 'Plausibility score', value: `${fmtScore(now.score)} · ${BANDS[now.band].label}`, status: now.band === 'unlikely' ? 'fail' : now.band === 'uncertain' ? 'flag' : 'ok' },
+        { label: 'Coverage gate', value: coverage === 'flagged' ? 'Flagged' : 'Passed', status: coverage === 'flagged' ? 'fail' : 'ok' },
+        { label: 'Authenticity gate', value: gateTripped ? 'Flagged' : c.photos.length ? 'Passed' : 'No photos to check', status: gateTripped ? 'fail' : c.photos.length ? 'ok' : 'info' },
+        { label: 'Recommended route', value: OUTCOMES[now.recommendation].label, status: 'info' },
+        { label: 'Case file assembled', value: `${evidence.length} findings · ${sourceCount} sources`, status: 'ok' },
+      ].map((x, i, all) => ({ ...x, id: `v${i}`, at: verdictWindow.at + ((i + 1) * verdictWindow.dur) / (all.length + 1) }) as DetailItem)
+    : [];
 
-  // Each finding's move on the score at the moment it arrived.
-  const ledger: LedgerLine[] = live.map((e, i) => ({
-    id: e.id,
-    title: e.title,
-    delta: computeScore(c.p0, live.slice(0, i + 1)) - computeScore(c.p0, live.slice(0, i)),
-  }));
+  // What each agent's latest finding is worth in the current score, biggest first.
+  const ledger: LedgerLine[] = (now?.contributions ?? [])
+    .filter((k) => isAgent(k.agent) || k.delta_logit !== 0)
+    .map((k) => ({ id: `${k.agent}.${k.round}`, title: agentName(k.agent), delta: pointsOf(now!.score, k.delta_logit) }))
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 
   const liveMeta = active ? STAGES.find((s) => s.id === active)! : null;
-  const headline = !started
+  const askedThisRound = c.questions.some((q) => q.round === round);
+  const headline = never
     ? 'Ready to investigate'
-    : decision && done
-      ? 'Decision logged'
-      : liveMeta
-        ? active === 'agents' && round > 1
-          ? `Re-checking with ${c.runs.filter((r) => r.round === round).length} agents`
-          : liveMeta.live
-        : 'Waiting for your decision';
+    : !started
+      ? 'Ready to replay'
+      : c.decision && done
+        ? 'Decision logged'
+        : liveMeta
+          ? active === 'agents' && round > 1
+            ? `Re-checking with ${c.runs.filter((r) => r.round === round).length || 'the'} agent${c.runs.filter((r) => r.round === round).length === 1 ? '' : 's'}`
+            : liveMeta.live
+          : 'Waiting for your decision';
   const stepNo = active ? STAGES.findIndex((s) => s.id === active) + 1 : done ? STAGES.length : 0;
 
   const select = (stage: StageId, agent?: AgentId) => {
@@ -204,33 +226,42 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
   const feed = [
     ...ORDER.flatMap((sid) => (c.details[sid] ?? []).map((i) => ({ at: i.at, text: `${i.label}${i.value ? `: ${i.value}` : ''}` }))),
     ...c.runs.map((r) => ({ at: r.at + r.dur, text: `${agentName(r.agent)}: ${r.finding}` })),
-    ...c.judge.map((j) => ({ at: j.at + j.dur * 0.75, text: `Judge: ${j.summary}` })),
+    ...c.judge.map((j) => ({ at: j.at + j.dur, text: `Judge: ${j.summary}` })),
   ]
     .filter((x) => x.at <= t)
     .sort((x, y) => x.at - y.at);
   const latest = feed[feed.length - 1];
-  const flaggedPhotos = c.photos.filter((ph) => [...ph.states].reverse().find((st) => st.at <= t)?.status === 'fail').length;
+  const flaggedPhotos = c.photos.filter((ph) => ph.at <= t && ph.status === 'fail').length;
 
-  const approve = () => setDecision({ route, kind: 'approved', at: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) });
+  const approve = () => act(() => actions.decide({ decision: 'approve' }));
 
   const decisionPanel = (
-    <DecisionPanel ready={done} recommended={route} decision={decision} requests={requests} onDecide={setDecision} onAsk={(q) => setRequests((r) => [...r, q])} />
+    <DecisionPanel
+      ready={done}
+      recommended={now?.recommendation}
+      decision={c.decision}
+      questions={c.questions}
+      busy={busy}
+      onApprove={approve}
+      onOverride={(outcome, reason) => act(() => actions.decide({ decision: 'modify', outcome, reason }))}
+      onAsk={(q) => act(() => actions.ask(q))}
+    />
   );
 
   // Read top to bottom in the order an adjuster works: what was claimed, what the run is doing, what it concluded.
   const dock: { id: Panel; icon: typeof Gauge; label: string; meta?: string; alert?: boolean; group: 'claim' | 'run' | 'result' }[] = [
     { id: 'claim', icon: FileText, label: 'Claim', group: 'claim' },
     { id: 'photos', icon: Camera, label: 'Photos', meta: flaggedPhotos ? `${flaggedPhotos} flagged` : String(c.photos.length), alert: flaggedPhotos > 0, group: 'claim' },
-    { id: 'map', icon: MapIcon, label: 'Map', group: 'claim' },
+    ...(c.map ? [{ id: 'map' as const, icon: MapIcon, label: 'Map', group: 'claim' as const }] : []),
     { id: 'step', icon: ListChecks, label: 'Step details', meta: STAGES.find((x) => x.id === shown)!.short, group: 'run' },
-    { id: 'score', icon: Gauge, label: 'Score', meta: started ? String(score) : undefined, group: 'run' },
+    { id: 'score', icon: Gauge, label: 'Score', meta: now ? fmtScore(now.score) : undefined, group: 'run' },
     { id: 'verdict', icon: Scale, label: 'Full report', group: 'result' },
   ];
 
   return (
     <div className="page case">
       <div className="run-progress" aria-hidden="true">
-        <span style={{ transform: `scaleX(${started ? Math.min(1, run.time / c.duration) : 0})` }} />
+        <span style={{ transform: `scaleX(${started && !live ? Math.min(1, run.time / c.duration) : 0})` }} />
       </div>
       <a className="back" href="#/">
         <ArrowLeft size={15} /> Claims queue
@@ -242,9 +273,9 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
         <span className="case-facts">
           {c.claimed} · {c.lag}
         </span>
-        <span className={`live-chip${run.playing && !done ? ' is-on' : ''}`}>
+        <span className={`live-chip${live || (run.playing && !done) ? ' is-on' : ''}`}>
           <span className="live-dot is-on" />
-          {run.playing && !done ? 'Live investigation' : done ? 'Investigation complete' : started ? 'Paused' : 'Not started'}
+          {live ? 'Live investigation' : never ? 'Not investigated yet' : done ? 'Investigation complete' : run.playing ? 'Replaying the investigation' : 'Replay paused'}
         </span>
       </div>
 
@@ -266,14 +297,24 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
         ))}
       </nav>
       <div className="case-main">
+      {actionError && (
+        <p className="form-error action-error" role="alert">
+          The backend refused that: {actionError}
+        </p>
+      )}
+      {c.error && (
+        <p className="form-error action-error" role="alert">
+          {c.error}
+        </p>
+      )}
       <div className={`stage-top${done ? ' is-done' : ''}`}>
       <section className="stage-head" aria-live="polite">
         {started && (
           <Kicker n={String(stepNo || 1).padStart(2, '0')}>
-            {`${liveMeta ? liveMeta.short : 'Review'} · ${fmtClock(run.time)}${round > 1 ? ' · round 2' : ''}`}
+            {`${liveMeta ? liveMeta.short : 'Review'} · ${fmtClock(run.time)}${round > 1 ? ` · round ${round}` : ''}`}
           </Kicker>
         )}
-        <h1 className={`stage-title${run.playing && !done ? ' is-working' : ''}`} key={headline}>
+        <h1 className={`stage-title${(live || run.playing) && !done ? ' is-working' : ''}`} key={headline}>
           {HEADLINE_SPLIT[headline] ? (
             <>
               {HEADLINE_SPLIT[headline][0]} <span className="hl">{HEADLINE_SPLIT[headline][1]}</span>
@@ -285,19 +326,28 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
         {started && (
         <p className="stage-sub">
           {done
-              ? 'The Judge has stopped. Approve the recommendation, or open the full report to see why.'
+              ? c.decision
+                ? 'Your decision is recorded. The full report keeps every source.'
+                : 'The Judge has stopped. Approve the recommendation, or open the full report to see why.'
               : liveMeta
                 ? active === 'agents' && round > 1
-                  ? 'The Judge found two points it could not settle and sent specific agents back with narrower questions.'
+                  ? askedThisRound
+                    ? 'An agent is answering your question.'
+                    : 'The Judge found points it could not settle and sent specific agents back with narrower questions.'
                   : liveMeta.help
                 : 'The recommendation is ready for you.'}
         </p>
         )}
         <div className="stage-cta">
-          {!started ? (
-            <button type="button" className="btn btn-primary is-large" onClick={run.play}>
+          {never ? (
+            <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={() => act(actions.start)}>
               <Play size={15} fill="currentColor" />
               Start investigation
+            </button>
+          ) : !started ? (
+            <button type="button" className="btn btn-primary is-large" onClick={run.play}>
+              <Play size={15} fill="currentColor" />
+              Replay investigation
             </button>
           ) : pinned && !done ? (
             <button type="button" className="btn btn-secondary" onClick={() => { setPinned(null); setAgentFocus(null); }}>
@@ -307,30 +357,30 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
           ) : null}
         </div>
       </section>
-      {!done && <LiveScore score={score} band={band} phase={phase} lines={ledger} onOpen={() => toggle('score')} />}
+      {!done && <LiveScore score={now?.score} band={band} phase={phase} lines={ledger} onOpen={() => toggle('score')} />}
       </div>
 
       <section className={`card rail-card tone-${tone}`}>
-        <Pipeline status={status} lanes={lanes} loop={loop} active={active} selected={shown} tone={tone} started={started} onSelect={select} />
+        <Pipeline status={status} lanes={lanes} loop={loop} round={round} active={active} selected={shown} tone={tone} started={started} onSelect={select} />
       </section>
-      <ReplayBar c={c} run={run} />
+      {!never && <ReplayBar c={c} run={run} live={live} busy={busy} onRerun={() => act(actions.start)} />}
 
-      {done && (
-        <section className={`card verdict-strip b-${band}`}>
-          <ScoreRing score={score} />
+      {done && now && (
+        <section className={`card verdict-strip b-${now.band}`}>
+          <ScoreRing score={now.score} />
           <div className="verdict-strip-text">
-            <h2>{BANDS[band].label}</h2>
-            <p className="verdict-route">Recommended: {ROUTES[route].action.toLowerCase()}</p>
-            <p>{c.rationale}</p>
+            <h2>{BANDS[now.band].label}</h2>
+            <p className="verdict-route">Recommended: {OUTCOMES[now.recommendation].action.toLowerCase()}</p>
+            {c.rationale && <p>{c.rationale}</p>}
           </div>
           <div className="verdict-strip-actions">
-            {decision ? (
+            {c.decision ? (
               <span className="chip st-done">
                 <Check size={12} strokeWidth={3} />
-                Decision logged at {decision.at}
+                {OUTCOMES[c.decision.outcome].label} · logged {c.decision.at}
               </span>
             ) : (
-              <button type="button" className="btn btn-primary is-large" onClick={approve}>
+              <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={approve}>
                 <Check size={15} strokeWidth={2.6} />
                 Approve
               </button>
@@ -355,48 +405,30 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
             <X size={16} />
           </button>
           {panel === 'step' && (
-            <StageDetail
-              c={c}
-              t={t}
-              stage={shown}
-              status={status[shown]}
-              agentFocus={agentFocus}
-              edits={edits}
-              onEdit={(id, v) => setEdits((e) => ({ ...e, [id]: v }))}
-              onRerunFrom={(stage) => {
-                run.seek(c.windows.find((w) => w.stage === stage)!.at + 1);
-                setPinned(null);
-                setEdits({});
-                run.play();
-              }}
-              verdictItems={verdictItems}
-            >
+            <StageDetail c={c} t={t} stage={shown} status={status[shown]} agentFocus={agentFocus} verdictItems={verdictItems}>
               {shown === 'review' ? decisionPanel : null}
             </StageDetail>
           )}
-          {panel === 'score' && <ScoreCard score={score} evidenceCount={live.length} phase={phase} coverage={coverage} authenticity={authenticity} />}
-          {panel === 'map' && <MapCard c={c} t={t} />}
+          {panel === 'score' && <ScoreCard score={now?.score} band={now?.band} evidenceCount={now?.contributions.filter((k) => isAgent(k.agent)).length ?? 0} phase={phase} coverage={coverage} authenticity={authenticity} />}
+          {panel === 'map' && c.map && <MapCard c={c} t={t} />}
           {panel === 'claim' && <ClaimCard c={c} />}
           {panel === 'photos' && (
             <section className="card">
               <header className="card-head">
                 <h3>Claimant photos</h3>
-                <span className="chip">{c.photos.length} files</span>
+                <span className="chip">{c.photos.length} file{c.photos.length === 1 ? '' : 's'}</span>
               </header>
               <PhotoGrid photos={c.photos} t={t} />
             </section>
           )}
           {panel === 'verdict' &&
-            (done ? (
+            (done && now ? (
               <Report
                 c={c}
-                evidence={evidence}
-                dismissed={dismissed}
-                score={score}
-                route={route}
-                gateTripped={gateTripped}
+                score={now}
                 tone={tone}
-                onToggle={(eid) => setDismissed((d) => (d.includes(eid) ? d.filter((x) => x !== eid) : [...d, eid]))}
+                busy={busy}
+                onReject={(eid) => act(() => actions.reject(eid))}
                 onJump={(at) => {
                   run.pause();
                   run.seek(at + 1);
@@ -408,12 +440,17 @@ function CaseInner({ c, initialT, initialTab }: { c: CaseFile; initialT?: number
               </Report>
             ) : (
               <div className="card">
-                <Empty title="The report is assembled when the Judge stops" body={started ? `The run is at step ${stepNo} of ${STAGES.length}.` : 'Start the investigation to build it.'} />
-                <div className="empty-actions">
-                  <button type="button" className="btn btn-secondary" onClick={run.finish}>
-                    Skip to verdict
-                  </button>
-                </div>
+                <Empty
+                  title="The report is assembled when the Judge stops"
+                  body={never ? 'Start the investigation to build it.' : live ? `The run is at step ${stepNo || 1} of ${STAGES.length}.` : 'The replay has not reached the verdict yet.'}
+                />
+                {!never && !live && (
+                  <div className="empty-actions">
+                    <button type="button" className="btn btn-secondary" onClick={run.finish}>
+                      Skip to verdict
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
         </div>

@@ -1,22 +1,30 @@
 import { CalendarDays, FileText, MapPin, ShieldCheck, Wallet } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { getFloodExtent, type GeoJSON } from '../api/client';
 import { useEased } from '../lib/hooks';
-import { bandOf } from '../lib/score';
-import { BANDS } from '../mock/meta';
-import type { Band, CaseFile } from '../mock/types';
+import { BANDS } from '../lib/meta';
+import { fmtScore } from '../lib/score';
+import type { Band, CaseFile, LatLon } from '../lib/types';
+import { Empty } from './ui';
 
 const BAND_ORDER: { id: Band; from: number; to: number }[] = [
   { id: 'unlikely', from: 0, to: 35 },
   { id: 'uncertain', from: 35, to: 65 },
   { id: 'likely', from: 65, to: 85 },
-  { id: 'very-likely', from: 85, to: 100 },
+  { id: 'very_likely', from: 85, to: 100 },
 ];
 
-export function ScoreMeter({ score, compact = false }: { score: number; compact?: boolean }) {
+/** A score that glides to its value, then rests on the backend's exact number. */
+export function ScoreNumber({ score, ms }: { score: number; ms?: number }) {
+  const eased = useEased(score, ms);
+  return <>{Math.abs(eased - score) < 0.05 ? fmtScore(score) : Math.round(eased)}</>;
+}
+
+export function ScoreMeter({ score, band, compact = false }: { score: number; band: Band; compact?: boolean }) {
   const eased = useEased(score);
-  const band = bandOf(score);
   return (
     <div className={`meter b-${band}${compact ? ' is-compact' : ''}`}>
-      <div className="meter-track" role="img" aria-label={`Plausibility score ${score} out of 100, ${BANDS[band].label}`}>
+      <div className="meter-track" role="img" aria-label={`Plausibility score ${fmtScore(score)} out of 100, ${BANDS[band].label}`}>
         {BAND_ORDER.map((b) => (
           <span key={b.id} className={`meter-seg b-${b.id}${b.id === band ? ' is-on' : ''}`} style={{ flexGrow: b.to - b.from }} />
         ))}
@@ -33,53 +41,51 @@ export function ScoreMeter({ score, compact = false }: { score: number; compact?
   );
 }
 
+export type GateState = 'pending' | 'passed' | 'flagged' | 'none';
+const GATE_TEXT: Record<GateState, string> = { pending: 'Pending', passed: 'Passed', flagged: 'Flagged', none: 'No photos to check' };
+
 export function ScoreCard({
   score,
+  band,
   evidenceCount,
   phase,
   coverage,
   authenticity,
 }: {
-  score: number;
+  score?: number;
+  band?: Band;
   evidenceCount: number;
   phase: 'idle' | 'base' | 'provisional' | 'final';
-  coverage: 'pending' | 'passed';
-  authenticity: 'pending' | 'passed' | 'flagged';
+  coverage: GateState;
+  authenticity: GateState;
 }) {
-  const eased = useEased(score);
-  const band = bandOf(score);
+  const has = score !== undefined && band !== undefined;
   return (
-    <section className={`card score-card b-${band} phase-${phase}`}>
+    <section className={`card score-card b-${band ?? 'uncertain'} phase-${has ? phase : 'idle'}`}>
       <header className="card-head">
         <h3>Plausibility score</h3>
-        <span className="chip">
-          {phase === 'idle' ? 'Not started' : phase === 'base' ? 'Base rate' : phase === 'provisional' ? 'Provisional' : 'Final'}
-        </span>
+        <span className="chip">{phase === 'idle' ? 'Not started' : phase === 'base' ? 'Waiting for evidence' : phase === 'provisional' ? 'Provisional' : 'Final'}</span>
       </header>
       <div className="score-row">
-        <span className="score-num">{phase === 'idle' ? '–' : Math.round(eased)}</span>
+        <span className="score-num">{has ? <ScoreNumber score={score} /> : '–'}</span>
         <div>
-          <p className="score-band">{phase === 'idle' ? 'Waiting for evidence' : BANDS[band].label}</p>
+          <p className="score-band">{has ? BANDS[band].label : 'Waiting for evidence'}</p>
           <p className="score-sub">
-            {phase === 'idle'
-              ? 'Starts from the base rate for this claim type'
-              : evidenceCount === 0
-                ? 'Base rate, no findings yet'
-                : `${evidenceCount} finding${evidenceCount === 1 ? '' : 's'} weighed`}
+            {has ? `${evidenceCount} finding${evidenceCount === 1 ? '' : 's'} weighed` : 'The score appears after the first round of agents'}
           </p>
         </div>
       </div>
-      {phase !== 'idle' && <ScoreMeter score={score} />}
+      {has && <ScoreMeter score={score} band={band} />}
       <ul className="gates">
         <li className={`g-${coverage}`}>
           <span className="gate-dot" />
           Coverage gate
-          <b>{coverage === 'passed' ? 'Passed' : 'Pending'}</b>
+          <b>{GATE_TEXT[coverage]}</b>
         </li>
-        <li className={`g-${authenticity}`}>
+        <li className={`g-${authenticity === 'none' ? 'pending' : authenticity}`}>
           <span className="gate-dot" />
           Authenticity gate
-          <b>{authenticity === 'passed' ? 'Passed' : authenticity === 'flagged' ? 'Flagged' : 'Pending'}</b>
+          <b>{GATE_TEXT[authenticity]}</b>
         </li>
       </ul>
     </section>
@@ -89,7 +95,7 @@ export function ScoreCard({
 export function ClaimCard({ c }: { c: CaseFile }) {
   const rows = [
     { icon: MapPin, label: 'Loss address', value: c.address },
-    { icon: CalendarDays, label: 'Event', value: `${c.event}, ${c.eventDate}` },
+    { icon: CalendarDays, label: 'Event', value: `${c.typeLabel}, ${c.eventDate}` },
     { icon: FileText, label: 'Filed', value: `${c.filed} · ${c.lag.replace('Filed ', '')}` },
     { icon: ShieldCheck, label: 'Policy', value: c.policy },
     { icon: Wallet, label: 'Claimed', value: c.claimed },
@@ -98,9 +104,9 @@ export function ClaimCard({ c }: { c: CaseFile }) {
     <section className="card claim-card">
       <header className="card-head">
         <h3>The claim</h3>
-        <span className="chip">{c.profile}</span>
+        <span className="chip">{c.id}</span>
       </header>
-      <p className="claim-desc">“{c.description}”</p>
+      {c.description && <p className="claim-desc">“{c.description}”</p>}
       <dl className="facts">
         {rows.map((r) => (
           <div key={r.label}>
@@ -116,75 +122,151 @@ export function ClaimCard({ c }: { c: CaseFile }) {
   );
 }
 
+// ---------------------------------------------------------------- map
+
+const VW = 360;
+const VH = 230;
+const floodCache = new Map<string, Promise<GeoJSON>>();
+
+/** Metres east and south of the house, on flat ground (fine at this scale). */
+const metres = (p: LatLon, house: LatLon) => ({
+  x: (p.lon - house.lon) * 111_320 * Math.cos((house.lat * Math.PI) / 180),
+  y: -(p.lat - house.lat) * 110_540,
+});
+
+const niceScale = (m: number) => [50, 100, 200, 500, 1000, 2000].find((s) => s >= m) ?? 5000;
+
+/**
+ * The house and the flood the backend mapped for this claim (Copernicus polygons from GET /claims/{id}/flood-extent),
+ * drawn to scale. Shown only for claims that have a mapped flood.
+ */
 export function MapCard({ c, t }: { c: CaseFile; t: number }) {
   const m = c.map;
+  const [geo, setGeo] = useState<GeoJSON | null | undefined>(undefined);
+  useEffect(() => {
+    if (!m) return;
+    let on = true;
+    let req = floodCache.get(c.id);
+    if (!req) {
+      req = getFloodExtent(c.id);
+      floodCache.set(c.id, req);
+      req.catch(() => floodCache.delete(c.id));
+    }
+    req.then((g) => on && setGeo(g)).catch(() => on && setGeo(null));
+    return () => {
+      on = false;
+    };
+  }, [c.id, m]);
+
+  // Half the view height in metres: wide enough for the flood edge and, if close, the nearest water.
+  const reach = m ? Math.max(m.distanceM ?? 0, Math.min(m.water?.distanceM ?? 0, 900)) : 0;
+  const half = Math.min(2500, Math.max(300, reach * 1.7));
+  const k = VH / 2 / half;
+  const px = (p: LatLon) => {
+    const q = metres(p, m!.house);
+    return { x: VW / 2 + q.x * k, y: VH / 2 + q.y * k };
+  };
+
+  const zonePath = useMemo(() => {
+    if (!geo || !m) return '';
+    const parts: string[] = [];
+    const ring = (r: number[][]) => {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      const pts = r.map(([lon, lat]) => {
+        const p = px({ lat, lon });
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y);
+        maxY = Math.max(maxY, p.y);
+        return p;
+      });
+      if (maxX < 0 || minX > VW || maxY < 0 || minY > VH) return; // nowhere near the view
+      parts.push(`M${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('L')}Z`);
+    };
+    for (const f of geo.features) {
+      const g = f.geometry;
+      if (!g) continue;
+      if (g.type === 'Polygon') (g.coordinates as number[][][]).forEach(ring);
+      else if (g.type === 'MultiPolygon') (g.coordinates as number[][][][]).forEach((poly) => poly.forEach(ring));
+    }
+    return parts.join('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geo, half]);
+
+  if (!m) return null;
   const zone = t >= m.zoneAt;
-  const elev = m.elevationAt !== undefined && t >= m.elevationAt;
-  const flood = m.kind === 'flood';
-  const house = flood ? { x: 236, y: 178 } : { x: 206, y: 128 };
+  const elev = m.elevationDiffM !== undefined && m.elevationAt !== undefined && t >= m.elevationAt;
+  const house = { x: VW / 2, y: VH / 2 };
+  const edge = m.edge ? px(m.edge) : undefined;
+  const water = m.water ? px(m.water) : undefined;
+  const waterVisible = water && water.x > 8 && water.x < VW - 8 && water.y > 8 && water.y < VH - 8;
+  const bar = niceScale(half / 3);
+  const distance = m.distanceM !== undefined ? `${Math.round(m.distanceM)} m` : '';
+  const zoneLabel = `Flood mapped by Copernicus (${m.activation}${m.mapDate ? `, ${m.mapDate.slice(0, 10)}` : ''})`;
+
   return (
     <section className="card map-card">
       <header className="card-head">
         <h3>Where it happened</h3>
         <span className="chip">{c.place}</span>
       </header>
-      <div className={`map kind-${m.kind}${zone ? ' has-zone' : ''}`}>
-        <svg viewBox="0 0 360 230" role="img" aria-label={flood ? `Map: the house is ${m.distanceLabel ?? ''} outside the mapped flood extent` : 'Map: the house is inside the strong-gust area'}>
-          <rect width="360" height="230" className="map-land" />
-          <g className="map-roads">
-            <path d="M-10 150 C80 140 160 172 370 150" />
-            <path d="M120 -10 C132 70 108 150 130 240" />
-            <path d="M250 -10 C240 80 262 160 244 240" />
-            <path d="M-10 205 C100 196 220 214 370 200" />
-          </g>
-          {flood ? (
-            <>
-              <path className="map-zone" d="M-5 22 C70 6 122 52 180 42 S300 6 365 30 L365 112 C300 96 252 128 192 120 S82 140 -5 108 Z" />
-              <path className="map-river" d="M-10 62 C60 42 110 96 170 80 S290 42 370 70" />
-            </>
-          ) : (
-            <path className="map-zone" d="M-5 40 C80 -6 240 18 365 96 L365 232 L150 232 C90 170 20 150 -5 120 Z" />
-          )}
-          {zone && flood && (
-            <g className="map-measure">
-              <line x1={house.x} y1={house.y - 10} x2={house.x} y2={124} />
-              <rect x={house.x + 8} y={139} width="52" height="20" rx="10" />
-              <text x={house.x + 34} y={153} textAnchor="middle">
-                {m.distanceLabel}
-              </text>
-            </g>
-          )}
-          {zone &&
-            m.stations?.map((s) => (
-              <g key={s.label} className="map-station">
-                <circle cx={s.x} cy={s.y} r="13" />
-                <text x={s.x} y={s.y + 4} textAnchor="middle">
-                  {s.label}
+      {geo === null ? (
+        <Empty title="The flood map could not be loaded" body="The backend did not return the mapped flood for this claim. The distances in the findings still stand." />
+      ) : (
+        <div className={`map kind-flood${zone && geo ? ' has-zone' : ''}`}>
+          <svg
+            viewBox={`0 0 ${VW} ${VH}`}
+            role="img"
+            aria-label={m.inside ? 'Map: the house is inside the mapped flood' : `Map: the house is ${distance} outside the mapped flood`}
+          >
+            <rect width={VW} height={VH} className="map-land" />
+            <path className="map-zone" d={zonePath} fillRule="evenodd" />
+            {zone && edge && !m.inside && (
+              <g className="map-measure">
+                <line x1={house.x} y1={house.y} x2={edge.x} y2={edge.y} />
+                <rect x={(house.x + edge.x) / 2 + 8} y={(house.y + edge.y) / 2 - 10} width="52" height="20" rx="10" />
+                <text x={(house.x + edge.x) / 2 + 34} y={(house.y + edge.y) / 2 + 4} textAnchor="middle">
+                  {distance}
                 </text>
               </g>
-            ))}
-          <g className="map-house" transform={`translate(${house.x} ${house.y})`}>
-            <circle r="16" className="map-house-halo" />
-            <circle r="7" className="map-house-dot" />
-          </g>
-          {elev && (
-            <g className="map-elev" transform={`translate(${house.x - 96} ${house.y + 12})`}>
-              <rect width="86" height="24" rx="12" />
-              <text x="43" y="16" textAnchor="middle">
-                {m.elevationLabel} higher
+            )}
+            {zone && waterVisible && (
+              <g className="map-station">
+                <circle cx={water.x} cy={water.y} r="4" />
+                <text x={water.x + 8} y={water.y + 4}>
+                  {m.water?.name ?? 'Nearest water'}
+                </text>
+              </g>
+            )}
+            <g className="map-house" transform={`translate(${house.x} ${house.y})`}>
+              <circle r="16" className="map-house-halo" />
+              <circle r="7" className="map-house-dot" />
+            </g>
+            {elev && (
+              <g className="map-elev" transform={`translate(${house.x - 104} ${house.y + 14})`}>
+                <rect width="94" height="24" rx="12" />
+                <text x="47" y="16" textAnchor="middle">
+                  {m.elevationDiffM! >= 0 ? `${m.elevationDiffM} m higher` : `${Math.abs(m.elevationDiffM!)} m lower`}
+                </text>
+              </g>
+            )}
+            <g className="map-scale">
+              <line x1={12} y1={VH - 12} x2={12 + bar * k} y2={VH - 12} />
+              <text x={12} y={VH - 17}>
+                {bar >= 1000 ? `${bar / 1000} km` : `${bar} m`}
               </text>
             </g>
-          )}
-        </svg>
-      </div>
+          </svg>
+        </div>
+      )}
       <ul className="map-legend">
         <li>
           <span className="lg lg-house" />
           Insured house
         </li>
-        <li className={zone ? '' : 'is-off'}>
+        <li className={zone && geo ? '' : 'is-off'}>
           <span className="lg lg-zone" />
-          {zone ? m.zoneLabel : 'Event footprint not loaded yet'}
+          {geo === undefined ? 'Loading the flood map' : zone ? zoneLabel : 'Flood map not loaded yet'}
         </li>
       </ul>
     </section>

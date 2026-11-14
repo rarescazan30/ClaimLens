@@ -1,7 +1,7 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useEffect } from 'react';
-import { agentName } from '../mock/meta';
-import type { AgentId, CaseFile, Verdict } from '../mock/types';
+import { agentName } from '../lib/meta';
+import type { AgentId, CaseFile, Verdict } from '../lib/types';
 import { AGENT_ICON } from './icons';
 
 const TONE: Record<Verdict, string> = { supports: 'support', contradicts: 'against', inconclusive: 'neutral' };
@@ -42,7 +42,7 @@ export function EvidenceDrawer({ c, agent, t, onClose, onOpenSteps }: { c: CaseF
             <div>
               <strong>{t >= first.at + first.dur ? first.finding : 'Still searching…'}</strong>
               <p>{first.question}</p>
-              {first.gaps?.map((g) => (
+              {first.gaps.map((g) => (
                 <p key={g}>{g}</p>
               ))}
             </div>
@@ -51,7 +51,7 @@ export function EvidenceDrawer({ c, agent, t, onClose, onOpenSteps }: { c: CaseF
             <div className="finding-block second" key={r.id}>
               <span className={`finding-dot tone-${TONE[r.verdict]}`} />
               <div>
-                <span className="eyebrow">Focused second pass</span>
+                <span className="eyebrow">Round {r.round}</span>
                 <strong>{t >= r.at + r.dur ? r.finding : 'Checking again…'}</strong>
                 <p>{r.question}</p>
               </div>

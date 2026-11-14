@@ -1,38 +1,30 @@
-import { Check, MessageSquarePlus, Send, Undo2 } from 'lucide-react';
+import { Check, MessageSquarePlus, Send } from 'lucide-react';
 import { useState } from 'react';
-import type { Decision } from '../lib/hooks';
-import { ROUTES } from '../mock/meta';
-import type { Route } from '../mock/types';
+import { agentName, OUTCOMES } from '../lib/meta';
+import type { Decision, Outcome, Question } from '../lib/types';
 
 const REASONS = ['New information from the claimant', 'Evidence source not reliable', 'Site visit already done', 'Policy exception applies'];
 
 interface Props {
   ready: boolean;
-  recommended: Route;
+  recommended?: Outcome;
   decision?: Decision;
-  requests: string[];
-  onDecide: (d: Decision | undefined) => void;
-  onAsk: (q: string) => void;
+  questions: Question[];
+  busy: boolean;
+  /** POST /claims/{id}/decision with decision "approve". */
+  onApprove: () => void;
+  /** POST /claims/{id}/decision with decision "modify": another outcome, with a reason. */
+  onOverride: (outcome: Outcome, reason: string) => void;
+  /** POST /claims/{id}/question: one more round of agents on the adjuster's question. */
+  onAsk: (question: string) => void;
 }
 
-const now = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-export function DecisionPanel({ ready, recommended, decision, requests, onDecide, onAsk }: Props) {
+export function DecisionPanel({ ready, recommended, decision, questions, busy, onApprove, onOverride, onAsk }: Props) {
   const [mode, setMode] = useState<'idle' | 'override' | 'ask'>('idle');
-  const [route, setRoute] = useState<Route | null>(null);
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [reason, setReason] = useState('');
   const [question, setQuestion] = useState('');
   const [error, setError] = useState('');
-  const rec = ROUTES[recommended];
-
-  if (!ready) {
-    return (
-      <div className="decision is-waiting">
-        <p className="decision-title">Your decision opens when the verdict is in</p>
-        <p>The system only recommends. Nothing is paid or refused until you decide.</p>
-      </div>
-    );
-  }
 
   if (decision) {
     return (
@@ -42,22 +34,27 @@ export function DecisionPanel({ ready, recommended, decision, requests, onDecide
         </span>
         <div>
           <p className="decision-title">
-            {decision.kind === 'approved' ? 'Recommendation approved' : 'Recommendation overridden'}: {ROUTES[decision.route].action.toLowerCase()}
+            {decision.kind === 'approve' ? 'Recommendation approved' : 'Recommendation overridden'}: {OUTCOMES[decision.outcome].action.toLowerCase()}
           </p>
           <p>
-            Logged at {decision.at} by Ana M.
-            {decision.reason ? ` Reason: ${decision.reason.toLowerCase()}.` : ''}
+            Logged {decision.at}.{decision.reason ? ` Reason: ${decision.reason}.` : ''}
           </p>
         </div>
-        <button type="button" className="btn btn-quiet" onClick={() => onDecide(undefined)}>
-          <Undo2 size={14} />
-          Undo
-        </button>
       </div>
     );
   }
 
-  const others = (Object.keys(ROUTES) as Route[]).filter((r) => r !== recommended);
+  if (!ready || !recommended) {
+    return (
+      <div className="decision is-waiting">
+        <p className="decision-title">Your decision opens when the verdict is in</p>
+        <p>The system only recommends. Nothing is paid or refused until you decide.</p>
+      </div>
+    );
+  }
+
+  const rec = OUTCOMES[recommended];
+  const others = (Object.keys(OUTCOMES) as Outcome[]).filter((r) => r !== recommended);
 
   return (
     <div className="decision">
@@ -67,7 +64,7 @@ export function DecisionPanel({ ready, recommended, decision, requests, onDecide
         <p>{rec.desc}</p>
       </div>
       <div className="decision-actions">
-        <button type="button" className="btn btn-primary" onClick={() => onDecide({ route: recommended, kind: 'approved', at: now() })}>
+        <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
           <Check size={15} strokeWidth={2.6} />
           Approve recommendation
         </button>
@@ -84,9 +81,9 @@ export function DecisionPanel({ ready, recommended, decision, requests, onDecide
         <div className="decision-more">
           <div className="route-options" role="radiogroup" aria-label="Route">
             {others.map((r) => (
-              <button type="button" key={r} role="radio" aria-checked={route === r} className={`route-option${route === r ? ' is-on' : ''}`} onClick={() => { setRoute(r); setError(''); }}>
-                <b>{ROUTES[r].action}</b>
-                <span>{ROUTES[r].desc}</span>
+              <button type="button" key={r} role="radio" aria-checked={outcome === r} className={`route-option${outcome === r ? ' is-on' : ''}`} onClick={() => { setOutcome(r); setError(''); }}>
+                <b>{OUTCOMES[r].action}</b>
+                <span>{OUTCOMES[r].desc}</span>
               </button>
             ))}
           </div>
@@ -102,10 +99,11 @@ export function DecisionPanel({ ready, recommended, decision, requests, onDecide
           <button
             type="button"
             className="btn btn-primary"
+            disabled={busy}
             onClick={() => {
-              if (!route) return setError('Pick a route first');
+              if (!outcome) return setError('Pick a route first');
               if (!reason) return setError('Pick a reason. Overrides are logged with one.');
-              onDecide({ route, kind: 'overridden', reason, at: now() });
+              onOverride(outcome, reason);
               setMode('idle');
             }}
           >
@@ -123,29 +121,34 @@ export function DecisionPanel({ ready, recommended, decision, requests, onDecide
             onAsk(question.trim());
             setQuestion('');
             setError('');
+            setMode('idle');
           }}
         >
           <label className="field-label" htmlFor="ask-q">
             What should the agents look into?
           </label>
           <div className="ask-row">
-            <input id="ask-q" value={question} placeholder="Check whether neighbours on the same street filed claims" onChange={(e) => { setQuestion(e.target.value); setError(''); }} />
-            <button type="submit" className="btn btn-primary">
+            <input id="ask-q" value={question} placeholder="Were gusts above 70 km/h on the next day too?" onChange={(e) => { setQuestion(e.target.value); setError(''); }} />
+            <button type="submit" className="btn btn-primary" disabled={busy}>
               <Send size={14} />
               Send to orchestrator
             </button>
           </div>
+          <p className="card-note">This starts one more round of agents. The score and the recommendation can change.</p>
           {error && <p className="form-error">{error}</p>}
         </form>
       )}
 
-      {requests.length > 0 && (
+      {questions.length > 0 && (
         <ul className="requests">
-          {requests.map((q) => (
-            <li key={q}>
+          {questions.map((q) => (
+            <li key={`${q.round}-${q.text}`}>
               <span className="pulse-dot" />
-              <span>{q}</span>
-              <span className="chip">Queued for the orchestrator</span>
+              <span>{q.text}</span>
+              <span className="chip">
+                Round {q.round}
+                {q.agent ? ` · ${agentName(q.agent)}` : ''}
+              </span>
             </li>
           ))}
         </ul>

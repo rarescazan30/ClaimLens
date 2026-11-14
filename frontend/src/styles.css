@@ -368,7 +368,7 @@ h4 {
   color: var(--bad);
 }
 .chip.v-inconclusive,
-.chip.h-conflict,
+.chip.h-conflicting,
 .chip.st-flag {
   background: var(--warn-soft);
   color: var(--warn);
@@ -867,11 +867,11 @@ button.q-row:hover .q-chev {
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
-.band-pill.b-very-likely {
+.band-pill.b-very_likely {
   background: var(--good-soft);
   color: var(--good);
 }
-.band-pill.b-very-likely b {
+.band-pill.b-very_likely b {
   background: var(--good-fill);
 }
 .band-pill.b-likely {
@@ -913,13 +913,13 @@ button.q-row:hover .q-chev {
   border-radius: 50%;
   background: var(--ink-3);
 }
-.route-tag.r-fast-track::before {
+.route-tag.r-fast_track::before {
   background: var(--good-fill);
 }
-.route-tag.r-standard::before {
+.route-tag.r-standard_review::before {
   background: var(--warn-fill);
 }
-.route-tag.r-investigate::before {
+.route-tag.r-antifraud_referral::before {
   background: var(--bad-fill);
 }
 .drawer-wrap {
@@ -1683,7 +1683,7 @@ button.q-row:hover .q-chev {
   height: 7px;
   border-radius: 50%;
 }
-.tab-dot.b-very-likely {
+.tab-dot.b-very_likely {
   background: var(--good-fill);
 }
 .tab-dot.b-likely {
@@ -2211,9 +2211,9 @@ input::placeholder {
 .score-card.phase-base .score-num {
   color: var(--ink-3);
 }
-.phase-provisional.b-very-likely .score-num,
-.phase-final.b-very-likely .score-num,
-.verdict-hero.b-very-likely .score-num {
+.phase-provisional.b-very_likely .score-num,
+.phase-final.b-very_likely .score-num,
+.verdict-hero.b-very_likely .score-num {
   color: var(--good);
 }
 .phase-provisional.b-likely .score-num,
@@ -2254,7 +2254,7 @@ input::placeholder {
 .meter-seg.b-likely {
   background: var(--likely-fill);
 }
-.meter-seg.b-very-likely {
+.meter-seg.b-very_likely {
   background: var(--good-fill);
 }
 .meter-pin {
@@ -3453,7 +3453,7 @@ input::placeholder {
   gap: 8px;
   flex: none;
 }
-.verdict-strip.b-very-likely .score-num {
+.verdict-strip.b-very_likely .score-num {
   color: var(--good);
 }
 .verdict-strip.b-likely .score-num {
@@ -3993,7 +3993,7 @@ h2 {
   color: var(--ink-3);
   font-size: 11px;
 }
-.verdict-strip.b-very-likely {
+.verdict-strip.b-very_likely {
   --ring: var(--good-fill);
 }
 .verdict-strip.b-likely {
@@ -4871,7 +4871,7 @@ body::after {
 }
 
 /* verdict ring: always ink */
-.verdict-strip.b-very-likely,
+.verdict-strip.b-very_likely,
 .verdict-strip.b-likely,
 .verdict-strip.b-uncertain,
 .verdict-strip.b-unlikely {
@@ -4891,7 +4891,7 @@ body::after {
 
 /* score pills: weight follows attention. Strong claims are quiet outlines, weak ones are solid black. */
 .band-pill,
-.band-pill.b-very-likely,
+.band-pill.b-very_likely,
 .band-pill.b-likely,
 .band-pill.b-uncertain,
 .band-pill.b-unlikely {
@@ -4904,7 +4904,7 @@ body::after {
   color: var(--ink);
   box-shadow: inset 0 0 0 1.5px var(--line-2);
 }
-.band-pill.b-very-likely b {
+.band-pill.b-very_likely b {
   color: var(--ink-2);
 }
 .band-pill.b-likely b {
@@ -5378,7 +5378,7 @@ button.q-row:hover .q-chev {
 
 /* score badges: a rounded square with the figure in the band's colour */
 .band-pill,
-.band-pill.b-very-likely,
+.band-pill.b-very_likely,
 .band-pill.b-likely,
 .band-pill.b-uncertain,
 .band-pill.b-unlikely {
@@ -5398,8 +5398,8 @@ button.q-row:hover .q-chev {
   font-weight: 560;
   font-variant-numeric: tabular-nums;
 }
-.band-pill.b-very-likely b,
-[data-theme='dark'] .band-pill.b-very-likely b {
+.band-pill.b-very_likely b,
+[data-theme='dark'] .band-pill.b-very_likely b {
   background: var(--good-soft);
   color: var(--good);
   box-shadow: none;
@@ -5420,10 +5420,10 @@ button.q-row:hover .q-chev {
   background: var(--bad-soft);
   color: var(--bad);
 }
-.route-tag.r-fast-track {
+.route-tag.r-fast_track {
   color: var(--good);
 }
-.route-tag.r-investigate {
+.route-tag.r-antifraud_referral {
   color: var(--bad);
 }
 
@@ -5559,7 +5559,7 @@ button.q-row:hover .q-chev {
   color: var(--tone, var(--accent));
   transition: color 0.5s;
 }
-.live-score.b-very-likely {
+.live-score.b-very_likely {
   --tone: var(--good);
 }
 .live-score.b-likely {
@@ -5700,8 +5700,8 @@ button.q-row:hover .q-chev {
 }
 
 /* ---------- verdict ---------- */
-.verdict-strip.b-very-likely,
-.verdict-hero.b-very-likely {
+.verdict-strip.b-very_likely,
+.verdict-hero.b-very_likely {
   --ring: var(--good-fill);
   --tone: var(--good);
 }
@@ -5751,7 +5751,7 @@ button.q-row:hover .q-chev {
   font-weight: 500;
   letter-spacing: -0.05em;
 }
-.score-card.b-very-likely {
+.score-card.b-very_likely {
   --tone: var(--good);
 }
 .score-card.b-likely {
@@ -6225,4 +6225,72 @@ button.q-row:hover .q-chev {
     justify-content: flex-start;
     padding: 0 10px;
   }
+}
+
+/* =====================================================================
+   Backend wiring: the few styles added when the mock was connected to the ClaimLens API.
+   ===================================================================== */
+/* real claimant photos served by the backend */
+.photo-thumb.is-real {
+  background: var(--surface-2);
+}
+.photo-thumb.is-real img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo-thumb.is-real,
+[data-theme='dark'] .photo-thumb.is-real {
+  filter: none !important;
+}
+.photo.is-waiting .photo-thumb.is-real {
+  filter: grayscale(1) opacity(0.6) !important;
+}
+/* the replay bar while a run is live: a clock and nothing to scrub */
+.replay.is-live {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.replay-live-note {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+/* a backend action that failed */
+.action-error {
+  margin: 0 0 14px;
+}
+/* "set aside" asks once before it calls the backend, because it cannot be undone */
+.contrib-row {
+  grid-template-columns: minmax(0, 1fr) 260px 64px minmax(32px, auto);
+}
+@media (max-width: 760px) {
+  .contrib-row {
+    grid-template-columns: minmax(0, 1fr) 56px minmax(32px, auto);
+  }
+}
+.contrib-confirm {
+  padding-inline: 10px;
+  color: var(--bad);
+}
+.contrib-spacer {
+  width: 32px;
+}
+.contrib-src + .contrib-src {
+  margin-top: 4px;
+}
+/* scale bar on the map */
+.map-scale line {
+  stroke: var(--ink-2);
+  stroke-width: 2;
+}
+.map-scale text {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--ink-2);
+}
+.map-station text {
+  text-anchor: start;
 }

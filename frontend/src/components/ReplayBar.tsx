@@ -1,12 +1,26 @@
-import { Pause, Play, SkipForward } from 'lucide-react';
+import { Pause, Play, RotateCcw, SkipForward } from 'lucide-react';
+import { useState } from 'react';
 import { fmtClock } from '../lib/derive';
 import type { RunClock } from '../lib/hooks';
-import { STAGES } from '../mock/meta';
-import type { CaseFile } from '../mock/types';
+import { STAGES } from '../lib/meta';
+import type { CaseFile } from '../lib/types';
 
 const SPEEDS = [1, 2, 4];
 
-export function ReplayBar({ c, run }: { c: CaseFile; run: RunClock }) {
+/**
+ * Replay controls for a finished run, plus "Run again" (POST /rerun).
+ * While a run is live there is nothing to scrub, so only the clock shows.
+ */
+export function ReplayBar({ c, run, live, busy, onRerun }: { c: CaseFile; run: RunClock; live: boolean; busy: boolean; onRerun: () => void }) {
+  const [arming, setArming] = useState(false);
+  if (live)
+    return (
+      <div className="replay is-live">
+        <span className="live-dot is-on" />
+        <span className="clock">{fmtClock(run.time)}</span>
+        <span className="replay-live-note">Live. The replay opens when the investigation ends.</span>
+      </div>
+    );
   const pct = (run.time / c.duration) * 100;
   const atEnd = run.time >= c.duration;
   const stageNow = STAGES.find((s) => s.id === [...c.windows].reverse().find((w) => w.at <= run.time)?.stage)?.short ?? 'Start';
@@ -26,7 +40,7 @@ export function ReplayBar({ c, run }: { c: CaseFile; run: RunClock }) {
           ))}
         </div>
         <div className="scrub-labels" aria-hidden="true">
-          {([['intake', 'Claim'], ['plan', 'Plan'], ['agents', 'Agents'], ['judge', 'Judge'], ['review', 'Decision']] as const).map(([st, label]) => {
+          {([['intake', 'Claim'], ['plan', 'Plan'], ['agents', 'Agents'], ['judge', 'Judge']] as const).map(([st, label]) => {
             const w = c.windows.find((x) => x.stage === st);
             return w ? (
               <span key={st} style={{ left: `${(w.at / c.duration) * 100}%` }}>
@@ -61,6 +75,22 @@ export function ReplayBar({ c, run }: { c: CaseFile; run: RunClock }) {
           <SkipForward size={14} />
         </button>
       )}
+      {atEnd &&
+        (arming ? (
+          <>
+            <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => { setArming(false); onRerun(); }}>
+              Erase this run and start over
+            </button>
+            <button type="button" className="btn btn-quiet" onClick={() => setArming(false)}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button type="button" className="btn btn-quiet" disabled={busy} onClick={() => setArming(true)} title="Investigate this claim again from the start">
+            <RotateCcw size={14} />
+            Run again
+          </button>
+        ))}
     </div>
   );
 }

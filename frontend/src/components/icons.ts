@@ -1,32 +1,9 @@
-import {
-  Camera,
-  CloudRain,
-  Eye,
-  FileCheck2,
-  FileText,
-  Inbox,
-  Mountain,
-  Newspaper,
-  Satellite,
-  Scale,
-  ScanSearch,
-  ShieldCheck,
-  Snowflake,
-  Stamp,
-  UserCheck,
-  Waves,
-  Wind,
-  Workflow,
-  type LucideIcon,
-} from 'lucide-react';
-import type { AgentId, ClaimType, StageId } from '../mock/types';
+import { Camera, CloudRain, Eye, FileCheck2, Inbox, Mountain, Newspaper, Satellite, Scale, ScanSearch, ShieldCheck, Stamp, Waves, Wind, Workflow, type LucideIcon } from 'lucide-react';
+import type { AgentId, ClaimType, StageId } from '../lib/types';
 
 export const STAGE_ICON: Record<StageId, LucideIcon> = {
   intake: Inbox,
-  client: UserCheck,
-  documents: FileText,
   policy: ShieldCheck,
-  photos: Camera,
   plan: Workflow,
   agents: Workflow,
   judge: Scale,
@@ -35,17 +12,17 @@ export const STAGE_ICON: Record<StageId, LucideIcon> = {
 };
 
 export const AGENT_ICON: Record<AgentId, LucideIcon> = {
-  weather: CloudRain,
+  meteo: CloudRain,
   satellite: Satellite,
-  streetview: Eye,
+  risk_zones: Mountain,
+  photo_forensics: ScanSearch,
+  street_view: Eye,
   news: Newspaper,
-  risk: Mountain,
-  forensics: ScanSearch,
 };
 
 export const TYPE_ICON: Record<ClaimType, LucideIcon> = {
   flood: Waves,
-  wind: Wind,
-  landslide: Mountain,
-  snow: Snowflake,
+  storm: Wind,
 };
+
+export const PHOTO_ICON = Camera;

@@ -1,5 +1,5 @@
-import { AGENTS, ORDER } from '../mock/meta';
-import type { AgentId, AgentRun, CaseFile, StageId, Verdict } from '../mock/types';
+import { AGENTS, ORDER } from './meta';
+import type { AgentId, AgentRun, CaseFile, StageId, Verdict } from './types';
 
 export type StageStatus = 'pending' | 'running' | 'done' | 'flag' | 'requeued';
 
@@ -43,13 +43,12 @@ export interface LaneState {
 }
 
 export function laneStates(c: CaseFile, t: number): Record<AgentId, LaneState> {
-  const planWindow = c.windows.find((w) => w.stage === 'plan')!;
-  const planned = t >= planWindow.at + planWindow.dur;
+  const planWindow = c.windows.find((w) => w.stage === 'plan');
+  const planned = !!planWindow && t >= planWindow.at + planWindow.dur;
   const out = {} as Record<AgentId, LaneState>;
   for (const { id } of AGENTS) {
-    const d = c.plan.dispatch.find((x) => x.agent === id);
-    if (d?.skipped) {
-      out[id] = planned ? { state: 'skipped', reason: d.skipped } : { state: 'idle' };
+    if (c.plan.dispatch.find((x) => x.agent === id)?.skipped) {
+      out[id] = planned ? { state: 'skipped', reason: 'Not relevant for this type of claim' } : { state: 'idle' };
       continue;
     }
     const started = c.runs.filter((r) => r.agent === id && r.at <= t);
@@ -74,14 +73,17 @@ export function runsStarted(c: CaseFile, t: number): AgentRun[] {
   return c.runs.filter((r) => r.at <= t);
 }
 
-/** True while the Judge has asked for another round and the pipeline is looping back. */
+/** Whether the Judge has sent agents back: 'active' around the moment a later round starts, 'used' after. */
 export function loopState(c: CaseFile, t: number): 'unused' | 'active' | 'used' {
-  const second = c.windows.find((w) => w.stage === 'agents' && (w.round ?? 1) > 1);
-  if (!second) return 'unused';
-  const firstJudge = c.windows.find((w) => w.stage === 'judge' && (w.round ?? 1) === 1)!;
-  if (t < firstJudge.at + firstJudge.dur - 900) return 'unused';
-  if (t < second.at + 1600) return 'active';
-  return 'used';
+  const later = c.windows.filter((w) => w.stage === 'agents' && (w.round ?? 1) > 1 && w.at - 900 <= t);
+  if (!later.length) return 'unused';
+  return t < later[later.length - 1].at + 1600 ? 'active' : 'used';
+}
+
+/** The backend's score at timeline offset `t`, or undefined before the first one. */
+export function scoreAt(c: CaseFile, t: number) {
+  const seen = c.scores.filter((s) => s.at <= t);
+  return seen.length ? seen[seen.length - 1] : undefined;
 }
 
 export const fmtClock = (ms: number) => {

@@ -1,13 +1,13 @@
 import { ChevronDown, Moon, Sparkles, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ClaimMenu } from './components/ClaimMenu';
-import { listQueue } from './mock/api';
-import type { QueueCase } from './mock/types';
+import { listQueue } from './api/hooks';
+import type { QueueCase } from './lib/types';
 import { Aurora } from './components/Aurora';
 import { CaseView } from './components/CaseView';
 import { Queue } from './components/Queue';
 import { useHashRoute, useTheme } from './lib/hooks';
-import { APP_NAME } from './mock/meta';
+import { APP_NAME } from './lib/meta';
 
 export function App() {
   const [theme, toggleTheme] = useTheme();
@@ -17,10 +17,10 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [rows, setRows] = useState<QueueCase[]>([]);
   useEffect(() => {
-    listQueue().then(setRows);
-  }, []);
+    listQueue().then(setRows).catch(() => setRows([]));
+  }, [caseId]);
   const current = rows.find((r) => r.id === caseId) ?? (caseId ? { id: caseId, claimant: '' } : undefined);
-  const waiting = rows.filter((r) => r.status === 'new').length;
+  const waiting = rows.filter((r) => r.status === 'received' || r.status === 'investigating').length;
 
   return (
     <>
