@@ -6476,3 +6476,10 @@ h2,
     gap: 8px 20px;
   }
 }
+
+/* queue figures: each one centred in its column, so the four sit evenly across the row */
+.stats .stat {
+  align-items: center;
+  text-align: center;
+  padding: 18px 16px 18px;
+}
