@@ -10,7 +10,7 @@ import json
 
 from engine.graph import JudgeOut
 from engine.llm import llm_json
-from engine.models import Evidence, Hypothesis, RuleFlag, ScoreResult
+from engine.models import Evidence, Flag, Hypothesis, RuleFlag, ScoreResult
 from engine.thresholds import AGENTS_FOR, ALL_AGENTS, THRESHOLD_TEXT
 
 AGENT_SKILLS = {
@@ -38,9 +38,17 @@ Primești ipotezele și dovezile agenților. Sarcina ta:
 2. Scrie tensiunile în cuvinte simple, în română, câte o propoziție.
 3. Dacă există un gol sau un conflict pe care un agent îl poate lămuri cu o verificare „la cerere”, cere
    redispatch: cel mult 2 agenți, fiecare cu O întrebare îngustă și concretă. Altfel "stop".
+Ține cont de semnalele din verificările inițiale când marchezi ipotezele și când decizi dacă trimiți un agent \
+înapoi; un semnal singur nu este niciodată un motiv de respingere a dosarului.
 Reguli: un gol de date NU înseamnă fraudă. Nu calculezi scoruri. Nu recomanzi respingerea: decide omul.
 Format JSON: {"marks": {"H1": "confirmed"}, "tensions": ["..."], "action": "stop" | "redispatch",
 "redispatch": [{"agent": "risk_zones", "question": "..."}]}"""
+
+
+def _flags_text(early_flags: list[Flag] | None) -> str:
+    if not early_flags:
+        return "Semnale din verificările inițiale: niciunul"
+    return "Semnale din verificările inițiale:\n" + "\n".join(f"- [{f.step}] {f.reason}" for f in early_flags)
 
 
 def _claim_text(claim: dict, policy: dict) -> str:
@@ -54,12 +62,14 @@ def _skills(agents: list[str]) -> str:
     return "\n".join(f"- {a}: {AGENT_SKILLS[a]}" for a in agents)
 
 
-async def plan_hypotheses(claim: dict, policy: dict, flags: list[RuleFlag]) -> list[Hypothesis]:
+async def plan_hypotheses(claim: dict, policy: dict, flags: list[RuleFlag],
+                          early_flags: list[Flag] | None = None) -> list[Hypothesis]:
     kind = claim.get("damage_type")
     allowed = AGENTS_FOR.get(kind, ALL_AGENTS)
     user = (f"Dosar:\n{_claim_text(claim, policy)}\n\n"
             f"Pragul pentru acest tip de daună: {THRESHOLD_TEXT.get(kind, 'nedefinit')}. Scrie pragul în ipoteza meteo.\n"
-            f"Reguli de poliță eșuate: {[f.reason for f in flags if not f.passed] or 'niciuna'}\n\n"
+            f"Reguli de poliță eșuate: {[f.reason for f in flags if not f.passed] or 'niciuna'}\n"
+            f"{_flags_text(early_flags)}\n\n"
             f"Agenți disponibili (folosește doar aceste nume):\n{_skills(allowed)}\n\n"
             "Formulează ipotezele în termenii datelor pe care agenții chiar le au (reanaliză meteo pe grilă, nu stații "
             "meteo; harta Copernicus; OpenStreetMap; altitudine). Fiecare ipoteză: o singură propoziție, sub 30 de cuvinte. "
@@ -87,12 +97,16 @@ def _evidence_text(evidence: list[Evidence]) -> str:
 
 
 async def judge_round(hypotheses: list[Hypothesis], evidence: list[Evidence], score: ScoreResult, round: int,
-                      question: str | None = None, claim_summary: str | None = None) -> JudgeOut:
+                      question: str | None = None, claim_summary: str | None = None,
+                      early_flags: list[Flag] | None = None) -> JudgeOut:
     agents = sorted({a for h in hypotheses for a in h.agents}) or ALL_AGENTS
     user = (f"Runda {round}.\n"
             + (f"Ce declară clientul: {claim_summary}\n" if claim_summary else "")
             + f"Ipoteze:\n{json.dumps([h.model_dump() for h in hypotheses], ensure_ascii=False)}\n\n"
-            f"Dovezi:\n{_evidence_text(evidence)}\n\n"
+            f"{_flags_text(early_flags)}\n"
+            + ("Constatările agentului Foto-forensic provin din aceleași verificări ale fotografiilor.\n"
+               if any(f.step == "photos" for f in early_flags or []) else "")
+            + f"\nDovezi:\n{_evidence_text(evidence)}\n\n"
             f"Ce poate verifica fiecare agent:\n{_skills([a for a in agents if a in AGENT_SKILLS])}\n")
     if question:
         user += (f"\nEvaluatorul uman întreabă: „{question}”. Alege UN agent care poate răspunde și trimite-i "

@@ -2,7 +2,7 @@ import pytest
 
 from engine import llm, prompts
 from engine.graph import run_investigation
-from engine.models import Evidence, Hypothesis, ScoreResult, WeightConfig
+from engine.models import Evidence, Flag, Hypothesis, ScoreResult, WeightConfig
 from engine.thresholds import ALL_AGENTS
 
 HYP = [Hypothesis(id="H1", text="ploaie", critical=True, agents=["meteo"])]
@@ -87,3 +87,42 @@ async def test_engine_drops_bad_redispatch_and_caps_at_two(monkeypatch, sink):
     await run_investigation(CLAIM, POLICY, cfg, sink, agents={a: make(a) for a in ALL_AGENTS}, planner=planner)
     assert [c for c in calls if c[0] == 2] == [(2, "meteo"), (2, "news")]
     assert "apa in casa" in users[0]  # the Judge must know what the client declared to spot tensions
+
+
+EARLY = [Flag(step="client", code="cnp_mismatch", severity="warn", reason="CNP diferit")]
+
+
+async def test_judge_sees_early_flags(monkeypatch):
+    seen = []
+    answer(monkeypatch, {"marks": {}, "tensions": [], "action": "stop", "redispatch": []}, seen)
+    await prompts.judge_round(HYP, EV, SCORE, 1, early_flags=EARLY)
+    system, user, _ = seen[0]
+    assert "Semnale din verificările inițiale:\n- [client] CNP diferit" in user
+    assert "Foto-forensic" not in user
+    assert "niciodată un motiv" in system
+
+
+async def test_judge_photo_flag_adds_forensic_sentence(monkeypatch):
+    seen = []
+    answer(monkeypatch, {"marks": {}, "tensions": [], "action": "stop", "redispatch": []}, seen)
+    await prompts.judge_round(HYP, EV, SCORE, 1, early_flags=[
+        Flag(step="photos", code="exif", severity="warn", reason="EXIF lipsă")])
+    assert "Constatările agentului Foto-forensic provin din aceleași verificări ale fotografiilor." in seen[0][1]
+
+
+@pytest.mark.parametrize("flags", [None, []])
+async def test_judge_without_flags_says_niciunul(monkeypatch, flags):
+    seen = []
+    answer(monkeypatch, {"marks": {}, "tensions": [], "action": "stop", "redispatch": []}, seen)
+    await prompts.judge_round(HYP, EV, SCORE, 1, early_flags=flags)
+    assert "Semnale din verificările inițiale: niciunul" in seen[0][1]
+
+
+async def test_orchestrator_sees_early_flags(monkeypatch):
+    seen = []
+    answer(monkeypatch, {"hypotheses": []}, seen)
+    await prompts.plan_hypotheses(CLAIM, POLICY, [], early_flags=EARLY)
+    assert "Semnale din verificările inițiale:\n- [client] CNP diferit" in seen[0][1]
+    seen.clear()
+    await prompts.plan_hypotheses(CLAIM, POLICY, [])
+    assert "Semnale din verificările inițiale: niciunul" in seen[0][1]
