@@ -123,7 +123,7 @@ async def test_trace_has_every_stage_and_ends_with_a_human_decision_step(sink):
         assert expected in ids
     assert ids[-1] == "final" and sink.steps[-1].type == "escalation"
     assert "evaluator" in sink.steps[-1].summary.lower()
-    assert len(sink.rule_flags) == 5 and sink.hyp == HYP
+    assert len(sink.rule_flags) == 6 and sink.hyp == HYP
 
 
 async def test_planner_failure_falls_back_to_default_hypotheses(sink):
