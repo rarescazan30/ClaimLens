@@ -1,6 +1,8 @@
-import { ArrowRight, Check, ChevronDown, CornerDownRight, TriangleAlert, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, CornerDownRight, ExternalLink, TriangleAlert, X } from 'lucide-react';
 import { useState } from 'react';
 import type { StageStatus } from '../lib/derive';
+import { documentUrl } from '../api/client';
+import { flagLine } from '../lib/early';
 import { AGENTS, agentName, MARK_TEXT, STAGES } from '../lib/meta';
 import type { AgentId, AgentRun, CaseFile, DetailItem, JudgeDecision, StageId } from '../lib/types';
 import { AGENT_ICON } from './icons';
@@ -37,6 +39,13 @@ export function StageDetail(props: Props) {
       <>
         <ItemList items={props.verdictItems} t={t} running={status === 'running'} />
         {props.children}
+      </>
+    );
+  } else if (stage === 'documents') {
+    body = (
+      <>
+        <ItemList items={c.details[stage] ?? []} t={t} running={status === 'running'} />
+        <DocumentsView c={c} />
       </>
     );
   } else {
@@ -88,6 +97,61 @@ function ItemList({ items, t, running }: { items: DetailItem[]; t: number; runni
         </li>
       )}
     </ul>
+  );
+}
+
+const DOCUMENTS: { key: 'claim_form' | 'policy'; title: string }[] = [
+  { key: 'claim_form', title: 'Claim form' },
+  { key: 'policy', title: 'Policy' },
+];
+
+/** What code read from each PDF, field by field as the backend names them, and a link to the original. */
+function DocumentsView({ c }: { c: CaseFile }) {
+  const docs = DOCUMENTS.filter((d) => c.documents[d.key]);
+  if (!docs.length) return null;
+  return (
+    <div className="doc-grid">
+      {docs.map((d) => {
+        const fields = Object.entries(c.documents[d.key] ?? {});
+        return (
+          <section key={d.key} className="doc-card">
+            <header>
+              <h3>{d.title}</h3>
+              <a className="btn btn-secondary" href={documentUrl(c.id, d.key)} target="_blank" rel="noopener">
+                <ExternalLink size={14} />
+                Open PDF
+              </a>
+            </header>
+            {fields.length ? (
+              <dl className="doc-fields">
+                {fields.map(([name, value]) => (
+                  <div key={name}>
+                    <dt>{name}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="card-note">No fields were read from this document.</p>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function FlagsGiven({ c }: { c: CaseFile }) {
+  if (!c.flags.length) return null;
+  return (
+    <details className="judge-flags">
+      <summary>Flags the Judge was given</summary>
+      <ul>
+        {c.flags.map((f, i) => (
+          <li key={i}>{flagLine(f)}</li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -240,13 +304,17 @@ function JudgeView({ c, t }: { c: CaseFile; t: number }) {
   const shown = c.judge.filter((j) => j.at <= t).reverse();
   if (!shown.length)
     return (
-      <p className="is-working">
-        <span className="pulse-dot" />
-        Weighing the findings against each hypothesis
-      </p>
+      <>
+        <p className="is-working">
+          <span className="pulse-dot" />
+          Weighing the findings against each hypothesis
+        </p>
+        <FlagsGiven c={c} />
+      </>
     );
   return (
     <div className="judge">
+      <FlagsGiven c={c} />
       {shown.map((j) => (
         <JudgeCard key={j.round} j={j} t={t} multi={c.judge.length > 1} />
       ))}

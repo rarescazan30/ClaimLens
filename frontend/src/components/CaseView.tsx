@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, FileText, Gauge, ListChecks, Map 
 import { useEffect, useRef, useState } from 'react';
 import { API_URL } from '../api/client';
 import { useCase, type CaseActions } from '../api/hooks';
+import { contributionTitle, failedPolicyRules, runModeText } from '../lib/early';
 import { activeStage, currentRound, fmtClock, laneStates, loopState, scoreAt, stageStatuses } from '../lib/derive';
 import { useRun } from '../lib/hooks';
 import { agentName, BANDS, isAgent, ORDER, OUTCOMES, STAGES } from '../lib/meta';
@@ -49,7 +50,6 @@ const DOCK_GROUPS = [
 ] as const;
 
 interface LedgerLine {
-  id: string;
   title: string;
   delta: number;
 }
@@ -67,8 +67,8 @@ function LiveScore({ score, band, phase, lines, onOpen }: { score?: number; band
       <span className="live-score-sub">{waiting ? 'Appears after the first round of agents' : `${BANDS[band as keyof typeof BANDS].label} · out of 100`}</span>
       {lines.length > 0 && (
         <span className="ledger">
-          {lines.slice(0, 4).map((l) => (
-            <span key={l.id} className={`ledger-row ${l.delta > 0 ? 'is-plus' : l.delta < 0 ? 'is-minus' : 'is-zero'}`}>
+          {lines.slice(0, 4).map((l, i) => (
+            <span key={i} className={`ledger-row ${l.delta > 0 ? 'is-plus' : l.delta < 0 ? 'is-minus' : 'is-zero'}`}>
               <span>{l.title}</span>
               <b>{l.delta === 0 ? '0' : `${l.delta > 0 ? '+' : '−'}${Math.abs(l.delta)}`}</b>
             </span>
@@ -105,13 +105,16 @@ type Panel = 'step' | 'score' | 'map' | 'claim' | 'photos' | 'verdict';
 function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; live: boolean; actions: CaseActions; initialT?: number; initialTab?: string }) {
   const finished = c.status === 'awaiting_decision' || c.status === 'decided';
   // A finished claim opens on its result; the replay bar goes back through the run.
-  const run = useRun(c.duration, initialT ?? (finished ? c.duration : 0), live, c.edge);
+  // A paused claim has nothing left to replay: the rail stays where the photo check ended.
+  const paused = c.status === 'paused' && !live;
+  const run = useRun(c.duration, initialT ?? (finished || paused ? c.duration : 0), live, c.edge);
   const [panel, setPanel] = useState<Panel | null>(initialTab === 'report' ? 'verdict' : null);
   const [pinned, setPinned] = useState<StageId | null>(null);
   const [agentFocus, setAgentFocus] = useState<AgentId | null>(null);
   const [drawer, setDrawer] = useState<AgentId | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [choosing, setChoosing] = useState(false);
 
   /** Runs one backend action; a failure is shown on the page instead of being lost. */
   const act = (fn: () => Promise<void>) => {
@@ -151,16 +154,17 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
   }, [run.toggle, live]);
 
   const never = c.status === 'received' && !live; // never investigated
-  const started = !never && (live || run.time > 0 || run.playing);
-  const t = started ? run.time : -1;
+  const started = paused || (!never && (live || run.time > 0 || run.playing));
+  const t = paused ? c.duration : started ? run.time : -1;
   const done = !live && finished && t >= c.duration;
 
   const status = stageStatuses(c, t, !!c.decision);
+  if (paused) status.review = 'pending';
   const lanes = laneStates(c, t);
   const active = activeStage(status);
   const round = currentRound(c, t);
   const loop = loopState(c, t);
-  const shown: StageId = pinned ?? active ?? (done ? 'review' : 'intake');
+  const shown: StageId = pinned ?? active ?? (done ? 'review' : paused ? 'policy' : 'intake');
 
   // The score is whatever the backend last computed at this point of the run. Nothing is recomputed here.
   const now = scoreAt(c, t);
@@ -193,12 +197,14 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
   // What each agent's latest finding is worth in the current score, biggest first.
   const ledger: LedgerLine[] = (now?.contributions ?? [])
     .filter((k) => isAgent(k.agent) || k.delta_logit !== 0)
-    .map((k) => ({ id: `${k.agent}.${k.round}`, title: agentName(k.agent), delta: pointsOf(now!.score, k.delta_logit) }))
+    .map((k) => ({ title: contributionTitle(k), delta: pointsOf(now!.score, k.delta_logit) }))
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 
   const liveMeta = active ? STAGES.find((s) => s.id === active)! : null;
   const askedThisRound = c.questions.some((q) => q.round === round);
-  const headline = never
+  const headline = paused
+    ? 'Paused: a policy rule failed'
+    : never
     ? 'Ready to investigate'
     : !started
       ? 'Ready to replay'
@@ -235,13 +241,17 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
 
   const approve = () => act(() => actions.decide({ decision: 'approve' }));
 
+  const failedRules = paused ? failedPolicyRules(c) : [];
+  const modeText = runModeText(c.runMode);
+
   const decisionPanel = (
     <DecisionPanel
-      ready={done}
+      ready={done || paused}
       recommended={now?.recommendation}
       decision={c.decision}
       questions={c.questions}
       busy={busy}
+      paused={paused}
       onApprove={approve}
       onOverride={(outcome, reason) => act(() => actions.decide({ decision: 'modify', outcome, reason }))}
       onAsk={(q) => act(() => actions.ask(q))}
@@ -277,6 +287,7 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
           <span className="live-dot is-on" />
           {live ? 'Live investigation' : never ? 'Not investigated yet' : done ? 'Investigation complete' : run.playing ? 'Replaying the investigation' : 'Replay paused'}
         </span>
+        {modeText && <span className="chip run-mode">{modeText}</span>}
       </div>
 
       <div className="case-layout">
@@ -307,9 +318,9 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
           {c.error}
         </p>
       )}
-      <div className={`stage-top${done ? ' is-done' : ''}`}>
+      <div className={`stage-top${done || paused ? ' is-done' : ''}`}>
       <section className="stage-head" aria-live="polite">
-        {started && (
+        {started && !paused && (
           <Kicker n={String(stepNo || 1).padStart(2, '0')}>
             {`${liveMeta ? liveMeta.short : 'Review'} · ${fmtClock(run.time)}${round > 1 ? ` · round ${round}` : ''}`}
           </Kicker>
@@ -323,7 +334,20 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
             headline
           )}
         </h1>
-        {started && (
+        {paused && (
+          <div className="paused-body">
+            <p className="stage-sub">The claim stopped before any AI call. Check the failed {failedRules.length === 1 ? 'rule' : 'rules'}, then continue the investigation or choose the outcome yourself.</p>
+            <ul className="paused-rules">
+              {failedRules.map((f, i) => (
+                <li key={i}>
+                  <b>{f.label}</b>
+                  {f.reason && <span>{f.reason}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {started && !paused && (
         <p className="stage-sub">
           {done
               ? c.decision
@@ -339,7 +363,17 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
         </p>
         )}
         <div className="stage-cta">
-          {never ? (
+          {paused ? (
+            <>
+              <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={() => act(actions.continueRun)}>
+                <Play size={15} fill="currentColor" />
+                Continue investigation
+              </button>
+              <button type="button" className={`btn btn-secondary is-large${choosing ? ' is-on' : ''}`} aria-expanded={choosing} onClick={() => setChoosing(!choosing)}>
+                Choose an outcome
+              </button>
+            </>
+          ) : never ? (
             <button type="button" className="btn btn-primary is-large" disabled={busy} onClick={() => act(actions.start)}>
               <Play size={15} fill="currentColor" />
               Start investigation
@@ -357,13 +391,15 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
           ) : null}
         </div>
       </section>
-      {!done && <LiveScore score={now?.score} band={band} phase={phase} lines={ledger} onOpen={() => toggle('score')} />}
+      {!done && !paused && <LiveScore score={now?.score} band={band} phase={phase} lines={ledger} onOpen={() => toggle('score')} />}
       </div>
 
       <section className={`card rail-card tone-${tone}`}>
         <Pipeline status={status} lanes={lanes} loop={loop} round={round} active={active} selected={shown} tone={tone} started={started} onSelect={select} />
       </section>
-      {!never && <ReplayBar c={c} run={run} live={live} busy={busy} onRerun={() => act(actions.start)} />}
+      {paused && choosing && <section className="card paused-choose">{decisionPanel}</section>}
+
+      {!never && !paused && <ReplayBar c={c} run={run} live={live} busy={busy} onRerun={() => act(actions.start)} />}
 
       {done && now && (
         <section className={`card verdict-strip b-${now.band}`}>
@@ -393,7 +429,7 @@ function CaseInner({ c, live, actions, initialT, initialTab }: { c: CaseFile; li
         </section>
       )}
 
-      {!panel && !done && started && (
+      {!panel && !done && !paused && started && (
         <p className="ticker" key={latest?.text ?? 'hint'} aria-live="polite">
           {latest ? latest.text : 'Starting…'}
         </p>

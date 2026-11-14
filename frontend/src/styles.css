@@ -6294,3 +6294,118 @@ button.q-row:hover .q-chev {
 .map-station text {
   text-anchor: start;
 }
+
+/* Early checks, the pause and the documents */
+.run-mode {
+  margin-left: auto;
+}
+.chip.c-paused {
+  color: var(--warn);
+  background: var(--gold-soft);
+  border-color: color-mix(in srgb, var(--gold) 35%, transparent);
+}
+.paused-body {
+  margin-top: 6px;
+}
+.paused-rules {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.paused-rules li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: var(--gold-soft);
+  border: 1px solid color-mix(in srgb, var(--gold) 30%, transparent);
+  font-size: 14px;
+}
+.paused-rules li span {
+  color: var(--ink-2);
+}
+.paused-choose {
+  padding: 8px;
+}
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.doc-card {
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.doc-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.doc-card h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.doc-fields {
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+.doc-fields > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.doc-fields dt {
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.doc-fields dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.judge-flags {
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.judge-flags summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.judge-flags ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.flag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.flag-list li {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  font-size: 13.5px;
+}
+.flag-step {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.flag-reason {
+  overflow-wrap: anywhere;
+}

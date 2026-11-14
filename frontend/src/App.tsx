@@ -7,6 +7,7 @@ import { Aurora } from './components/Aurora';
 import { CaseView } from './components/CaseView';
 import { Queue } from './components/Queue';
 import { useHashRoute, useTheme } from './lib/hooks';
+import { isNewClaim } from './lib/early';
 import { APP_NAME } from './lib/meta';
 
 export function App() {
@@ -20,7 +21,7 @@ export function App() {
     listQueue().then(setRows).catch(() => setRows([]));
   }, [caseId]);
   const current = rows.find((r) => r.id === caseId) ?? (caseId ? { id: caseId, claimant: '' } : undefined);
-  const waiting = rows.filter((r) => r.status === 'received' || r.status === 'investigating').length;
+  const waiting = rows.filter((r) => isNewClaim(r.status)).length;
 
   return (
     <>

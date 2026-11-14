@@ -2,6 +2,7 @@ import { ArrowRight, ChevronDown, ChevronRight, ClipboardCheck, Inbox, ListCheck
 import { useEffect, useState } from 'react';
 import { API_URL } from '../api/client';
 import { useQueue } from '../api/hooks';
+import { isNewClaim } from '../lib/early';
 import { OUTCOMES } from '../lib/meta';
 import { fmtScore } from '../lib/score';
 import type { Outcome, QueueCase } from '../lib/types';
@@ -45,7 +46,7 @@ export function Queue() {
     );
 
   // "New" = not investigated yet, or being investigated right now. "Verdict ready" = the run is over.
-  const fresh = rows.filter((r) => r.status === 'received' || r.status === 'investigating');
+  const fresh = rows.filter((r) => isNewClaim(r.status));
   const ready = rows.filter((r) => r.status === 'awaiting_decision' || r.status === 'decided').sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const visible = ready.filter((r) => filter === 'all' || r.outcome === filter);
   const count = (o: Outcome) => ready.filter((x) => x.outcome === o).length;
@@ -170,12 +171,13 @@ export function Queue() {
                             <span className="mono-value">{q.id}</span> · {q.typeLabel} · {q.place}
                           </p>
                         </div>
+                        {q.status === 'paused' && <span className="chip c-paused">Paused</span>}
                         <span className="chip">Filed {q.filed}</span>
                       </div>
                       {q.description && <p className="new-desc">“{q.description}”</p>}
                       <span className="btn btn-primary">
                         <Play size={14} fill="currentColor" />
-                        {running ? 'Watch the investigation' : 'Open to investigate'}
+                        {running ? 'Watch the investigation' : q.status === 'paused' ? 'Open to continue or decide' : 'Open to investigate'}
                       </span>
                     </a>
                   );

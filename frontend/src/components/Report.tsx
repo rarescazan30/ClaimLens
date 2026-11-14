@@ -1,6 +1,7 @@
-import { ChevronDown, EyeOff, Scale, Workflow } from 'lucide-react';
+import { ChevronDown, EyeOff, Scale, UserRound, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { fmtClock } from '../lib/derive';
+import { contributionTitle, stepName } from '../lib/early';
 import { agentName, AGENTS, BANDS, isAgent, OUTCOMES } from '../lib/meta';
 import { baseOf, fmtScore, pointsOf } from '../lib/score';
 import type { CaseFile, Evidence, ScoreStep } from '../lib/types';
@@ -32,10 +33,14 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
     .map((k) => ({ k, e: c.evidence.find((e) => e.agent === k.agent && e.round === k.round && !e.rejected) }))
     .filter((x): x is { k: (typeof score.contributions)[number]; e: Evidence } => !!x.e)
     .map(({ k, e }) => ({ e, off: false, delta: pointsOf(score.score, k.delta_logit) }));
+  // Client-data lines carry their own reason; they are counted in the score but are not findings that can be set aside.
+  const clientLines = score.contributions
+    .filter((k) => k.agent === 'client')
+    .map((k) => ({ title: contributionTitle(k), delta: pointsOf(score.score, k.delta_logit) }));
   const context = score.contributions.find((k) => k.agent === 'context' && k.delta_logit !== 0);
   const aside = c.evidence.filter((e) => e.rejected).map((e) => ({ e, off: true, delta: 0 }));
   const rows = [...counted.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)), ...aside];
-  const max = Math.max(10, ...rows.map((r) => Math.abs(r.delta)));
+  const max = Math.max(10, ...rows.map((r) => Math.abs(r.delta)), ...clientLines.map((l) => Math.abs(l.delta)));
 
   const flaggedPhotos = c.photos.filter((ph) => ph.status === 'fail').length;
   const planWindow = c.windows.find((w) => w.stage === 'plan');
@@ -122,6 +127,27 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
                 </li>
               );
             })}
+            {clientLines.map((l, i) => {
+              const sign = l.delta > 0 ? 'pos' : l.delta < 0 ? 'neg' : 'zero';
+              return (
+                <li key={`client-${i}`} className={`contrib-row is-${sign}`}>
+                  <div className="contrib-what">
+                    <span className="agent-ico">
+                      <UserRound size={15} />
+                    </span>
+                    <div>
+                      <p className="contrib-title">{l.title}</p>
+                    </div>
+                  </div>
+                  <div className="contrib-bar" role="img" aria-label={`${l.delta > 0 ? 'Adds' : l.delta < 0 ? 'Removes' : 'No effect:'} ${Math.abs(l.delta)} points`}>
+                    <span className="contrib-zero" />
+                    {sign !== 'zero' && <span className="contrib-fill" style={{ width: `${(Math.abs(l.delta) / max) * 50}%`, [l.delta > 0 ? 'left' : 'right']: '50%' }} />}
+                  </div>
+                  <span className="contrib-delta">{l.delta === 0 ? 'No effect' : `${l.delta > 0 ? '+' : '−'}${Math.abs(l.delta)}`}</span>
+                  <span className="contrib-spacer" />
+                </li>
+              );
+            })}
           </ul>
           <footer className="contrib-foot">
             <span>
@@ -156,6 +182,26 @@ export function Report({ c, score, tone, busy, onReject, onJump, children }: Pro
               </li>
             </ul>
             <p className="card-note">A flagged gate sends the case to a person, whatever the score says.</p>
+          </section>
+
+          <section className="card">
+            <header className="card-head">
+              <h3>Flags from the early checks</h3>
+              <span className="chip">{c.flags.length}</span>
+            </header>
+            {c.flags.length ? (
+              <ul className="flag-list">
+                {c.flags.map((f, i) => (
+                  <li key={i} className={`is-${f.severity}`}>
+                    <span className="flag-step">{stepName(f.step)}</span>
+                    <span className="flag-reason">{f.reason}</span>
+                    <span className={`chip${f.severity === 'fail' ? ' v-contradicts' : ''}`}>{f.severity === 'fail' ? 'Fail' : 'Warning'}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="card-note">The early checks raised no flags.</p>
+            )}
           </section>
 
           <details className="card fold">

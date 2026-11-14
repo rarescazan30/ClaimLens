@@ -1,13 +1,16 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { listQueue } from '../api/hooks';
+import { isNewClaim } from '../lib/early';
 import { navigate } from '../lib/hooks';
 import { OUTCOMES } from '../lib/meta';
 import { fmtScore } from '../lib/score';
 import type { QueueCase } from '../lib/types';
 
 const stateText = (r: QueueCase) =>
-  r.status === 'received'
+  r.status === 'paused'
+    ? 'Paused'
+    : r.status === 'received'
     ? 'Ready to investigate'
     : r.status === 'investigating'
       ? 'Investigating'
@@ -28,7 +31,7 @@ export function ClaimMenu({ open, current, onClose }: { open: boolean; current?:
     return () => window.removeEventListener('keydown', on);
   }, [open, onClose]);
   if (!open) return null;
-  const waiting = (r: QueueCase) => Number(r.status === 'received' || r.status === 'investigating');
+  const waiting = (r: QueueCase) => Number(isNewClaim(r.status));
   const sorted = [...rows].sort((a, b) => waiting(b) - waiting(a));
   return (
     <>

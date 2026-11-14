@@ -11,6 +11,8 @@ interface Props {
   decision?: Decision;
   questions: Question[];
   busy: boolean;
+  /** The run waits after a failed policy rule: only "Choose another route" is offered, never Approve or Ask. */
+  paused?: boolean;
   /** POST /claims/{id}/decision with decision "approve". */
   onApprove: () => void;
   /** POST /claims/{id}/decision with decision "modify": another outcome, with a reason. */
@@ -19,7 +21,7 @@ interface Props {
   onAsk: (question: string) => void;
 }
 
-export function DecisionPanel({ ready, recommended, decision, questions, busy, onApprove, onOverride, onAsk }: Props) {
+export function DecisionPanel({ ready, recommended, decision, questions, busy, paused, onApprove, onOverride, onAsk }: Props) {
   const [mode, setMode] = useState<'idle' | 'override' | 'ask'>('idle');
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [reason, setReason] = useState('');
@@ -44,7 +46,7 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
     );
   }
 
-  if (!ready || !recommended) {
+  if (!paused && (!ready || !recommended)) {
     return (
       <div className="decision is-waiting">
         <p className="decision-title">Your decision opens when the verdict is in</p>
@@ -53,16 +55,27 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
     );
   }
 
-  const rec = OUTCOMES[recommended];
+  const rec = recommended ? OUTCOMES[recommended] : undefined;
   const others = (Object.keys(OUTCOMES) as Outcome[]).filter((r) => r !== recommended);
+  const choosing = paused || mode === 'override';
 
   return (
     <div className="decision">
-      <div className="decision-rec">
-        <p className="eyebrow">Recommended next step</p>
-        <p className="decision-title">{rec.action}</p>
-        <p>{rec.desc}</p>
-      </div>
+      {paused ? (
+        <div className="decision-rec">
+          <p className="eyebrow">Choose an outcome</p>
+          <p>The investigation has not started, so there is no recommendation. Pick the route yourself and say why.</p>
+        </div>
+      ) : (
+        rec && (
+          <div className="decision-rec">
+            <p className="eyebrow">Recommended next step</p>
+            <p className="decision-title">{rec.action}</p>
+            <p>{rec.desc}</p>
+          </div>
+        )
+      )}
+      {!paused && (
       <div className="decision-actions">
         <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
           <Check size={15} strokeWidth={2.6} />
@@ -76,8 +89,9 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
           Ask for more
         </button>
       </div>
+      )}
 
-      {mode === 'override' && (
+      {choosing && (
         <div className="decision-more">
           <div className="route-options" role="radiogroup" aria-label="Route">
             {others.map((r) => (
@@ -87,7 +101,7 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
               </button>
             ))}
           </div>
-          <p className="field-label">Why are you overriding?</p>
+          <p className="field-label">{paused ? 'Why this outcome?' : 'Why are you overriding?'}</p>
           <div className="reason-chips">
             {REASONS.map((x) => (
               <button type="button" key={x} className={`chip is-button${reason === x ? ' is-on' : ''}`} aria-pressed={reason === x} onClick={() => { setReason(x); setError(''); }}>
@@ -107,12 +121,12 @@ export function DecisionPanel({ ready, recommended, decision, questions, busy, o
               setMode('idle');
             }}
           >
-            Confirm override
+            {paused ? 'Confirm outcome' : 'Confirm override'}
           </button>
         </div>
       )}
 
-      {mode === 'ask' && (
+      {!paused && mode === 'ask' && (
         <form
           className="decision-more"
           onSubmit={(e) => {
