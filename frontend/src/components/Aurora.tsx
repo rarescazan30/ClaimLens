@@ -82,15 +82,25 @@ export function Aurora({ x = 0.5, y = 0.5, spread = 2.4, tone = 'accent', gain =
       setFallback(true);
       return;
     }
+    // Some browsers hand out a WebGL context that is already lost (Safari with the GPU busy or switched off):
+    // every create call then returns null. The light is decoration, so fall back to the CSS gradient
+    // instead of letting the error take the whole page down.
     const compile = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
+      const s = gl.createShader(type);
+      if (!s) return null;
       gl.shaderSource(s, src);
       gl.compileShader(s);
       return s;
     };
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    const prog = gl.createProgram();
+    const vert = compile(gl.VERTEX_SHADER, VERT);
+    const frag = compile(gl.FRAGMENT_SHADER, FRAG);
+    if (gl.isContextLost() || !prog || !vert || !frag) {
+      setFallback(true);
+      return;
+    }
+    gl.attachShader(prog, vert);
+    gl.attachShader(prog, frag);
     gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
       setFallback(true);
@@ -162,7 +172,9 @@ export function Aurora({ x = 0.5, y = 0.5, spread = 2.4, tone = 'accent', gain =
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      // The context is left alone: React's development double-mount reuses this canvas, and a context that
+      // was thrown away here stays lost in Safari. The browser frees it when the canvas goes.
+      gl.deleteProgram(prog);
     };
     // The shader is set up once; props flow in through `target`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
