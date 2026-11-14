@@ -2,13 +2,16 @@
 
 Demo anchored on real events. Claims and people are **synthetic**.
 
-| Case | File | Event (real) | Expected outcome |
+| Case | File | Documents | Meant to show |
 | --- | --- | --- | --- |
-| "Smart fraud" | `cases/fraud.json` (C-1042) | Galați flood, 14.09.2024, Copernicus CEMS EMSR758 | Round 2 re-dispatch → antifraud referral |
-| Honest | `cases/honest.json` (C-1038) | Windstorm, 26.11.2023, Galați | Fast-track |
+| C-8001 flood | `cases/flood.json` | `documents/flood/` (the team's PDFs + `poza.png`) | Galați flood 14.09.2024, Pechea; runs through to the agents |
+| C-8002 storm | `cases/storm.json` | `documents/storm/` (the team's PDFs + `poza.png`) | Bucharest windstorm 17.07.2025; runs through to the agents |
+| C-8003 paused | `cases/paused.json` | `documents/paused/` (generated) + `flood/poza.png` | The flood claim on a policy (P-8003) that expired 31.01.2024: pauses on `policy_active` |
 
-Both files are **drafts**: addresses are placeholders and there are no photos yet. The backend loads every
-`cases/*.json` at startup.
+`cases/` holds case files only; documents and photos live together in `documents/`. The team's files in
+`documents/flood|storm` are the standard template and are not edited. `documents/paused/` is written from
+`cases/sources/C-8003.json` by `backend/scripts/make_documents.py`. All people are synthetic; the team's CNPs fail
+the checksum, so every demo claim shows a `cnp_invalid` warning. The backend loads every `cases/*.json` at startup.
 
 ## What we measured (use these numbers in the pitch)
 
@@ -30,14 +33,6 @@ Things that are **not** true and must not be said: "140 mm in 48 h" (the data sh
   measured) shows as 53.6 km/h. Large winter windstorms are captured well, which is why the honest case uses
   26.11.2023.
 - OpenStreetMap has almost no buildings mapped around Pechea, so "is there a house here" has to be checked by eye.
-
-## To finish the cases
-
-1. Check each address with `python backend/scripts/check_site.py <lat> <lon> <date>`.
-2. Fraud photos: metadata stripped; at least one must be a real flood picture already published online
-   before 14.09.2024 (otherwise the web copy search correctly finds nothing).
-3. Honest photos: real roof damage, EXIF date 26–27.11.2023.
-4. Put photos in `cases/photos/<claim id>/` and list them in the case file as `"<claim id>/<file>"`.
 
 Other folders: `cache/` saved API responses (committed, used by replay mode), `mock/` sample API responses
 for the frontend, and the backup video goes here too.

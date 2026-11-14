@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.db import Store
-from app.seed import DEMO, seed
+from app.seed import documents_dir, seed
 from engine import http, modes
 from engine.documents import from_claim, read_document, write_document
 from engine.graph import run_investigation
@@ -52,8 +52,8 @@ class QuestionIn(BaseModel):
 
 def create_app(cases_dir: Path | None = None) -> FastAPI:
     data_dir = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parents[1] / "data")
-    photo_roots = [data_dir / "photos", DEMO / "cases" / "photos"]
-    document_roots = [data_dir / "documents", (cases_dir or DEMO / "cases") / "documents"]
+    photo_roots = [data_dir / "photos", documents_dir(cases_dir)]        # demo photos sit with their documents
+    document_roots = [data_dir / "documents", documents_dir(cases_dir)]
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):

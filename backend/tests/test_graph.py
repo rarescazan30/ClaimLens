@@ -198,12 +198,10 @@ def test_should_stop_counts_rounds_from_first_round():
 from engine.documents import write_document  # noqa: E402
 from engine.models import Flag, RuleFlag  # noqa: E402
 
-DOC_CLAIM = {
-    "numar_dosar": "C-1042", "numar_polita": "P-7731", "nume_asigurat": "Persoană Sintetică Unu",
-    "cnp": "1800101123456", "telefon": "+40 700 000 000", "email": "nume@example.ro",
-    "iban": "RO49AAAA1B31007593840000", "adresa_daunei": "Str. Exemplu 12, Pechea, jud. Galați",
-    "tip_dauna": "inundație", "data_evenimentului": "2024-09-14", "data_notificarii": "2024-09-19",
-    "descriere": "Apa a intrat în casă", "suma_solicitata": "48000", "numar_fotografii": "0",
+DOC_CLAIM = {   # no coordinates: the client step geocodes the address
+    "numar_polita": "P-7731", "tip_dauna": "inundație", "data_evenimentului": "2024-09-14",
+    "data_notificarii": "2024-09-19", "adresa_daunei": "Str. Exemplu 12, Pechea, jud. Galați",
+    "descriere": "Apa a intrat în casă",
 }
 DOC_POLICY = {
     "numar_polita": "P-7731", "produs": "PAD", "nume_asigurat": "Persoană Sintetică Unu",
@@ -265,14 +263,15 @@ class Recorder:
 
 async def test_all_rules_pass_runs_through_to_the_verdict(sink, docs_ok):
     rec, calls = Recorder(), []
-    out = await run_investigation({}, {}, CFG, sink, documents=docs_ok, photos=[], agents=rec.agents(calls),
-                                  planner=rec.planner, judge=rec.judge)
+    out = await run_investigation({"id": "C-1042", "amount_claimed": 48000}, {}, CFG, sink, documents=docs_ok,
+                                  photos=[], agents=rec.agents(calls), planner=rec.planner, judge=rec.judge)
     assert out is not None
     assert [s.step_id for s in sink.steps][:6] == ["intake", "documents", "client", "rules", "photos", "plan"]
     assert all(s.parent is None for s in sink.steps[:5])
     assert [r.step for r in sink.check_results] == ["intake", "documents", "client", "policy", "photos"]
     assert sink.read_fields["lat"] == 45.6 and sink.read_fields["lon"] == 27.7
-    assert sink.read_fields["damage_type"] == "flood" and sink.read_fields["amount_claimed"] == 48000
+    assert sink.read_fields["damage_type"] == "flood" and "amount_claimed" not in sink.read_fields
+    assert all(t.claim["amount_claimed"] == 48000 for _, t in rec.tasks)   # not on the form: the API's amount stays
     assert len(calls) == 6 and all(t.claim["lat"] == 45.6 for _, t in rec.tasks)
     early = [f for r in sink.check_results for f in r.flags]
     assert rec.plan_flags == [early] and rec.judge_flags == [early]

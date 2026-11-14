@@ -66,8 +66,7 @@ def test_amount_above_sum_insured_fails_the_new_rule():
     assert _rules(claim={"amount_claimed": 120000})["amount_within_sum_insured"].passed is False
 
 
-def test_amount_missing_fails_the_rule():
-    assert _rules(claim={"amount_claimed": None})["amount_within_sum_insured"].passed is False
+def test_sum_insured_missing_fails_the_rule_when_an_amount_is_stated():
     assert _rules(policy={"sum_insured": None})["amount_within_sum_insured"].passed is False
 
 
@@ -98,3 +97,12 @@ def test_policy_flags_items_and_flags():
     by = {i.id: i for i in res.items}
     assert by["risk_covered"].status == "fail" and by["policy_active"].status == "ok"
     assert [(f.code, f.severity, f.step, f.field) for f in res.flags] == [("risk_covered", "fail", "policy", None)]
+
+
+def test_no_amount_on_the_claim_does_not_fail_the_amount_rule():
+    r = _rules(claim={"amount_claimed": None})["amount_within_sum_insured"]
+    assert r.passed is True and r.reason == "Cererea nu declară o sumă; regula nu se aplică"
+
+
+def test_stated_amount_above_sum_insured_still_fails():
+    assert _rules(claim={"amount_claimed": 100001})["amount_within_sum_insured"].passed is False

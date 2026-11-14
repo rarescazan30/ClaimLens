@@ -101,7 +101,7 @@ claim's), `holder_name`, `address`, `valid_from`, `valid_to`, `waiting_days`, `c
     "photos":    {"step": "photos", "items": [...], "flags": [...]}
   },
   "flags": [Flag],
-  "documents": {"claim_form": {"numar_dosar": "C-1042", "...": "..."}, "policy": {"numar_polita": "P-7731"}},
+  "documents": {"claim_form": {"numar_polita": "P-8001", "...": "..."}, "policy": {"numar_polita": "P-8001"}},
   "run_mode": "live | replay | record | null"
 }
 ```
@@ -113,6 +113,11 @@ claim's), `holder_name`, `address`, `valid_from`, `valid_to`, `waiting_days`, `c
 - `documents`: the fields read from each PDF, by form-field name (`CLAIM_FIELDS` / `POLICY_FIELDS` in
   `backend/engine/documents.py`), read again on every request; `{}` for one PDF that is missing or unreadable;
   `{}` overall for a claim without documents.
+- Document fields follow the demo team's template (`demo/documents/flood|storm`). Claim form: `numar_polita,
+  tip_dauna, data_evenimentului, data_notificarii, adresa_daunei, latitudine, longitudine, descriere` (no claim
+  number, claimant identity, IBAN, amount or photo count). Policy: `numar_polita, produs, riscuri_acoperite,
+  suma_asigurata, nume_asigurat, cnp, email, telefon, adresa_titular, valabila_de_la, valabila_pana_la,
+  zile_asteptare, adresa_asigurata, latitudine, longitudine`. New documents flag: `policy_number_mismatch` (warn).
 - `run_mode`: the mode of the latest run (`null` before any run).
 - `claim` no longer carries `documents`, `checks`, `early_flags` or `run_mode`.
 

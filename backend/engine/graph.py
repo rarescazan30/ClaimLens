@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from engine import intake
 from engine.client import check_client
 from engine.context import AgentContext
-from engine.documents import check_documents, check_intake, to_claim
+from engine.documents import check_documents, check_intake
 from engine.models import Evidence, Flag, Hypothesis, RuleFlag, ScoreResult, Sink, TraceStep, WeightConfig, now_iso
 from engine.rules import check_policy, context_term, policy_flags
 from engine.score import compute_score
@@ -137,14 +137,15 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
         planner = planner or prompts.plan_hypotheses
         if judge is None:
             async def judge(*args, **kw):   # the claim summary is built when asked: the documents may fill it in
-                declared = f"{claim.get('description') or ''} (sumă cerută: {claim.get('amount_claimed')})"
+                amount = claim.get("amount_claimed")
+                declared = (claim.get("description") or "") + (f" (sumă cerută: {amount})" if amount is not None else "")
                 return await prompts.judge_round(*args, claim_summary=declared, **kw)
 
     reading = documents is not None and resume is None and not extra_question
     resuming = resume is not None and not extra_question
     if reading:
         claim_doc, policy_doc = intake.read_documents(documents)
-        claim["id"] = claim.get("id") or claim_doc.fields.get("numar_dosar") or "necunoscut"
+        claim["id"] = claim.get("id") or "necunoscut"   # the claim form has no claim number
     if (reading or resuming) and photos is not None:
         claim["photo_paths"] = [str(p) for p in photos]
         if earlier_photos is not None:
@@ -173,7 +174,7 @@ async def run_investigation(claim: dict, policy: dict, cfg: WeightConfig, sink: 
                **(outputs or {})}, t0=t0)
 
     async def intake_node(state: State) -> State:
-        result = check_intake(documents, photos or [], to_claim(claim_doc, policy_doc)[0].get("declared_photos"))
+        result = check_intake(documents, photos or [], None)   # the team's claim form declares no photo count
         report("intake", "intake", "observation", "Dosar primit", result)
         return {"early_flags": list(result.flags)}
 

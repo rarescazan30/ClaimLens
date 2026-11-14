@@ -1,8 +1,14 @@
-"""Client data step: identity, contact, bank account and address checks. Findings are warnings, never verdicts."""
+"""Client data step: identity, contact, bank account and address checks. Findings are warnings, never verdicts.
+
+The team's claim form carries no identity: the policyholder's own data (CNP, phone, e-mail) is read from the policy
+and checked there; claim-vs-policy comparisons run only when the claim side has the value. Coordinates written on
+the documents locate the two points directly; only an address without coordinates is geocoded.
+"""
 from __future__ import annotations
 
 import unicodedata
 
+from engine.documents import _parse_lat, _parse_lon
 from engine.geocode import GeoHit, geocode
 from engine.models import CheckItem, Flag, ReadDocument, StepResult
 from engine.validators import cnp_valid, email_valid, iban_valid, phone_valid
@@ -40,27 +46,31 @@ async def check_client(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tup
         else:
             add("name", "Numele asiguratului", name, "flag",
                 f"Numele din cerere („{name}”) diferă de cel din poliță („{pname}”).", "name_mismatch", "nume_asigurat")
+    elif pname:
+        add("name", "Numele asiguratului", pname, "info", "din poliță (cererea nu are numele asiguratului)")
     else:
-        add("name", "Numele asiguratului", name or None, "info", "nu este completat")
+        add("name", "Numele asiguratului", None, "info", "nu este completat")
 
     # CNP
-    cnp, pcnp = get(c, "cnp"), get(p, "cnp")
+    ccnp, pcnp = get(c, "cnp"), get(p, "cnp")
+    cnp = ccnp or pcnp
+    where = "din cerere" if ccnp else "asiguratului (din poliță)"
     if not cnp:
         add("cnp", "CNP", None, "info", "nu este completat")
     elif not cnp_valid(cnp):
-        add("cnp", "CNP", _mask(cnp), "flag", "CNP-ul din cerere nu are un format valid (cifra de control nu corespunde).",
+        add("cnp", "CNP", _mask(cnp), "flag", f"CNP-ul {where} nu are un format valid (cifra de control nu corespunde).",
             "cnp_invalid", "cnp")
     else:
         add("cnp", "CNP", _mask(cnp), "ok")
-    if cnp and pcnp:
-        if "".join(cnp.split()) == "".join(pcnp.split()):
+    if ccnp and pcnp:
+        if "".join(ccnp.split()) == "".join(pcnp.split()):
             add("cnp_match", "CNP identic în cerere și poliță", _mask(pcnp), "ok")
         else:
             add("cnp_match", "CNP identic în cerere și poliță", _mask(pcnp), "flag",
                 "CNP-ul din cerere diferă de cel din poliță.", "cnp_mismatch", "cnp")
 
     # Phone
-    phone = get(c, "telefon")
+    phone = get(c, "telefon") or get(p, "telefon")
     if not phone:
         add("telefon", "Telefon", None, "info", "nu este completat")
     elif phone_valid(phone):
@@ -69,7 +79,7 @@ async def check_client(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tup
         add("telefon", "Telefon", phone, "flag", "Numărul de telefon nu are un format românesc valid.", "phone_invalid", "telefon")
 
     # Email (optional)
-    email = get(c, "email")
+    email = get(c, "email") or get(p, "email")
     if not email:
         add("email", "E-mail", None, "info", "nu este completat")
     elif email_valid(email):
@@ -86,12 +96,24 @@ async def check_client(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tup
     else:
         add("iban", "IBAN", _mask(iban), "flag", "IBAN-ul nu este valid (cifra de control nu corespunde).", "iban_invalid", "iban")
 
-    # Addresses: looked up one after the other (Nominatim allows about one request per second)
-    claim_addr, policy_addr = get(c, "adresa_daunei"), get(p, "adresa_asigurata")
-    claim_pt = await geocode(claim_addr) if claim_addr else None
-    policy_pt = await geocode(policy_addr) if policy_addr else None
+    def written(d: dict) -> GeoHit | None:
+        lat, lon = _parse_lat(d.get("latitudine")), _parse_lon(d.get("longitudine"))
+        return GeoHit(lat=lat, lon=lon, precision="house") if lat is not None and lon is not None else None
 
-    if not claim_addr:
+    # Addresses: coordinates on the document first; otherwise looked up one after the other (Nominatim allows
+    # about one request per second)
+    claim_addr, policy_addr = get(c, "adresa_daunei"), get(p, "adresa_asigurata")
+    claim_pt, policy_pt = written(c), written(p)
+    claim_written, policy_written = claim_pt is not None, policy_pt is not None
+    if claim_pt is None and claim_addr:
+        claim_pt = await geocode(claim_addr)
+    if policy_pt is None and policy_addr:
+        policy_pt = await geocode(policy_addr)
+
+    if claim_written:
+        add("adresa_daunei", "Adresa daunei", claim_addr or None, "ok",
+            f"Coordonate din cerere: {claim_pt.lat}, {claim_pt.lon}")
+    elif not claim_addr:
         add("adresa_daunei", "Adresa daunei", None, "info", "nu este completat")
     elif claim_pt is None:
         add("adresa_daunei", "Adresa daunei", claim_addr, "flag", "Adresa daunei nu a putut fi localizată pe hartă.",
@@ -102,7 +124,10 @@ async def check_client(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tup
     else:
         add("adresa_daunei", "Adresa daunei", claim_addr, "ok")
 
-    if not policy_addr:
+    if policy_written:
+        add("adresa_asigurata", "Adresa asigurată", policy_addr or None, "ok",
+            f"Coordonate din poliță: {policy_pt.lat}, {policy_pt.lon}")
+    elif not policy_addr:
         add("adresa_asigurata", "Adresa asigurată", None, "info", "nu este completat")
     elif policy_pt is None:
         add("adresa_asigurata", "Adresa asigurată", policy_addr, "info", "Adresa din poliță nu a putut fi localizată pe hartă.")

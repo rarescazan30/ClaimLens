@@ -95,7 +95,7 @@ async def test_bad_cnp_email_iban_flagged(route):
 
 async def test_empty_optional_and_required_fields_give_info_not_flags(route):
     route(HOUSE)
-    result, _, _ = await check_client(doc(email="", iban="", cnp="", telefon=""), pol())
+    result, _, _ = await check_client(doc(email="", iban="", cnp="", telefon=""), pol(cnp=""))
     assert result.flags == []
     by_id = {i.id: i for i in result.items}
     assert by_id["email"].status == "info" and by_id["email"].reason == "nu este completat"
@@ -109,3 +109,31 @@ async def test_cnp_and_iban_are_masked_in_items(route):
     assert by_id["cnp"].value == "•••••••••0000"
     assert by_id["iban"].value.endswith("0000") and "RO49" not in by_id["iban"].value
     assert "1960101170000" not in str([i.value for i in result.items])
+
+
+# ---- the demo team's documents ------------------------------------------------------------------
+from pathlib import Path  # noqa: E402
+
+from engine.documents import read_document  # noqa: E402
+
+TEAM = Path(__file__).resolve().parents[2] / "demo" / "documents"
+
+
+def team(name):
+    return read_document(TEAM / name / "claim.pdf", "claim_form"), read_document(TEAM / name / "policy.pdf", "policy")
+
+
+async def test_coordinates_from_documents_skip_geocoding(route):
+    calls = route({"nominatim": 500})
+    result, claim_pt, policy_pt = await check_client(*team("flood"))
+    assert (claim_pt.lat, claim_pt.lon) == (policy_pt.lat, policy_pt.lon) == (45.6319, 27.8017)
+    assert not {"address_not_found", "address_imprecise"} & set(codes(result))
+    assert calls == []
+
+
+async def test_policyholder_cnp_is_checked(route):
+    route({"nominatim": 500})
+    for name in ("flood", "storm"):
+        result, _, _ = await check_client(*team(name))
+        assert "cnp_invalid" in codes(result)                       # the team's CNPs fail the checksum
+        assert not {"name_mismatch", "cnp_mismatch"} & set(codes(result))   # the claim form carries no identity

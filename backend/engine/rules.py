@@ -69,8 +69,10 @@ def check_policy(claim: dict, policy: dict, claim_point: GeoHit | None = None,
             f"Notificat la {days} zile de la eveniment (termen: {NOTIFY_DAYS} zile)")
 
     amount, insured = claim.get("amount_claimed"), policy.get("sum_insured")
-    if amount is None or insured is None:
-        add("amount_within_sum_insured", False, "", "Lipsește suma cerută sau suma asigurată")
+    if amount is None:   # the team's claim form has no amount: the rule cannot apply, and must not pause the claim
+        add("amount_within_sum_insured", True, "Cererea nu declară o sumă; regula nu se aplică", "")
+    elif insured is None:
+        add("amount_within_sum_insured", False, "", "Lipsește suma asigurată")
     else:
         add("amount_within_sum_insured", amount <= insured,
             f"Suma cerută ({amount}) este în limita sumei asigurate ({insured})",

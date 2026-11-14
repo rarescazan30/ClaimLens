@@ -1,9 +1,11 @@
 """Load demo cases, weight profiles and stored event footprints. Safe to run at every startup.
 
 A case file is either the old format (`{"policy": {...}, "claim": {...}}`) or points to the claim's two PDFs:
-`{"documents": {"claim_form": "C-1042/claim_form.pdf", "policy": "C-1042/policy.pdf"}, "claim": {"photos": [...]}}`,
-paths under `<cases>/documents/`. The PDFs are only read here (no checks, no geocoding), so the queue shows the
-claim before any run; the run itself reads them again from the start.
+`{"claim": {"id": "C-8001", "documents": {"claim_form": "flood/claim.pdf", "policy": "flood/policy.pdf"},
+"photos": ["flood/poza.png"]}}` (`documents` may also sit next to `claim`). Documents and photos live together under
+`documents_dir(cases_dir)` (`demo/documents/` for the demo); `demo/cases/` holds case files only. The claim number
+comes from the case file (the claim form has none). The PDFs are only read here (no checks, no geocoding), so the
+queue shows the claim before any run; the run itself reads them again from the start.
 """
 from __future__ import annotations
 
@@ -19,8 +21,18 @@ CLAIM_COLUMNS = ("id", "policy_id", "damage_type", "event_date", "notified_at", 
                  "description", "amount_claimed", "photos")
 
 
+def documents_dir(cases_dir: Path | None = None) -> Path:
+    """Where a cases folder's documents and photos live: `documents/` next to it."""
+    return (cases_dir or DEMO / "cases").parent / "documents"
+
+
+def _documents(case: dict) -> dict | None:
+    names = case.get("documents") or (case.get("claim") or {}).get("documents")
+    return names if isinstance(names, dict) else None
+
+
 def _from_documents(case: dict, docs_dir: Path) -> tuple[dict, dict]:
-    names = case["documents"]
+    names = _documents(case)
 
     def read(kind):
         root = docs_dir.resolve()
@@ -43,8 +55,8 @@ def seed(store: Store, cases_dir: Path | None = None) -> None:
     cases_dir = cases_dir or DEMO / "cases"
     for path in sorted(cases_dir.glob("*.json")):
         case = json.loads(path.read_text())
-        if "documents" in case:
-            claim, policy = _from_documents(case, cases_dir / "documents")
+        if _documents(case):
+            claim, policy = _from_documents(case, documents_dir(cases_dir))
             if policy.get("id"):
                 store.upsert_policy({**(store.get_policy(policy["id"]) or {}), **policy})
             if claim.get("id") and store.get_claim(claim["id"]) is None:

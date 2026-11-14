@@ -11,11 +11,11 @@ from engine.models import CheckItem, Finding, Flag, ReadDocument, RuleFlag, Step
 from engine.photos import check_photos
 
 # Claim keys whose value comes from the documents. A key the documents leave empty is dropped, never kept from
-# an older copy of the claim. "id" stays the caller's (the API's claim id).
-CLAIM_READ_KEYS = ("policy_id", "damage_type", "event_date", "notified_at", "address", "description",
-                   "amount_claimed", "declared_photos", "lat", "lon")
-POLICY_READ_KEYS = ("id", "holder_name", "address", "valid_from", "valid_to", "waiting_days", "covered_risks",
-                    "sum_insured", "product")
+# an older copy of the claim. "id" stays the caller's (the API's claim id). The team's claim form has no amount:
+# an amount the API was given stays on the claim.
+CLAIM_READ_KEYS = ("policy_id", "damage_type", "event_date", "notified_at", "address", "description", "lat", "lon")
+POLICY_READ_KEYS = ("id", "holder_name", "address", "lat", "lon", "valid_from", "valid_to", "waiting_days",
+                    "covered_risks", "sum_insured", "product")
 
 
 def read_documents(documents: dict[str, Path | None]) -> tuple[ReadDocument, ReadDocument]:

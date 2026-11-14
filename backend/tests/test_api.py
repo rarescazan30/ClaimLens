@@ -376,7 +376,7 @@ def test_documents_are_served_and_cannot_escape_their_folder(client, tmp_path):
     from engine.documents import read_document
     cid = create(client)
     wait(client, cid)
-    for name, kind, field, value in (("claim_form.pdf", "claim_form", "numar_dosar", cid),
+    for name, kind, field, value in (("claim_form.pdf", "claim_form", "numar_polita", "P-1"),
                                      ("policy.pdf", "policy", "nume_asigurat", "Test")):
         r = client.get(f"/documents/{cid}/{name}")
         assert r.status_code == 200 and r.content.startswith(b"%PDF")
@@ -398,7 +398,7 @@ def test_case_response_has_checks_flags_documents_and_run_mode(client):
     assert set(body["checks"]) == {"intake", "documents", "client", "policy", "photos"}
     assert set(body["checks"]["client"]) == {"step", "items", "flags"}
     assert "cnp_invalid" in [f["code"] for f in body["flags"]]
-    assert body["documents"]["claim_form"]["numar_dosar"] == cid
+    assert body["documents"]["claim_form"]["numar_polita"] == "P-1"
     assert body["documents"]["claim_form"]["tip_dauna"] == "inundație"
     assert body["documents"]["policy"]["nume_asigurat"] == "Test"
     assert body["run_mode"] == "live"
@@ -455,15 +455,18 @@ def test_seed_reads_claims_from_their_documents(tmp_path, monkeypatch):
     from engine.documents import write_document
     from app.main import create_app
     cases = tmp_path / "cases"
-    (cases / "documents" / "C-9").mkdir(parents=True)
-    write_document({"numar_dosar": "C-9", "numar_polita": "P-9", "nume_asigurat": "Ana Pop",
-                    "adresa_daunei": "Str. Y 2", "tip_dauna": "furtună", "data_evenimentului": "2024-09-14",
-                    "suma_solicitata": "5000"}, "claim_form", cases / "documents" / "C-9" / "claim_form.pdf")
+    docs = tmp_path / "documents" / "C-9"                     # documents live next to the cases folder
+    docs.mkdir(parents=True)
+    cases.mkdir()
+    write_document({"numar_polita": "P-9", "adresa_daunei": "Str. Y 2", "tip_dauna": "furtună",
+                    "data_evenimentului": "2024-09-14", "latitudine": "45.1", "longitudine": "27.1"},
+                   "claim_form", docs / "claim_form.pdf")
     write_document({"numar_polita": "P-9", "nume_asigurat": "Ana Pop", "valabila_de_la": "2024-01-01",
                     "valabila_pana_la": "2024-12-31", "riscuri_acoperite": "furtună", "suma_asigurata": "90000"},
-                   "policy", cases / "documents" / "C-9" / "policy.pdf")
-    (cases / "new.json").write_text(json.dumps(
-        {"documents": {"claim_form": "C-9/claim_form.pdf", "policy": "C-9/policy.pdf"}, "claim": {"photos": []}}))
+                   "policy", docs / "policy.pdf")
+    (cases / "new.json").write_text(json.dumps({"claim": {
+        "id": "C-9", "documents": {"claim_form": "C-9/claim_form.pdf", "policy": "C-9/policy.pdf"}, "photos": [],
+        "amount_claimed": 5000}}))
     (cases / "old.json").write_text(json.dumps({"policy": POLICY, "claim": {**CLAIM, "id": "C-OLD"}}))
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     with TestClient(create_app(cases_dir=cases)) as c:
@@ -473,7 +476,8 @@ def test_seed_reads_claims_from_their_documents(tmp_path, monkeypatch):
         body = c.get("/claims/C-9").json()
         assert body["policy"]["holder_name"] == "Ana Pop" and body["policy"]["sum_insured"] == 90000
         assert body["claim"]["amount_claimed"] == 5000 and body["checks"] == {}
-        assert body["documents"]["claim_form"]["numar_dosar"] == "C-9"
+        assert body["documents"]["claim_form"]["numar_polita"] == "P-9"
+        assert (body["claim"]["lat"], body["claim"]["lon"]) == (45.1, 27.1)
         assert c.get("/documents/C-9/policy.pdf").content.startswith(b"%PDF")
 
 
@@ -499,6 +503,6 @@ def test_claim_with_full_client_data_gets_no_flags_and_no_client_lines(client):
     body = client.get(f"/claims/{cid}").json()
     assert body["flags"] == []
     assert body["documents"]["policy"]["cnp"] == "1800101123450"
-    assert body["documents"]["claim_form"]["telefon"] == "0722123456"
+    assert body["documents"]["policy"]["telefon"] == "0722123456"   # the policyholder's data, on the policy
     assert [c for c in body["score"]["contributions"] if c["agent"] == "client"] == []
     assert body["policy"]["cnp"] == "1800101123450" and "unknown_key" not in body["policy"]
