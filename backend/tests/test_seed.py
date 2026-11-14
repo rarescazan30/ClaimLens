@@ -15,11 +15,22 @@ def test_demo_claims_load_from_the_team_documents(tmp_path):
     store.create_schema()
     seed(store)
     ids = {c["id"] for c in store.list_claims()}
-    assert {"C-8001", "C-8002", "C-8003"} <= ids
+    assert ids == {"C-8001", "C-8002"}   # two fresh claims for the live demo; C-8003 lives in demo/extra
     c = store.get_claim("C-8001")
     assert store.get_policy(c["policy_id"])["holder_name"] == "Mircea Popescu"
-    third = store.get_claim("C-8003")
-    assert store.get_policy(third["policy_id"])["holder_name"] == "Andrei Stan"   # not a second Mircea Popescu
+    assert store.get_policy(store.get_claim("C-8002")["policy_id"])["holder_name"] == "Maria Ionescu"
+
+
+def test_reset_demo_starts_from_fresh_claims(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    old = Store(tmp_path / "claimlens.db"); old.create_schema()
+    old.upsert_claim({"id": "C-OLD", "policy_id": "P", "status": "decided"})
+    monkeypatch.setenv("RESET_DEMO", "1")
+    with TestClient(create_app()) as client:
+        rows = client.get("/claims").json()
+    assert {r["id"] for r in rows} == {"C-8001", "C-8002"} and all(r["status"] == "received" for r in rows)
 
 
 async def test_paused_demo_claim_pauses(sink, route):

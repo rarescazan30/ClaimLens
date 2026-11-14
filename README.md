@@ -61,11 +61,15 @@ claims** (`RECORD=1`, see below); until then a replayed run gets "unavailable" A
 Three modes: **live** (default, no variable): every run really calls the sources and the AI, nothing saved is reused.
 **Replay** (`REPLAY=1`): only saved answers. **Record** (`RECORD=1`): live, and overwrites the saved answers.
 
-If you ran the backend before, delete the old local database once so the new demo claims load cleanly:
+To start the demo from fresh claims (the 2 live claims not yet analysed), start the backend with `RESET_DEMO=1`
+once; it deletes the local database and loads the claims again:
 
 ```bash
-rm -f data/claimlens.db
+RESET_DEMO=1 .venv/bin/uvicorn app.main:app --port 8000
 ```
+
+The queue then shows 2 new claims to analyse live (C-8001 Mircea Popescu, C-8002 Maria Ionescu) and 3 archived
+claims with a verdict (C-7001–C-7003, display only). The paused-policy example (C-8003) is in `demo/extra/`.
 
 ### 3. Frontend (terminal 2)
 
@@ -146,7 +150,6 @@ The demo claims:
 | --- | --- | --- |
 | C-8001, flood, Pechea (DJ255 nr. 19) | Real flood of 14.09.2024 | to be recorded with keys |
 | C-8002, storm, București (Str. Borșa 15) | Storm of 17.07.2025 | to be recorded with keys |
-| C-8003, flood, Pechea | Same as C-8001, but the policy expired on 31.01.2024 | **pauses** at the policy check |
 
 Documents and photos are in `demo/documents/` (from the demo team). People are synthetic. Both CNPs in the team's
 policies fail the official checksum, so each claim shows an "invalid CNP" flag. Details:

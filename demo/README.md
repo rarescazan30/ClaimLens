@@ -6,7 +6,7 @@ Demo anchored on real events. Claims and people are **synthetic**.
 | --- | --- | --- | --- |
 | C-8001 flood | `cases/flood.json` | `documents/flood/` (the team's PDFs + `poza.png`) | Galați flood 14.09.2024, Pechea; runs through to the agents |
 | C-8002 storm | `cases/storm.json` | `documents/storm/` (the team's PDFs + `poza.png`) | Bucharest windstorm 17.07.2025; runs through to the agents |
-| C-8003 paused | `cases/paused.json` | `documents/paused/` (generated) + `flood/poza.png` | The flood claim on a policy (P-8003) that expired 31.01.2024: pauses on `policy_active` |
+| C-8003 paused (not seeded; example) | `extra/paused.json` | `documents/paused/` (generated) + `flood/poza.png` | The flood claim on a policy (P-8003) that expired 31.01.2024: pauses on `policy_active` |
 
 `cases/` holds case files only; documents and photos live together in `documents/`. The team's files in
 `documents/flood|storm` are the standard template and are not edited. `documents/paused/` is written from

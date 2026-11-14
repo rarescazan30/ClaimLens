@@ -59,6 +59,9 @@ def create_app(cases_dir: Path | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         data_dir.mkdir(parents=True, exist_ok=True)
+        if os.environ.get("RESET_DEMO", "") not in ("", "0"):   # demo: start from fresh, never-analysed claims
+            for f in data_dir.glob("claimlens.db*"):
+                f.unlink()
         store = Store(data_dir / "claimlens.db")
         store.create_schema()
         seed(store, cases_dir)
