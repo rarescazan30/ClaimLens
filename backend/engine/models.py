@@ -124,3 +124,12 @@ class Sink(Protocol):
     def flags(self, f: list[RuleFlag]) -> None: ...
     def checks(self, result: StepResult) -> None: ...
     def claim_read(self, fields: dict) -> None: ...
+
+
+class ReadDocument(BaseModel):
+    """What the code read from one PDF. `fields` holds raw text by field name; `missing` lists names with no value."""
+
+    kind: Literal["claim_form", "policy"]
+    fields: dict[str, str] = {}
+    missing: list[str] = []
+    readable: bool = True
