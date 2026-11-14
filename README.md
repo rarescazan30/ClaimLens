@@ -7,10 +7,22 @@ Agentic assistant for home-insurance claim adjusters after natural disasters (fl
 
 📄 Full proposal and research (Romanian): [`docs/proposal.md`](docs/proposal.md)
 
+## 🌐 Live
+
+| What | Address | Hosted on |
+| --- | --- | --- |
+| **The app** | **https://claim-lens-omega.vercel.app** | Vercel (frontend, `frontend/`) |
+| Pitch demo page | https://claim-lens-omega.vercel.app/#/demo | Vercel |
+| Backend API | https://claimlens-production-4973fbb1.up.railway.app (`/health`, `/claims`) | Railway (`backend/` + `demo/`, volume at `/data`) |
+
+Every push to `main` redeploys both. The hosted backend runs **live**: each investigation calls the real sources
+and AI models. **Reset the demo to unanalysed claims:** Railway → Variables → `RESET_DEMO=1` (Railway redeploys and
+starts from a fresh database), then delete the variable. Setup steps: [`backend/README.md`](backend/README.md#deploy-railway).
+
 **Deadline: Saturday 14 November 2026, 14:00.** Deliverables: code on GitHub, working prototype, 5-minute pitch,
 demo of 5 minutes or less.
 
-Contents: [Run it](#run-it) · [What you see](#what-you-see) · [How it works](#how-it-works) ·
+Contents: [Live](#-live) · [Run it](#run-it) · [What you see](#what-you-see) · [How it works](#how-it-works) ·
 [What is real today](#what-is-real-today) · [Not built yet](#not-built-yet) · [Repository layout](#repository-layout)
 
 ---
@@ -221,7 +233,7 @@ Honest status, so nobody says more in the pitch than the code does.
 - The cross-claim "learning" (reusing a saved flood map for the next claim nearby) exists in code but has not been
   seen working.
 - One language on screen: labels are English, findings are Romanian.
-- Deployment (Railway for the backend, Vercel for the frontend). UiPath (optional).
+- UiPath (optional).
 
 ---
 
