@@ -8,7 +8,8 @@ from engine.documents import (
 from engine.models import ReadDocument
 
 CLAIM = {
-    "numar_polita": "P-7731", "tip_dauna": "inundație", "data_evenimentului": "14.09.2024",
+    "numar_polita": "P-7731", "nume_asigurat": "Persoană Sintetică Unu", "cnp": "1780514170010",
+    "iban": "RO31DEMO1004220715808001", "tip_dauna": "inundație", "data_evenimentului": "14.09.2024",
     "data_notificarii": "19.09.2024", "adresa_daunei": "Str. Exemplu 12, Pechea, jud. Galați",
     "latitudine": "45.6059", "longitudine": "27.78329", "descriere": "Apa a intrat în casă",
 }
@@ -200,7 +201,7 @@ def test_team_policy_is_read():
     d = read_document(TEAM / "flood" / "policy.pdf", "policy")
     assert d.readable
     assert d.fields["nume_asigurat"] == "Mircea Popescu"
-    assert d.fields["cnp"] == "1780514170015"
+    assert d.fields["cnp"] == "1780514170010"
     assert d.fields["valabila_de_la"] == "01/02/2024"
     assert d.fields["suma_asigurata"] == "100.000 RON"
     assert d.fields["zile_asteptare"] == "0 zile"

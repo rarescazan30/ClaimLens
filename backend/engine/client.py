@@ -1,7 +1,7 @@
 """Client data step: identity, contact, bank account and address checks. Findings are warnings, never verdicts.
 
-The team's claim form carries no identity: the policyholder's own data (CNP, phone, e-mail) is read from the policy
-and checked there; claim-vs-policy comparisons run only when the claim side has the value. Coordinates written on
+The claim form carries the insured's name, CNP and IBAN; the policy carries the policyholder's data (CNP, phone,
+e-mail). Claim-vs-policy comparisons run only when the claim side has the value. Coordinates written on
 the documents locate the two points directly; only an address without coordinates is geocoded.
 """
 from __future__ import annotations
@@ -88,7 +88,7 @@ async def check_client(claim_doc: ReadDocument, policy_doc: ReadDocument) -> tup
         add("email", "E-mail", email, "flag", "Adresa de e-mail nu are un format valid.", "email_invalid", "email")
 
     # IBAN (optional)
-    iban = get(c, "iban")
+    iban = get(c, "iban") or get(p, "iban")
     if not iban:
         add("iban", "IBAN", None, "info", "nu este completat")
     elif iban_valid(iban):

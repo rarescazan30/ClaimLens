@@ -18,6 +18,8 @@ def test_demo_claims_load_from_the_team_documents(tmp_path):
     assert {"C-8001", "C-8002", "C-8003"} <= ids
     c = store.get_claim("C-8001")
     assert store.get_policy(c["policy_id"])["holder_name"] == "Mircea Popescu"
+    third = store.get_claim("C-8003")
+    assert store.get_policy(third["policy_id"])["holder_name"] == "Andrei Stan"   # not a second Mircea Popescu
 
 
 async def test_paused_demo_claim_pauses(sink, route):
@@ -36,7 +38,7 @@ async def test_paused_demo_claim_pauses(sink, route):
     out = await run_investigation({"id": "C-8003"}, {}, CFG, sink,
                                   documents={"claim_form": docs / "paused" / "claim.pdf",
                                              "policy": docs / "paused" / "policy.pdf"},
-                                  photos=[docs / "flood" / "poza.png"], agents={a: agent for a in ALL_AGENTS},
+                                  photos=[docs / "paused" / "poza.jpg"], agents={a: agent for a in ALL_AGENTS},
                                   planner=planner, judge=judge)
     assert out is None and sink.steps[-1].step_id == "paused"
     assert sink.steps[-1].outputs == {"failed_rules": ["policy_active"]}

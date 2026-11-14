@@ -131,9 +131,10 @@ async def test_coordinates_from_documents_skip_geocoding(route):
     assert calls == []
 
 
-async def test_policyholder_cnp_is_checked(route):
+async def test_policyholder_cnp_is_checked_when_the_claim_has_none(route):
     route({"nominatim": 500})
-    for name in ("flood", "storm"):
-        result, _, _ = await check_client(*team(name))
-        assert "cnp_invalid" in codes(result)                       # the team's CNPs fail the checksum
-        assert not {"name_mismatch", "cnp_mismatch"} & set(codes(result))   # the claim form carries no identity
+    claim, policy = team("flood")
+    claim = claim.model_copy(update={"fields": {k: v for k, v in claim.fields.items() if k not in ("cnp", "nume_asigurat")}})
+    policy = policy.model_copy(update={"fields": {**policy.fields, "cnp": "1780514170015"}})   # the team's old CNP
+    result, _, _ = await check_client(claim, policy)
+    assert "cnp_invalid" in codes(result) and not {"name_mismatch", "cnp_mismatch"} & set(codes(result))

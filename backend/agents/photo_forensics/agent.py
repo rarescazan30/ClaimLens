@@ -27,8 +27,10 @@ VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
 ROLE = "autenticitatea fotografiilor: metadate, copii în alte dosare sau pe web, ce arată imaginile."
 MAX_VISION_PHOTOS = 4
 GUIDANCE = ("Lipsa metadatelor EXIF este frecventă (aplicații de mesagerie le șterg): singură este 'inconclusive'. "
-            "O dată EXIF cu multe zile înaintea evenimentului, o copie în alt dosar sau o copie pe web publicată "
-            "înainte de eveniment contrazic puternic (strength ≥ 0.8). O copie pe web fără dată nu e concludentă.")
+            "O dată EXIF înaintea evenimentului, o fotografie făcută departe de adresa daunei (GPS la peste 1 km), "
+            "o copie în alt dosar sau o copie pe web publicată înainte de eveniment contrazic puternic "
+            "(strength ≥ 0.8): fotografia nu arată dauna acestei case din acest eveniment. O dată EXIF în zilele de "
+            "după eveniment și un GPS la adresa daunei susțin dauna. O copie pe web fără dată nu e concludentă.")
 
 VISION_SYSTEM = """Analizezi fotografii dintr-un dosar de daună la o locuință. Pentru fiecare fotografie, în ordinea primită:
 - shows_declared_damage: true/false/null – arată dauna descrisă de client?

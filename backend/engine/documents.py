@@ -29,6 +29,9 @@ Kind = Literal["claim_form", "policy"]
 # field name → label shown in the checks
 CLAIM_FIELDS: dict[str, str] = {
     "numar_polita": "Număr poliță",
+    "nume_asigurat": "Nume asigurat",
+    "cnp": "CNP",
+    "iban": "IBAN",
     "tip_dauna": "Tip de daună",
     "data_evenimentului": "Data evenimentului",
     "data_notificarii": "Data avizării",
@@ -45,6 +48,7 @@ POLICY_FIELDS: dict[str, str] = {
     "suma_asigurata": "Suma asigurată",
     "nume_asigurat": "Nume asigurat",
     "cnp": "CNP/CUI",
+    "iban": "IBAN",
     "email": "E-mail",
     "telefon": "Telefon",
     "adresa_titular": "Adresa asiguratului",
@@ -57,12 +61,16 @@ POLICY_FIELDS: dict[str, str] = {
 }
 
 _FIELDS: dict[str, dict[str, str]] = {"claim_form": CLAIM_FIELDS, "policy": POLICY_FIELDS}
-_OPTIONAL = {"latitudine", "longitudine", "cnp", "email", "telefon", "adresa_titular"}
+_OPTIONAL = {"latitudine", "longitudine", "cnp", "email", "telefon", "adresa_titular", "iban"}
+_OPTIONAL_ON_CLAIM = {"nume_asigurat"}   # older forms have no insured's name (the policy has it)
 
 # ---- the template's layout (the reader and the writer share it)
 _CLAIM_TITLE = ("CERERE DE DESPĂGUBIRE", "Formular de avizare a daunei")
 _CLAIM_LAYOUT: list[tuple[str | None, str, str]] = [   # (section starting here, label line, field)
     ("I. POLIȚA DE ASIGURARE", "NUMĂR POLIȚĂ", "numar_polita"),
+    (None, "NUME ASIGURAT", "nume_asigurat"),
+    (None, "CNP", "cnp"),
+    (None, "IBAN", "iban"),
     ("II. EVENIMENTUL ASIGURAT", "TIP DE DAUNĂ", "tip_dauna"),
     (None, "DATA EVENIMENTULUI", "data_evenimentului"),
     (None, "DATA AVIZĂRII", "data_notificarii"),
@@ -76,14 +84,14 @@ _POLICY_TITLE = ("Poliță de asigurare", "a locuinței")
 _HOLDER, _LOCATION = "ASIGURAT", "LOCAȚIA ASIGURATĂ / CLĂDIREA CU DESTINAȚIE DE LOCUINȚĂ"
 _POLICY_BLOCKS: list[tuple[str | None, list[tuple[str, str]]]] = [   # (block header, [(label, field)])
     (None, [("Nr.:", "numar_polita"), ("PRODUS:", "produs"), ("Riscuri acoperite prin contract:", "riscuri_acoperite"),
-            ("SUMA ASIGURATĂ", "suma_asigurata")]),
+            ("SUMA ASIGURATĂ", "suma_asigurata"), ("IBAN:", "iban")]),
     (_HOLDER, [("Nume/Denumire:", "_nume"), ("Prenume:", "_prenume"), ("CNP/CUI:", "cnp"), ("E-mail:", "email"),
                ("Telefon:", "telefon"), ("Adresa:", "adresa_titular")]),
     ("PERIOADA DE VALABILITATE", [("De la:", "valabila_de_la"), ("Până la:", "valabila_pana_la"),
                                   ("Perioadă de așteptare:", "zile_asteptare")]),
     (_LOCATION, [("Adresa:", "adresa_asigurata"), ("Latitudine:", "latitudine"), ("Longitudine:", "longitudine")]),
 ]
-_SAME_LINE = {"Nr.:", "PRODUS:"}   # written "Nr.: P-8001"; the other labels have the value on the next line
+_SAME_LINE = {"Nr.:", "PRODUS:", "IBAN:"}   # written "Nr.: P-8001"; the other labels have the value on the next line
 _POLICY_HEADERS = {_HOLDER, "CONTRACTANT", "BENEFICIAR", "PERIOADA DE VALABILITATE", _LOCATION,
                    "MENȚIUNI SPECIALE"}
 
@@ -394,6 +402,9 @@ def from_claim(claim: dict, policy: dict) -> tuple[dict[str, str], dict[str, str
     waiting = policy.get("waiting_days")
     claim_fields = {
         "numar_polita": text(claim.get("policy_id") or policy.get("id")),
+        "nume_asigurat": text(policy.get("holder_name") or claim.get("holder_name")),
+        "cnp": either("cnp"),
+        "iban": text(claim.get("iban") or policy.get("iban")),
         "tip_dauna": _DAMAGE_RO.get(claim.get("damage_type"), text(claim.get("damage_type"))),
         "data_evenimentului": day(claim.get("event_date"), "."),
         "data_notificarii": day(claim.get("notified_at"), "."),
@@ -470,7 +481,7 @@ def check_documents(claim_doc: ReadDocument, policy_doc: ReadDocument) -> StepRe
             value = (doc.fields.get(name) or "").strip()
             item_id = f"{prefix}.{name}"
             if not value:
-                if name in _OPTIONAL:
+                if name in _OPTIONAL or (doc is claim_doc and name in _OPTIONAL_ON_CLAIM):
                     items.append(CheckItem(id=item_id, label=label, value=None, status="ok", reason="Câmp opțional necompletat"))
                     continue
                 reason = f"{label}: câmp lipsă."
