@@ -2,6 +2,7 @@ import { ArrowRight, ChevronDown, ChevronRight, ClipboardCheck, Inbox, ListCheck
 import { useEffect, useState } from 'react';
 import { API_URL } from '../api/client';
 import { useQueue } from '../api/hooks';
+import { verdictRows, withHistory } from '../lib/demoHistory';
 import { isNewClaim } from '../lib/early';
 import { OUTCOMES } from '../lib/meta';
 import { fmtScore } from '../lib/score';
@@ -16,7 +17,8 @@ const OUTCOME_ICON = { fast_track: Zap, standard_review: ClipboardCheck, antifra
 const goTo = (id: string) => requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
 export function Queue() {
-  const { rows, error } = useQueue();
+  const { rows: liveRows, error } = useQueue();
+  const rows = liveRows ? withHistory(liveRows) : liveRows;
   const [filter, setFilter] = useState<Filter>('all');
   const [peek, setPeek] = useState<QueueCase | null>(null);
   const [showReady, setShowReady] = useState(true);
@@ -47,7 +49,7 @@ export function Queue() {
 
   // "New" = not investigated yet, or being investigated right now. "Verdict ready" = the run is over.
   const fresh = rows.filter((r) => isNewClaim(r.status));
-  const ready = rows.filter((r) => r.status === 'awaiting_decision' || r.status === 'decided').sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const ready = verdictRows(rows);
   const visible = ready.filter((r) => filter === 'all' || r.outcome === filter);
   const count = (o: Outcome) => ready.filter((x) => x.outcome === o).length;
 
@@ -288,10 +290,14 @@ export function Queue() {
                 </ul>
               </>
             )}
-            <a className="btn btn-primary" href={`#/case/${peek.id}?tab=report`}>
-              Deschideți dosarul
-              <ArrowRight size={14} />
-            </a>
+            {peek.mock ? (
+              <p className="row-sub archived-note">Dosar arhivat</p>
+            ) : (
+              <a className="btn btn-primary" href={`#/case/${peek.id}?tab=report`}>
+                Deschideți dosarul
+                <ArrowRight size={14} />
+              </a>
+            )}
           </aside>
         </div>
       )}

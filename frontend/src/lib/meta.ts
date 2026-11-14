@@ -1,6 +1,6 @@
 import type { AgentId, Band, ClaimType, Mark, Outcome, StageId } from './types';
 
-export const APP_NAME = 'AsigIT';
+export const APP_NAME = 'ClaimIT';
 
 /** "1 agent", "3 agenți", "20 de agenți": Romanian counts take "de" from 20 up. */
 export const nr = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${n % 100 >= 20 || (n >= 100 && n % 100 === 0) ? 'de ' : ''}${many}`);

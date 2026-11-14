@@ -372,4 +372,6 @@ export interface QueueCase {
   outcome?: Outcome;
   decided: boolean;
   signals: string[];
+  /** Archived demo history: shown in the queue, never opened or sent to the backend. */
+  mock?: boolean;
 }
